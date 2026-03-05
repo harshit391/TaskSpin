@@ -1,6 +1,12 @@
-# TaskSpin
+<p align="center">
+  <img src="public/logo.png" alt="TaskSpin Logo" width="80" height="80">
+</p>
 
+<h1 align="center">TaskSpin</h1>
+
+<p align="center">
 A modern web-based task scheduling application that eliminates decision fatigue by intelligently distributing tasks across your week using randomization.
+</p>
 
 **Add your tasks once, set their frequency, and let TaskSpin randomly distribute them across your week. No more deciding what to do when.**
 
