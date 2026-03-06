@@ -6,14 +6,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTaskStore } from '../../store/taskStore';
-import type { FrequencyType } from '../../types';
-import { FREQUENCY_OPTIONS } from '../../types';
+import type { FrequencyType, DayOfWeek } from '../../types';
+import { FREQUENCY_OPTIONS, DAYS_OF_WEEK, DAY_LABELS } from '../../types';
 
 const taskSchema = z.object({
   name: z.string().min(1, 'Task name is required').max(100, 'Task name is too long'),
   description: z.string().max(500, 'Description is too long').optional(),
   link: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
-  frequencyType: z.enum(['daily', 'once', 'twice', 'thrice', 'custom'] as const),
+  frequencyType: z.enum(['daily', 'once', 'twice', 'thrice', 'custom', 'one-time'] as const),
   customCount: z.number().min(1).max(7).optional(),
 });
 
@@ -25,6 +25,8 @@ interface TaskFormProps {
 
 export function TaskForm({ onSuccess }: TaskFormProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [useFixedDays, setUseFixedDays] = useState(false);
+  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>([]);
   const addTask = useTaskStore((state) => state.addTask);
 
   const {
@@ -45,6 +47,24 @@ export function TaskForm({ onSuccess }: TaskFormProps) {
   });
 
   const frequencyType = watch('frequencyType');
+  const customCount = watch('customCount');
+
+  // Calculate max selectable days based on frequency
+  const getMaxDays = (): number => {
+    if (frequencyType === 'custom') return customCount || 4;
+    const option = FREQUENCY_OPTIONS.find(f => f.type === frequencyType);
+    return option?.count || 1;
+  };
+
+  const maxDays = getMaxDays();
+
+  const handleDayToggle = (day: DayOfWeek) => {
+    if (selectedDays.includes(day)) {
+      setSelectedDays(selectedDays.filter(d => d !== day));
+    } else if (selectedDays.length < maxDays) {
+      setSelectedDays([...selectedDays, day]);
+    }
+  };
 
   const onSubmit = async (data: TaskFormData) => {
     const frequencyCount =
@@ -52,9 +72,13 @@ export function TaskForm({ onSuccess }: TaskFormProps) {
         ? data.customCount || 4
         : FREQUENCY_OPTIONS.find((f) => f.type === data.frequencyType)?.count || 1;
 
-    await addTask(data.name, data.description || '', data.frequencyType, frequencyCount, data.link || undefined);
+    const fixedDays = useFixedDays && selectedDays.length > 0 ? selectedDays : undefined;
+
+    await addTask(data.name, data.description || '', data.frequencyType, frequencyCount, data.link || undefined, fixedDays);
 
     reset();
+    setUseFixedDays(false);
+    setSelectedDays([]);
     setIsOpen(false);
     onSuccess?.();
   };
@@ -176,11 +200,82 @@ export function TaskForm({ onSuccess }: TaskFormProps) {
               )}
             </AnimatePresence>
 
+            {/* Fixed Days Toggle */}
+            <AnimatePresence>
+              {frequencyType !== 'daily' && frequencyType !== 'one-time' && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-3"
+                >
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <div
+                      onClick={() => setUseFixedDays(!useFixedDays)}
+                      className={`w-10 h-6 rounded-full transition-colors relative ${
+                        useFixedDays ? 'bg-[var(--accent)]' : 'bg-[var(--bg-secondary)] border border-[var(--border-color)]'
+                      }`}
+                    >
+                      <motion.div
+                        animate={{ x: useFixedDays ? 18 : 2 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                        className={`absolute top-1 w-4 h-4 rounded-full ${
+                          useFixedDays ? 'bg-white' : 'bg-[var(--text-muted)]'
+                        }`}
+                      />
+                    </div>
+                    <span className="text-sm text-[var(--text-secondary)]">
+                      Fix to specific days
+                    </span>
+                  </label>
+
+                  <AnimatePresence>
+                    {useFixedDays && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                      >
+                        <p className="text-xs text-[var(--text-muted)] mb-2">
+                          Select {maxDays} day{maxDays > 1 ? 's' : ''} ({selectedDays.length}/{maxDays} selected)
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {DAYS_OF_WEEK.map((day) => {
+                            const isSelected = selectedDays.includes(day);
+                            const isDisabled = !isSelected && selectedDays.length >= maxDays;
+                            return (
+                              <button
+                                key={day}
+                                type="button"
+                                onClick={() => handleDayToggle(day)}
+                                disabled={isDisabled}
+                                className={`px-3 py-1.5 text-xs font-medium uppercase tracking-wider border rounded transition-all ${
+                                  isSelected
+                                    ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
+                                    : isDisabled
+                                    ? 'border-[var(--border-color)] text-[var(--text-muted)] opacity-40 cursor-not-allowed'
+                                    : 'border-[var(--border-color)] text-[var(--text-muted)] hover:border-[var(--text-muted)]'
+                                }`}
+                              >
+                                {DAY_LABELS[day]}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <div className="flex gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => {
                   reset();
+                  setUseFixedDays(false);
+                  setSelectedDays([]);
                   setIsOpen(false);
                 }}
                 className="btn-ghost flex-1"

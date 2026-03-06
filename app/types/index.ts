@@ -1,6 +1,6 @@
 export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
 
-export type FrequencyType = 'daily' | 'once' | 'twice' | 'thrice' | 'custom';
+export type FrequencyType = 'daily' | 'once' | 'twice' | 'thrice' | 'custom' | 'one-time';
 
 export interface Task {
   id: string;
@@ -9,6 +9,7 @@ export interface Task {
   link?: string; // Optional URL to attach to the task
   frequencyType: FrequencyType;
   frequencyCount: number; // 7 for daily, 1 for once, 2 for twice, etc.
+  fixedDays?: DayOfWeek[]; // Optional: specific days this task must appear on
   createdAt: Date;
   updatedAt: Date;
 }
@@ -67,6 +68,7 @@ export const FREQUENCY_OPTIONS: FrequencyOption[] = [
   { type: 'twice', label: 'Twice a week', count: 2 },
   { type: 'thrice', label: 'Three times a week', count: 3 },
   { type: 'custom', label: 'Custom', count: 0 },
+  { type: 'one-time', label: 'One-time', count: 7 },
 ];
 
 export const DAYS_OF_WEEK: DayOfWeek[] = [

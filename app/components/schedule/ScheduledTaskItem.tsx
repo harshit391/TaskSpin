@@ -209,9 +209,21 @@ export function ScheduledTaskItem({ scheduledTask, day, index, expanded = false,
           </a>
         )}
         {expanded && (
-          <span className="inline-block mt-2 text-[10px] px-2 py-0.5 rounded bg-[var(--bg-hover)] text-[var(--text-muted)]">
-            {frequencyLabel}
-          </span>
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-[var(--bg-hover)] text-[var(--text-muted)]">
+              {frequencyLabel}
+            </span>
+            {task.frequencyType === 'one-time' && (
+              <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-[var(--accent)]/20 text-[var(--accent)]">
+                ONE-TIME
+              </span>
+            )}
+            {task.fixedDays && task.fixedDays.length > 0 && (
+              <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-[var(--accent)]/20 text-[var(--accent)]">
+                FIXED
+              </span>
+            )}
+          </div>
         )}
       </div>
 
@@ -242,7 +254,7 @@ export function ScheduledTaskItem({ scheduledTask, day, index, expanded = false,
         </button>
       </div>
 
-      {/* Daily Badge or Link indicator */}
+      {/* Badge indicators */}
       {!expanded && (
         <div className="flex items-center gap-1 flex-shrink-0">
           {task.link && (
@@ -257,8 +269,14 @@ export function ScheduledTaskItem({ scheduledTask, day, index, expanded = false,
               </svg>
             </button>
           )}
+          {task.frequencyType === 'one-time' && (
+            <span className="tag text-[10px] tag-accent">ONE-TIME</span>
+          )}
           {task.frequencyType === 'daily' && (
             <span className="tag text-[10px]">DAILY</span>
+          )}
+          {task.fixedDays && task.fixedDays.length > 0 && (
+            <span className="tag text-[10px] bg-[var(--accent)]/20 text-[var(--accent)]">FIXED</span>
           )}
         </div>
       )}

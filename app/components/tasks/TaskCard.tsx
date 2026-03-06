@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Task } from '../../types';
-import { FREQUENCY_OPTIONS } from '../../types';
+import { FREQUENCY_OPTIONS, DAY_LABELS } from '../../types';
 import { useTaskStore } from '../../store/taskStore';
 
 interface TaskCardProps {
@@ -22,7 +22,13 @@ export function TaskCard({ task, index }: TaskCardProps) {
   const frequencyLabel =
     task.frequencyType === 'custom'
       ? `${task.frequencyCount}x / week`
+      : task.frequencyType === 'one-time'
+      ? 'One-time'
       : FREQUENCY_OPTIONS.find((f) => f.type === task.frequencyType)?.label || task.frequencyType;
+
+  const fixedDaysLabel = task.fixedDays && task.fixedDays.length > 0
+    ? task.fixedDays.map(d => DAY_LABELS[d]).join(', ')
+    : null;
 
   const handleSave = async () => {
     if (editName.trim() && editName !== task.name) {
@@ -93,14 +99,19 @@ export function TaskCard({ task, index }: TaskCardProps) {
             </a>
           )}
 
-          <div className="mt-3 flex items-center gap-2">
+          <div className="mt-3 flex items-center gap-2 flex-wrap">
             <span
               className={`tag ${
-                task.frequencyType === 'daily' ? 'tag-accent' : ''
+                task.frequencyType === 'daily' || task.frequencyType === 'one-time' ? 'tag-accent' : ''
               }`}
             >
               {frequencyLabel}
             </span>
+            {fixedDaysLabel && (
+              <span className="tag bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]/30">
+                {fixedDaysLabel}
+              </span>
+            )}
           </div>
         </div>
 

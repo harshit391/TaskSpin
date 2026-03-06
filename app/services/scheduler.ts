@@ -118,9 +118,20 @@ export function generateWeeklySchedule(
   const remainingCapacity = new Map<DayOfWeek, number>();
   orderedDays.forEach(day => remainingCapacity.set(day, capacity[day]));
 
-  // Separate daily tasks from non-daily tasks
+  // Separate tasks into categories
   const dailyTasks = tasks.filter(t => t.frequencyType === 'daily');
-  const nonDailyTasks = tasks.filter(t => t.frequencyType !== 'daily');
+  const oneTimeTasks = tasks.filter(t => t.frequencyType === 'one-time');
+  const fixedDayTasks = tasks.filter(t =>
+    t.frequencyType !== 'daily' &&
+    t.frequencyType !== 'one-time' &&
+    t.fixedDays &&
+    t.fixedDays.length > 0
+  );
+  const randomTasks = tasks.filter(t =>
+    t.frequencyType !== 'daily' &&
+    t.frequencyType !== 'one-time' &&
+    (!t.fixedDays || t.fixedDays.length === 0)
+  );
 
   // Step 1: Place daily tasks on all days (daily tasks don't count against capacity)
   for (const task of dailyTasks) {
@@ -132,13 +143,43 @@ export function generateWeeklySchedule(
     }
   }
 
-  // Step 2: Create a pool of (task, occurrences) for non-daily tasks
+  // Step 2: Place one-time tasks on all days (like daily, don't count against capacity)
+  for (const task of oneTimeTasks) {
+    for (const day of orderedDays) {
+      daySchedule.get(day)!.push({
+        taskId: task.id,
+        completed: false,
+      });
+    }
+  }
+
+  // Step 3: Place fixed-day tasks on their specific days
+  for (const task of fixedDayTasks) {
+    for (const fixedDay of task.fixedDays!) {
+      if (!orderedDays.includes(fixedDay)) continue;
+
+      if (remainingCapacity.get(fixedDay)! <= 0) {
+        return {
+          success: false,
+          error: `Cannot place "${task.name}" on ${fixedDay} - insufficient capacity.`,
+        };
+      }
+
+      daySchedule.get(fixedDay)!.push({
+        taskId: task.id,
+        completed: false,
+      });
+      remainingCapacity.set(fixedDay, remainingCapacity.get(fixedDay)! - 1);
+    }
+  }
+
+  // Step 4: Create a pool of (task, occurrences) for random tasks
   interface TaskOccurrence {
     taskId: string;
     remaining: number;
   }
 
-  const taskPool: TaskOccurrence[] = nonDailyTasks.map(task => ({
+  const taskPool: TaskOccurrence[] = randomTasks.map(task => ({
     taskId: task.id,
     remaining: task.frequencyCount,
   }));
@@ -154,7 +195,7 @@ export function generateWeeklySchedule(
     };
   }
 
-  // Step 3: Randomly distribute non-daily tasks
+  // Step 5: Randomly distribute remaining tasks
   // Shuffle task pool for randomness
   const shuffledPool = shuffleArray(taskPool);
 
@@ -208,7 +249,7 @@ export function generateWeeklySchedule(
     }
   }
 
-  // Step 4: Build final schedule
+  // Step 6: Build final schedule
   const endDate = new Date(startDate);
   endDate.setDate(startDate.getDate() + 6);
 

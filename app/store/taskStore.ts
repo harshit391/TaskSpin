@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import type { Task, FrequencyType } from '../types';
+import type { Task, FrequencyType, DayOfWeek } from '../types';
 import { db } from '../database/db';
 
 interface TaskStore {
@@ -10,7 +10,7 @@ interface TaskStore {
 
   // Actions
   initialize: () => Promise<void>;
-  addTask: (name: string, description: string, frequencyType: FrequencyType, frequencyCount: number, link?: string) => Promise<Task>;
+  addTask: (name: string, description: string, frequencyType: FrequencyType, frequencyCount: number, link?: string, fixedDays?: DayOfWeek[]) => Promise<Task>;
   updateTask: (id: string, updates: Partial<Omit<Task, 'id' | 'createdAt'>>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
   getTaskById: (id: string) => Task | undefined;
@@ -35,7 +35,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
 
-  addTask: async (name, description, frequencyType, frequencyCount, link) => {
+  addTask: async (name, description, frequencyType, frequencyCount, link, fixedDays) => {
     const now = new Date();
     const newTask: Task = {
       id: uuidv4(),
@@ -44,6 +44,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       link: link || undefined,
       frequencyType,
       frequencyCount,
+      fixedDays: fixedDays && fixedDays.length > 0 ? fixedDays : undefined,
       createdAt: now,
       updatedAt: now,
     };

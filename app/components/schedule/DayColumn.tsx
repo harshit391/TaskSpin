@@ -8,7 +8,7 @@ import { ScheduledTaskItem } from './ScheduledTaskItem';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useTaskStore } from '../../store/taskStore';
 
-type TaskFilter = 'all' | 'daily' | 'not-daily';
+type TaskFilter = 'all' | 'daily' | 'not-daily' | 'one-time';
 
 interface DayColumnProps {
   scheduledDay: ScheduledDay;
@@ -34,7 +34,11 @@ export function DayColumn({ scheduledDay, index, isToday, expanded = false, task
       if (taskFilter === 'daily') {
         return task.frequencyType === 'daily';
       }
-      return task.frequencyType !== 'daily';
+      if (taskFilter === 'one-time') {
+        return task.frequencyType === 'one-time';
+      }
+      // 'not-daily' excludes both daily and one-time
+      return task.frequencyType !== 'daily' && task.frequencyType !== 'one-time';
     });
   }, [scheduledDay.tasks, taskFilter, getTaskById]);
 
@@ -104,7 +108,10 @@ export function DayColumn({ scheduledDay, index, isToday, expanded = false, task
       <div className={`flex-1 p-3 space-y-2 ${expanded ? 'min-h-[300px]' : 'min-h-[200px] max-h-[400px]'} overflow-y-auto`}>
         {filteredTasks.length === 0 ? (
           <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
-            {taskFilter === 'all' ? 'No tasks' : `No ${taskFilter === 'daily' ? 'daily' : 'non-daily'} tasks`}
+            {taskFilter === 'all' ? 'No tasks' :
+              taskFilter === 'daily' ? 'No daily tasks' :
+              taskFilter === 'one-time' ? 'No one-time tasks' :
+              'No non-daily tasks'}
           </div>
         ) : (
           filteredTasks.map((task, taskIndex) => (

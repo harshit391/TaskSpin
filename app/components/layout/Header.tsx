@@ -6,7 +6,7 @@ import Image from 'next/image';
 export function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-[var(--border-color)] bg-[var(--bg-primary)]/90 backdrop-blur-sm">
-      <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
+      <div className="w-[92%] sm:w-[88%] md:w-[85%] lg:w-[82%] max-w-6xl mx-auto py-4 flex items-center justify-between">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}

@@ -116,6 +116,23 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
         updatedSchedule = removeFutureOccurrence(updatedSchedule, taskId, day);
       }
 
+      // Check if this is a one-time task - if so, delete it after completion
+      const { getTaskById, deleteTask } = useTaskStore.getState();
+      const task = getTaskById(taskId);
+
+      if (task?.frequencyType === 'one-time') {
+        // Remove this task from all days in the schedule
+        updatedSchedule = {
+          ...updatedSchedule,
+          days: updatedSchedule.days.map(daySchedule => ({
+            ...daySchedule,
+            tasks: daySchedule.tasks.filter(t => t.taskId !== taskId),
+          })),
+        };
+        // Delete the task permanently
+        await deleteTask(taskId);
+      }
+
       await db.schedules.put(updatedSchedule);
       set({ schedule: updatedSchedule });
     } catch (error) {

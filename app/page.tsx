@@ -126,7 +126,7 @@ export default function Home() {
       <Header />
 
       <main className="pt-24 pb-12">
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="w-[92%] sm:w-[88%] md:w-[85%] lg:w-[82%] max-w-6xl mx-auto">
           {/* Hero Section */}
           <motion.section
             initial={{ opacity: 0, y: 20 }}
@@ -176,7 +176,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-[var(--border-color)] py-6">
-        <div className="max-w-7xl mx-auto px-6 text-center">
+        <div className="w-[92%] sm:w-[88%] md:w-[85%] lg:w-[82%] max-w-6xl mx-auto text-center">
           <p className="text-sm text-[var(--text-muted)]">
             TaskSpin &mdash; Your randomized weekly task planner
           </p>

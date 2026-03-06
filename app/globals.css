@@ -297,3 +297,29 @@ body {
   opacity: 0.5;
   text-decoration: line-through;
 }
+
+/* Container with consistent side spacing across all screen sizes */
+.container-app {
+  width: 92%;
+  max-width: 72rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 640px) {
+  .container-app {
+    width: 88%;
+  }
+}
+
+@media (min-width: 768px) {
+  .container-app {
+    width: 85%;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-app {
+    width: 82%;
+  }
+}

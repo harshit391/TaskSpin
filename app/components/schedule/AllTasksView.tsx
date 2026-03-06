@@ -7,7 +7,7 @@ import { useScheduleStore } from '../../store/scheduleStore';
 import { FREQUENCY_OPTIONS, DAY_LABELS, type DayOfWeek } from '../../types';
 import { formatDateToISO } from '../../services/scheduler';
 
-type TaskFilter = 'all' | 'daily' | 'not-daily';
+type TaskFilter = 'all' | 'daily' | 'not-daily' | 'one-time';
 
 interface AllTasksViewProps {
   taskFilter: TaskFilter;
@@ -35,7 +35,9 @@ export function AllTasksView({ taskFilter }: AllTasksViewProps) {
   const filteredTasks = useMemo(() => {
     if (taskFilter === 'all') return tasks;
     if (taskFilter === 'daily') return tasks.filter(t => t.frequencyType === 'daily');
-    return tasks.filter(t => t.frequencyType !== 'daily');
+    if (taskFilter === 'one-time') return tasks.filter(t => t.frequencyType === 'one-time');
+    // 'not-daily' excludes both daily and one-time
+    return tasks.filter(t => t.frequencyType !== 'daily' && t.frequencyType !== 'one-time');
   }, [tasks, taskFilter]);
 
   // Get today's swappable tasks when swap dialog is shown
@@ -67,20 +69,25 @@ export function AllTasksView({ taskFilter }: AllTasksViewProps) {
     return { scheduled, completed, scheduledDays, occurrences };
   };
 
-  const handleToggleOccurrence = async (taskId: string, day: DayOfWeek, date: string, currentlyCompleted: boolean, isDaily: boolean) => {
+  const handleToggleOccurrence = async (taskId: string, day: DayOfWeek, date: string, currentlyCompleted: boolean, isDaily: boolean, isOneTime: boolean) => {
+    // One-time tasks cannot be uncompleted (they get deleted)
+    if (currentlyCompleted && isOneTime) {
+      return;
+    }
+
     if (currentlyCompleted) {
       // Uncomplete
       await uncompleteTask(taskId, day);
     } else {
-      // Check if this is not today and not a daily task
+      // Check if this is not today and not a daily/one-time task
       const isToday = date === today;
-      if (!isToday && !isDaily) {
+      if (!isToday && !isDaily && !isOneTime) {
         // Show swap confirmation
         setSwapConfirm({ taskId, day });
         setSelectedSwapTask(null);
       } else {
-        // Complete normally
-        await completeTask(taskId, day, !isDaily);
+        // Complete normally - one-time tasks will be deleted by the store
+        await completeTask(taskId, day, !isDaily && !isOneTime);
       }
     }
   };
@@ -130,9 +137,12 @@ export function AllTasksView({ taskFilter }: AllTasksViewProps) {
   };
 
   if (filteredTasks.length === 0) {
+    const filterLabel = taskFilter === 'daily' ? 'daily' :
+      taskFilter === 'one-time' ? 'one-time' :
+      taskFilter === 'not-daily' ? 'non-daily' : '';
     return (
       <div className="text-center py-12 text-[var(--text-muted)]">
-        No {taskFilter === 'daily' ? 'daily' : taskFilter === 'not-daily' ? 'non-daily' : ''} tasks found.
+        No {filterLabel} tasks found.
       </div>
     );
   }
@@ -255,10 +265,17 @@ export function AllTasksView({ taskFilter }: AllTasksViewProps) {
         const frequencyLabel =
           task.frequencyType === 'custom'
             ? `${task.frequencyCount}x/week`
+            : task.frequencyType === 'one-time'
+            ? 'One-time'
             : FREQUENCY_OPTIONS.find((f) => f.type === task.frequencyType)?.label || task.frequencyType;
+
+        const fixedDaysLabel = task.fixedDays && task.fixedDays.length > 0
+          ? task.fixedDays.map(d => DAY_LABELS[d]).join(', ')
+          : null;
 
         const isEditing = editingId === task.id;
         const isDaily = task.frequencyType === 'daily';
+        const isOneTime = task.frequencyType === 'one-time';
 
         if (isEditing) {
           return (
@@ -326,9 +343,14 @@ export function AllTasksView({ taskFilter }: AllTasksViewProps) {
                   <h3 className="text-lg font-medium text-[var(--text-primary)]">
                     {task.name}
                   </h3>
-                  <span className={`tag ${task.frequencyType === 'daily' ? 'tag-accent' : ''}`}>
+                  <span className={`tag ${isDaily || isOneTime ? 'tag-accent' : ''}`}>
                     {frequencyLabel}
                   </span>
+                  {fixedDaysLabel && (
+                    <span className="tag bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]/30">
+                      {fixedDaysLabel}
+                    </span>
+                  )}
                 </div>
 
                 {task.description && (
@@ -363,7 +385,7 @@ export function AllTasksView({ taskFilter }: AllTasksViewProps) {
                         return (
                           <button
                             key={i}
-                            onClick={() => handleToggleOccurrence(task.id, occ.day, occ.date, occ.completed, isDaily)}
+                            onClick={() => handleToggleOccurrence(task.id, occ.day, occ.date, occ.completed, isDaily, isOneTime)}
                             className={`flex items-center gap-2 px-3 py-1.5 rounded border text-sm transition-all ${
                               occ.completed
                                 ? 'border-[var(--success)] bg-[var(--success)]/10 text-[var(--success)]'
