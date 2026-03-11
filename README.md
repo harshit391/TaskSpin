@@ -26,11 +26,28 @@ A modern web-based task scheduling application that eliminates decision fatigue 
 - Automatic schedule regeneration when a new week begins
 - Manual "Re-Spin" to generate fresh randomized schedules
 
+### Task Pools
+- Break down large goals into ordered subtask roadmaps
+- One subtask active at a time, automatically injected into weekly schedule
+- Sequential progression through pool subtasks
+- JSON import/export for pools
+
+### Side Tasks
+- Separate list for ad-hoc or urgent one-off tasks
+- Optional due dates with overdue tracking
+- Independent from the weekly schedule
+
 ### Task Completion
 - Mark tasks complete with a single click
 - **Early completion**: For non-daily tasks, completing early removes future occurrences for the week
 - Progress tracking with visual progress bars (daily and weekly)
 - Completion history preservation
+
+### Progressive Web App (PWA)
+- Installable on mobile and desktop (Add to Home Screen / browser install)
+- Offline support via service worker caching
+- Standalone app experience without browser chrome
+- Automatic cache updates on new versions
 
 ### Customizable Settings
 - **Daily Capacity**: Set limits (0-20) for randomized tasks per day (daily tasks are excluded)
@@ -91,9 +108,11 @@ npm run lint
 ├── /app
 │   ├── /components          # React UI components
 │   │   ├── /layout          # Header, TabNavigation
-│   │   ├── /tasks           # TaskList, TaskForm, TaskCard
-│   │   ├── /schedule        # WeeklySchedule, DayColumn, ScheduledTaskItem
-│   │   └── /settings        # SettingsPanel, CapacityConfig, WeekConfig
+│   │   ├── /tasks           # TaskList, TaskForm, TaskCard, TaskEditModal
+│   │   ├── /schedule        # WeeklySchedule, DayColumn, ScheduledTaskItem, AllTasksView
+│   │   ├── /pools           # PoolList, PoolCard, PoolForm, PoolDetailModal
+│   │   ├── /sidetasks       # SideTaskList
+│   │   └── /settings        # SettingsPanel, CapacityConfig, WeekConfig, DataManagement
 │   ├── /database            # Dexie database setup
 │   ├── /hooks               # Custom React hooks
 │   ├── /services            # Core scheduling algorithm
@@ -102,7 +121,10 @@ npm run lint
 │   ├── page.tsx             # Main page
 │   ├── layout.tsx           # Root layout
 │   └── globals.css          # Global styles & design system
-├── /public                  # Static assets
+├── /public
+│   ├── manifest.json        # PWA web app manifest
+│   ├── sw.js                # Service worker for offline support
+│   └── ...                  # Icons and static assets
 └── package.json
 ```
 
@@ -110,27 +132,32 @@ npm run lint
 
 ### State Management
 
-Three Zustand stores manage application state:
+Five Zustand stores manage application state:
 
 - **taskStore**: Task CRUD operations with database persistence
 - **settingsStore**: User preferences (capacity limits, week configuration)
 - **scheduleStore**: Weekly schedule generation, completion tracking, auto-regeneration
+- **poolStore**: Task pool management with sequential subtask progression
+- **sideTaskStore**: Ad-hoc side task management with due date tracking
 
 ### Data Persistence
 
 All data is stored locally in the browser using IndexedDB via Dexie:
 
-- **tasks**: User-created tasks
+- **tasks**: User-created recurring tasks
 - **settings**: Capacity and week configuration
 - **schedules**: Generated weekly schedules (keeps last 4 weeks)
+- **pools**: Task pools with ordered subtasks
+- **sideTasks**: Ad-hoc tasks with optional due dates
 
 ### Scheduling Algorithm
 
 1. Daily tasks are placed on all 7 days (independent of capacity)
 2. Capacity is used exclusively for non-daily tasks
 3. Non-daily tasks are shuffled randomly
-4. Tasks are distributed across eligible days, preferring variety
-5. Conflict avoidance spreads same-task occurrences across different days
+4. Active pool subtasks are injected as one-time entries
+5. Tasks are distributed across eligible days, preferring variety
+6. Conflict avoidance spreads same-task occurrences across different days
 
 ## Design System
 
@@ -151,8 +178,9 @@ Daily tasks are always scheduled on all 7 days regardless of these limits. All s
 
 ## Browser Support
 
-Works in all modern browsers with IndexedDB support:
+Works in all modern browsers with IndexedDB and service worker support:
 - Chrome, Firefox, Safari, Edge (latest versions)
+- Installable as a PWA on Android, iOS, and desktop
 
 ## License
 
