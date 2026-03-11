@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import type { ScheduledTask, DayOfWeek } from '../../types';
+import type { ScheduledTask, DayOfWeek, Task } from '../../types';
+import { isPoolSubtaskId, parsePoolTaskId } from '../../types';
 import { useTaskStore } from '../../store/taskStore';
 import { useScheduleStore } from '../../store/scheduleStore';
+import { usePoolStore } from '../../store/poolStore';
 import { FREQUENCY_OPTIONS } from '../../types';
 import { TaskDetailModal } from './TaskDetailModal';
 
@@ -20,10 +22,35 @@ export function ScheduledTaskItem({ scheduledTask, day, index, expanded = false,
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const getTaskById = useTaskStore((state) => state.getTaskById);
+  const getPoolById = usePoolStore((state) => state.getPoolById);
   const completeTask = useScheduleStore((state) => state.completeTask);
   const uncompleteTask = useScheduleStore((state) => state.uncompleteTask);
 
-  const task = getTaskById(scheduledTask.taskId);
+  const isPoolTask = isPoolSubtaskId(scheduledTask.taskId);
+
+  // Resolve task data: either from task store or synthesized from pool store
+  let task: Task | undefined;
+  let poolLabel: string | undefined;
+  if (isPoolTask) {
+    const { poolId, subtaskId } = parsePoolTaskId(scheduledTask.taskId);
+    const pool = getPoolById(poolId);
+    const subtask = pool?.subtasks.find((s) => s.id === subtaskId);
+    if (pool && subtask) {
+      poolLabel = pool.name;
+      task = {
+        id: scheduledTask.taskId,
+        name: subtask.name,
+        description: subtask.description,
+        link: subtask.link,
+        frequencyType: 'one-time',
+        frequencyCount: 7,
+        createdAt: pool.createdAt,
+        updatedAt: pool.updatedAt,
+      } as Task;
+    }
+  } else {
+    task = getTaskById(scheduledTask.taskId);
+  }
 
   if (!task) return null;
 
@@ -33,30 +60,37 @@ export function ScheduledTaskItem({ scheduledTask, day, index, expanded = false,
     // Only allow completing/uncompleting if it's today
     if (!isToday) return;
 
-    // Don't allow uncompleting one-time tasks
-    if (scheduledTask.completed && task.frequencyType === 'one-time') return;
+    // Don't allow uncompleting one-time or pool tasks
+    if (scheduledTask.completed && (task!.frequencyType === 'one-time' || isPoolTask)) return;
 
     if (scheduledTask.completed) {
       await uncompleteTask(scheduledTask.taskId, day);
     } else {
-      const removeNextOccurrence = task.frequencyType !== 'daily' && task.frequencyType !== 'one-time';
-      await completeTask(scheduledTask.taskId, day, removeNextOccurrence);
+      if (isPoolTask) {
+        await completeTask(scheduledTask.taskId, day, false);
+      } else {
+        const removeNextOccurrence = task!.frequencyType !== 'daily' && task!.frequencyType !== 'one-time';
+        await completeTask(scheduledTask.taskId, day, removeNextOccurrence);
+      }
     }
   };
 
   const handleOpenLink = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (task.link) {
-      window.open(task.link, '_blank', 'noopener,noreferrer');
+    if (task!.link) {
+      window.open(task!.link, '_blank', 'noopener,noreferrer');
     }
   };
 
   const handleOpenModal = () => {
-    setIsModalOpen(true);
+    if (!isPoolTask) {
+      setIsModalOpen(true);
+    }
   };
 
-  const frequencyLabel =
-    task.frequencyType === 'custom'
+  const frequencyLabel = isPoolTask
+    ? 'Pool'
+    : task.frequencyType === 'custom'
       ? `${task.frequencyCount}x/week`
       : task.frequencyType === 'one-time'
       ? 'One-time'
@@ -139,7 +173,12 @@ export function ScheduledTaskItem({ scheduledTask, day, index, expanded = false,
               <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-[var(--bg-hover)] text-[var(--text-muted)]">
                 {frequencyLabel}
               </span>
-              {task.frequencyType === 'one-time' && (
+              {isPoolTask && poolLabel && (
+                <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-[var(--accent)]/20 text-[var(--accent)]">
+                  {poolLabel}
+                </span>
+              )}
+              {!isPoolTask && task.frequencyType === 'one-time' && (
                 <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-[var(--accent)]/20 text-[var(--accent)]">
                   ONE-TIME
                 </span>
@@ -199,10 +238,13 @@ export function ScheduledTaskItem({ scheduledTask, day, index, expanded = false,
                 </svg>
               </button>
             )}
-            {task.frequencyType === 'one-time' && (
+            {isPoolTask && (
+              <span className="tag text-[10px] tag-accent">POOL</span>
+            )}
+            {!isPoolTask && task.frequencyType === 'one-time' && (
               <span className="tag text-[10px] tag-accent">ONE-TIME</span>
             )}
-            {task.frequencyType === 'daily' && (
+            {!isPoolTask && task.frequencyType === 'daily' && (
               <span className="tag text-[10px]">DAILY</span>
             )}
             {task.fixedDays && task.fixedDays.length > 0 && (
@@ -212,15 +254,17 @@ export function ScheduledTaskItem({ scheduledTask, day, index, expanded = false,
         )}
       </motion.div>
 
-      {/* Task Detail Modal */}
-      <TaskDetailModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        task={task}
-        scheduledTask={scheduledTask}
-        day={day}
-        isToday={isToday}
-      />
+      {/* Task Detail Modal - only for regular tasks */}
+      {!isPoolTask && (
+        <TaskDetailModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          task={task}
+          scheduledTask={scheduledTask}
+          day={day}
+          isToday={isToday}
+        />
+      )}
     </>
   );
 }

@@ -1,5 +1,5 @@
 import type { Task, WeeklyCapacity, WeekConfig, DayOfWeek, ScheduledTask, WeeklySchedule } from '../types';
-import { DAYS_OF_WEEK } from '../types';
+import { DAYS_OF_WEEK, makePoolTaskId } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 // Fisher-Yates shuffle algorithm
@@ -74,6 +74,14 @@ function generateWeekDates(startDate: Date, orderedDays: DayOfWeek[]): Map<DayOf
   return dateMap;
 }
 
+export interface PoolSubtaskInjection {
+  poolId: string;
+  subtaskId: string;
+  name: string;
+  description?: string;
+  link?: string;
+}
+
 export interface ScheduleGenerationResult {
   success: boolean;
   schedule?: WeeklySchedule;
@@ -84,9 +92,10 @@ export function generateWeeklySchedule(
   tasks: Task[],
   capacity: WeeklyCapacity,
   weekConfig: WeekConfig,
-  referenceDate: Date = new Date()
+  referenceDate: Date = new Date(),
+  poolSubtasks: PoolSubtaskInjection[] = []
 ): ScheduleGenerationResult {
-  if (tasks.length === 0) {
+  if (tasks.length === 0 && poolSubtasks.length === 0) {
     const startDate = getWeekStartDate(weekConfig, referenceDate);
     const orderedDays = getOrderedDays(weekConfig);
     const dateMap = generateWeekDates(startDate, orderedDays);
@@ -148,6 +157,17 @@ export function generateWeeklySchedule(
     for (const day of orderedDays) {
       daySchedule.get(day)!.push({
         taskId: task.id,
+        completed: false,
+      });
+    }
+  }
+
+  // Step 2.5: Place active pool subtasks on all days (like one-time, don't count against capacity)
+  for (const poolSub of poolSubtasks) {
+    const syntheticTaskId = makePoolTaskId(poolSub.poolId, poolSub.subtaskId);
+    for (const day of orderedDays) {
+      daySchedule.get(day)!.push({
+        taskId: syntheticTaskId,
         completed: false,
       });
     }

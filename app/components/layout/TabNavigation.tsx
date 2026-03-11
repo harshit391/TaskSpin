@@ -6,6 +6,7 @@ interface Tab {
   id: string;
   label: string;
   icon: React.ReactNode;
+  badge?: number;
 }
 
 interface TabNavigationProps {
@@ -38,6 +39,11 @@ export function TabNavigation({ tabs, activeTab, onTabChange }: TabNavigationPro
           <span className="relative z-10 flex items-center gap-2">
             {tab.icon}
             {tab.label}
+            {tab.badge != null && tab.badge > 0 && (
+              <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold rounded-full bg-[var(--accent)] text-white">
+                {tab.badge}
+              </span>
+            )}
           </span>
         </button>
       ))}

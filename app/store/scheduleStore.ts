@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { WeeklySchedule, DayOfWeek } from '../types';
+import { isPoolSubtaskId, parsePoolTaskId } from '../types';
 import { db } from '../database/db';
 import {
   generateWeeklySchedule,
@@ -7,10 +8,12 @@ import {
   removeFutureOccurrence,
   needsNewSchedule,
   formatDateToISO,
-  type ScheduleGenerationResult
+  type ScheduleGenerationResult,
+  type PoolSubtaskInjection
 } from '../services/scheduler';
 import { useTaskStore } from './taskStore';
 import { useSettingsStore } from './settingsStore';
+import { usePoolStore } from './poolStore';
 
 interface ScheduleStore {
   schedule: WeeklySchedule | null;
@@ -73,11 +76,24 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
     try {
       const { tasks } = useTaskStore.getState();
       const { settings } = useSettingsStore.getState();
+      const { getActiveSubtasks } = usePoolStore.getState();
+
+      // Build pool subtask injections
+      const activePoolSubtasks = getActiveSubtasks();
+      const poolSubtasks: PoolSubtaskInjection[] = activePoolSubtasks.map(({ pool, subtask }) => ({
+        poolId: pool.id,
+        subtaskId: subtask.id,
+        name: subtask.name,
+        description: subtask.description,
+        link: subtask.link,
+      }));
 
       const result = generateWeeklySchedule(
         tasks,
         settings.weeklyCapacity,
-        settings.weekConfig
+        settings.weekConfig,
+        new Date(),
+        poolSubtasks
       );
 
       if (result.success && result.schedule) {
@@ -112,16 +128,13 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
     try {
       let updatedSchedule = completeTaskUtil(schedule, taskId, day);
 
-      if (removeNextOccurrence) {
-        updatedSchedule = removeFutureOccurrence(updatedSchedule, taskId, day);
-      }
+      // Check if this is a pool subtask
+      if (isPoolSubtaskId(taskId)) {
+        const { poolId } = parsePoolTaskId(taskId);
+        const { completeActiveSubtask } = usePoolStore.getState();
+        await completeActiveSubtask(poolId);
 
-      // Check if this is a one-time task - if so, delete it after completion
-      const { getTaskById, deleteTask } = useTaskStore.getState();
-      const task = getTaskById(taskId);
-
-      if (task?.frequencyType === 'one-time') {
-        // Remove this task from all days in the schedule
+        // Remove this subtask from all days (like one-time behavior)
         updatedSchedule = {
           ...updatedSchedule,
           days: updatedSchedule.days.map(daySchedule => ({
@@ -129,8 +142,27 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
             tasks: daySchedule.tasks.filter(t => t.taskId !== taskId),
           })),
         };
-        // Delete the task permanently
-        await deleteTask(taskId);
+      } else if (removeNextOccurrence) {
+        updatedSchedule = removeFutureOccurrence(updatedSchedule, taskId, day);
+      }
+
+      // Check if this is a one-time task - if so, delete it after completion
+      if (!isPoolSubtaskId(taskId)) {
+        const { getTaskById, deleteTask } = useTaskStore.getState();
+        const task = getTaskById(taskId);
+
+        if (task?.frequencyType === 'one-time') {
+          // Remove this task from all days in the schedule
+          updatedSchedule = {
+            ...updatedSchedule,
+            days: updatedSchedule.days.map(daySchedule => ({
+              ...daySchedule,
+              tasks: daySchedule.tasks.filter(t => t.taskId !== taskId),
+            })),
+          };
+          // Delete the task permanently
+          await deleteTask(taskId);
+        }
       }
 
       await db.schedules.put(updatedSchedule);

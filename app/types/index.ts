@@ -104,3 +104,54 @@ export const DEFAULT_WEEKLY_CAPACITY: WeeklyCapacity = {
 export const DEFAULT_WEEK_CONFIG: WeekConfig = {
   startDay: 'monday',
 };
+
+// Pool types
+export type SubtaskStatus = 'pending' | 'active' | 'completed';
+
+export interface PoolSubtask {
+  id: string;
+  name: string;
+  description?: string;
+  link?: string;
+  estimatedDuration: number; // in days, default 7
+  order: number; // position in the roadmap (0-indexed)
+  status: SubtaskStatus;
+  completedAt?: Date;
+  activatedAt?: Date;
+}
+
+export interface Pool {
+  id: string;
+  name: string;
+  description?: string;
+  subtasks: PoolSubtask[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Side task types
+export interface SideTask {
+  id: string;
+  name: string;
+  description?: string;
+  link?: string;
+  dueDate?: string; // ISO date string (YYYY-MM-DD), optional
+  completed: boolean;
+  completedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Pool subtask ID utilities
+export function isPoolSubtaskId(taskId: string): boolean {
+  return taskId.startsWith('pool:');
+}
+
+export function parsePoolTaskId(taskId: string): { poolId: string; subtaskId: string } {
+  const parts = taskId.split(':');
+  return { poolId: parts[1], subtaskId: parts[2] };
+}
+
+export function makePoolTaskId(poolId: string, subtaskId: string): string {
+  return `pool:${poolId}:${subtaskId}`;
+}

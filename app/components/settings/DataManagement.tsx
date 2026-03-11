@@ -9,6 +9,8 @@ interface ExportData {
   tasks: unknown[];
   settings: unknown;
   schedules: unknown[];
+  pools?: unknown[];
+  sideTasks?: unknown[];
 }
 
 export function DataManagement() {
@@ -23,13 +25,17 @@ export function DataManagement() {
     const tasks = await db.tasks.toArray();
     const settings = await db.settings.get('default');
     const schedules = await db.schedules.toArray();
+    const pools = await db.pools.toArray();
+    const sideTasks = await db.sideTasks.toArray();
 
     return {
-      version: 1,
+      version: 3,
       exportedAt: new Date().toISOString(),
       tasks,
       settings,
       schedules,
+      pools,
+      sideTasks,
     };
   };
 
@@ -43,6 +49,8 @@ export function DataManagement() {
     await db.tasks.clear();
     await db.settings.clear();
     await db.schedules.clear();
+    await db.pools.clear();
+    await db.sideTasks.clear();
 
     // Import tasks
     if (data.tasks && Array.isArray(data.tasks)) {
@@ -57,6 +65,16 @@ export function DataManagement() {
     // Import schedules
     if (data.schedules && Array.isArray(data.schedules)) {
       await db.schedules.bulkAdd(data.schedules as never[]);
+    }
+
+    // Import pools (backward compatible with v1 exports)
+    if (data.pools && Array.isArray(data.pools)) {
+      await db.pools.bulkAdd(data.pools as never[]);
+    }
+
+    // Import side tasks (backward compatible with older exports)
+    if (data.sideTasks && Array.isArray(data.sideTasks)) {
+      await db.sideTasks.bulkAdd(data.sideTasks as never[]);
     }
   };
 

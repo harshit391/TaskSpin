@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import type { ScheduledDay } from '../../types';
-import { DAY_LABELS } from '../../types';
+import { DAY_LABELS, isPoolSubtaskId } from '../../types';
 import { ScheduledTaskItem } from './ScheduledTaskItem';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useTaskStore } from '../../store/taskStore';
@@ -29,6 +29,10 @@ export function DayColumn({ scheduledDay, index, isToday, expanded = false, task
       return scheduledDay.tasks;
     }
     return scheduledDay.tasks.filter((scheduledTask) => {
+      // Pool subtasks: treat like one-time for filtering
+      if (isPoolSubtaskId(scheduledTask.taskId)) {
+        return taskFilter === 'one-time';
+      }
       const task = getTaskById(scheduledTask.taskId);
       if (!task) return false;
       if (taskFilter === 'daily') {

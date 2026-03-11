@@ -4,17 +4,20 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useScheduleStore } from '../../store/scheduleStore';
 import { useTaskStore } from '../../store/taskStore';
+import { usePoolStore } from '../../store/poolStore';
+import { useSideTaskStore } from '../../store/sideTaskStore';
 import { DayColumn } from './DayColumn';
 import { AllTasksView } from './AllTasksView';
 import { ScheduledTaskItem } from './ScheduledTaskItem';
 import { formatDateToISO } from '../../services/scheduler';
 import type { DayOfWeek } from '../../types';
+import { isPoolSubtaskId } from '../../types';
 
 type ViewMode = 'daily' | 'weekly' | 'all';
 type TaskFilter = 'all' | 'daily' | 'not-daily' | 'one-time';
 
 export function WeeklySchedule() {
-  const [viewMode, setViewMode] = useState<ViewMode>('weekly');
+  const [viewMode, setViewMode] = useState<ViewMode>('daily');
   const [taskFilter, setTaskFilter] = useState<TaskFilter>('all');
   const schedule = useScheduleStore((state) => state.schedule);
   const isLoading = useScheduleStore((state) => state.isLoading);
@@ -22,6 +25,9 @@ export function WeeklySchedule() {
   const generateNewSchedule = useScheduleStore((state) => state.generateNewSchedule);
   const clearError = useScheduleStore((state) => state.clearError);
   const tasks = useTaskStore((state) => state.tasks);
+  const pools = usePoolStore((state) => state.pools);
+  const pendingSideTaskCount = useSideTaskStore((state) => state.getPendingCount());
+  const overdueSideTaskCount = useSideTaskStore((state) => state.getOverdueCount());
 
   const today = formatDateToISO(new Date());
 
@@ -74,7 +80,8 @@ export function WeeklySchedule() {
     );
   }
 
-  if (tasks.length === 0) {
+  const hasActivePoolSubtasks = pools.some((p) => p.subtasks.some((s) => s.status === 'active'));
+  if (tasks.length === 0 && !hasActivePoolSubtasks) {
     return (
       <div className="text-center py-20">
         <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[var(--bg-secondary)] flex items-center justify-center">
@@ -146,9 +153,10 @@ export function WeeklySchedule() {
     0
   );
 
-  // Get today's one-time tasks for the To-Do section
+  // Get today's one-time tasks and pool subtasks for the To-Do section
   const todaySchedule = schedule.days.find(d => d.date === today);
   const oneTimeTasks = todaySchedule?.tasks.filter(st => {
+    if (isPoolSubtaskId(st.taskId)) return !st.completed;
     const task = tasks.find(t => t.id === st.taskId);
     return task?.frequencyType === 'one-time' && !st.completed;
   }) || [];
@@ -276,6 +284,27 @@ export function WeeklySchedule() {
             ))}
           </div>
         </motion.div>
+      )}
+
+      {/* Side tasks reminder */}
+      {pendingSideTaskCount > 0 && (
+        <div className={`flex items-center gap-3 px-4 py-3 rounded border ${
+          overdueSideTaskCount > 0
+            ? 'border-[var(--error)]/30 bg-[var(--error)]/5'
+            : 'border-[var(--border-color)] bg-[var(--bg-secondary)]'
+        }`}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            className={overdueSideTaskCount > 0 ? 'text-[var(--error)]' : 'text-[var(--text-muted)]'}>
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+          </svg>
+          <span className="text-sm text-[var(--text-secondary)] flex-1">
+            You have <strong className={overdueSideTaskCount > 0 ? 'text-[var(--error)]' : 'text-[var(--text-primary)]'}>{pendingSideTaskCount} side task{pendingSideTaskCount !== 1 ? 's' : ''}</strong> pending
+            {overdueSideTaskCount > 0 && (
+              <span className="text-[var(--error)]"> ({overdueSideTaskCount} overdue)</span>
+            )}
+          </span>
+        </div>
       )}
 
       {/* Weekly progress bar */}

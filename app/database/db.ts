@@ -1,10 +1,12 @@
 import Dexie, { type Table } from 'dexie';
-import type { Task, Settings, WeeklySchedule } from '../types';
+import type { Task, Settings, WeeklySchedule, Pool, SideTask } from '../types';
 
 export class TaskSpinDB extends Dexie {
   tasks!: Table<Task, string>;
   settings!: Table<Settings, string>;
   schedules!: Table<WeeklySchedule, string>;
+  pools!: Table<Pool, string>;
+  sideTasks!: Table<SideTask, string>;
 
   constructor() {
     super('TaskSpinDB');
@@ -13,6 +15,21 @@ export class TaskSpinDB extends Dexie {
       tasks: 'id, name, createdAt',
       settings: 'id',
       schedules: 'id, weekStartDate, generatedAt',
+    });
+
+    this.version(2).stores({
+      tasks: 'id, name, createdAt',
+      settings: 'id',
+      schedules: 'id, weekStartDate, generatedAt',
+      pools: 'id, name, createdAt',
+    });
+
+    this.version(3).stores({
+      tasks: 'id, name, createdAt',
+      settings: 'id',
+      schedules: 'id, weekStartDate, generatedAt',
+      pools: 'id, name, createdAt',
+      sideTasks: 'id, completed, dueDate, createdAt',
     });
   }
 }
@@ -67,4 +84,25 @@ export async function deleteOldSchedules(keepCount: number = 4): Promise<void> {
     const toDelete = allSchedules.slice(keepCount).map(s => s.id);
     await db.schedules.bulkDelete(toDelete);
   }
+}
+
+// Pool helper functions
+export async function getAllPools(): Promise<Pool[]> {
+  return db.pools.toArray();
+}
+
+export async function getPool(id: string): Promise<Pool | undefined> {
+  return db.pools.get(id);
+}
+
+export async function addPool(pool: Pool): Promise<string> {
+  return db.pools.add(pool);
+}
+
+export async function updatePool(id: string, updates: Partial<Pool>): Promise<number> {
+  return db.pools.update(id, updates);
+}
+
+export async function deletePool(id: string): Promise<void> {
+  return db.pools.delete(id);
 }
