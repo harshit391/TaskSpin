@@ -46,7 +46,7 @@ export function SideTaskList() {
     formState: { errors, isSubmitting },
   } = useForm<SideTaskFormData>({
     resolver: zodResolver(sideTaskSchema),
-    defaultValues: { name: '', description: '', link: '', dueDate: '' },
+    defaultValues: { name: '', description: '', link: '', dueDate: '', poolId: '' },
   });
 
   const onSubmit = async (data: SideTaskFormData) => {

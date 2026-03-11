@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Pool, PoolSubtask } from '../../types';
 import { usePoolStore } from '../../store/poolStore';
@@ -38,7 +38,8 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
   const completeActiveSubtask = usePoolStore((state) => state.completeActiveSubtask);
   const reorderSubtasks = usePoolStore((state) => state.reorderSubtasks);
 
-  const poolSideTasks = useSideTaskStore((state) => state.getSideTasksByPoolId(pool.id));
+  const allSideTasks = useSideTaskStore((state) => state.sideTasks);
+  const poolSideTasks = useMemo(() => allSideTasks.filter((t) => t.poolId === pool.id), [allSideTasks, pool.id]);
   const addSideTask = useSideTaskStore((state) => state.addSideTask);
   const toggleSideTaskComplete = useSideTaskStore((state) => state.toggleComplete);
   const deleteSideTask = useSideTaskStore((state) => state.deleteSideTask);
@@ -438,7 +439,6 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
                 );
               })
             )}
-          </div>
 
           {/* Add subtask */}
           <div className="mt-4">
@@ -620,6 +620,7 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
                 </motion.button>
               )}
             </AnimatePresence>
+          </div>
           </div>
 
           {/* Footer actions */}

@@ -29,7 +29,6 @@ export const metadata: Metadata = {
   description:
     "Remove decision fatigue with intelligent task distribution across your week",
   manifest: "/manifest.json",
-  themeColor: "#000000",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

@@ -13,7 +13,9 @@ interface PoolCardProps {
 
 export function PoolCard({ pool, index }: PoolCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const pendingSideTaskCount = useSideTaskStore((state) => state.getPendingSideTaskCountByPoolId(pool.id));
+  const pendingSideTaskCount = useSideTaskStore((state) =>
+    state.sideTasks.filter((t) => t.poolId === pool.id && !t.completed).length
+  );
 
   const completedCount = pool.subtasks.filter((s) => s.status === 'completed').length;
   const totalCount = pool.subtasks.length;
