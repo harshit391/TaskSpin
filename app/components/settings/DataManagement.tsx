@@ -29,7 +29,7 @@ export function DataManagement() {
     const sideTasks = await db.sideTasks.toArray();
 
     return {
-      version: 3,
+      version: 4,
       exportedAt: new Date().toISOString(),
       tasks,
       settings,

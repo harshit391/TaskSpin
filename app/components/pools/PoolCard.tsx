@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Pool } from '../../types';
+import { useSideTaskStore } from '../../store/sideTaskStore';
 import { PoolDetailModal } from './PoolDetailModal';
 
 interface PoolCardProps {
@@ -12,6 +13,7 @@ interface PoolCardProps {
 
 export function PoolCard({ pool, index }: PoolCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const pendingSideTaskCount = useSideTaskStore((state) => state.getPendingSideTaskCountByPoolId(pool.id));
 
   const completedCount = pool.subtasks.filter((s) => s.status === 'completed').length;
   const totalCount = pool.subtasks.length;
@@ -48,6 +50,11 @@ export function PoolCard({ pool, index }: PoolCardProps) {
               {activeSubtask && (
                 <span className="tag tag-accent">
                   {activeSubtask.name}
+                </span>
+              )}
+              {pendingSideTaskCount > 0 && (
+                <span className="tag">
+                  {pendingSideTaskCount} side task{pendingSideTaskCount !== 1 ? 's' : ''}
                 </span>
               )}
               {isComplete && (

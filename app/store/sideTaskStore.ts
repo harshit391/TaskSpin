@@ -10,14 +10,18 @@ interface SideTaskStore {
 
   // Actions
   initialize: () => Promise<void>;
-  addSideTask: (name: string, description?: string, link?: string, dueDate?: string) => Promise<SideTask>;
+  addSideTask: (name: string, description?: string, link?: string, dueDate?: string, poolId?: string) => Promise<SideTask>;
   updateSideTask: (id: string, updates: Partial<Omit<SideTask, 'id' | 'createdAt'>>) => Promise<void>;
   deleteSideTask: (id: string) => Promise<void>;
   toggleComplete: (id: string) => Promise<void>;
+  deleteSideTasksByPoolId: (poolId: string) => Promise<void>;
+  dissociateSideTasksFromPool: (poolId: string) => Promise<void>;
 
   // Query helpers
   getPendingCount: () => number;
   getOverdueCount: () => number;
+  getSideTasksByPoolId: (poolId: string) => SideTask[];
+  getPendingSideTaskCountByPoolId: (poolId: string) => number;
 }
 
 export const useSideTaskStore = create<SideTaskStore>((set, get) => ({
@@ -39,13 +43,14 @@ export const useSideTaskStore = create<SideTaskStore>((set, get) => ({
     }
   },
 
-  addSideTask: async (name, description, link, dueDate) => {
+  addSideTask: async (name, description, link, dueDate, poolId) => {
     const now = new Date();
     const newTask: SideTask = {
       id: uuidv4(),
       name,
       description: description || undefined,
       link: link || undefined,
+      poolId: poolId || undefined,
       dueDate: dueDate || undefined,
       completed: false,
       createdAt: now,
@@ -100,5 +105,35 @@ export const useSideTaskStore = create<SideTaskStore>((set, get) => ({
     return get().sideTasks.filter(
       (t) => !t.completed && t.dueDate && t.dueDate < today
     ).length;
+  },
+
+  getSideTasksByPoolId: (poolId) => {
+    return get().sideTasks.filter((t) => t.poolId === poolId);
+  },
+
+  getPendingSideTaskCountByPoolId: (poolId) => {
+    return get().sideTasks.filter((t) => t.poolId === poolId && !t.completed).length;
+  },
+
+  deleteSideTasksByPoolId: async (poolId) => {
+    const toDelete = get().sideTasks.filter((t) => t.poolId === poolId);
+    for (const task of toDelete) {
+      await db.sideTasks.delete(task.id);
+    }
+    set((state) => ({
+      sideTasks: state.sideTasks.filter((t) => t.poolId !== poolId),
+    }));
+  },
+
+  dissociateSideTasksFromPool: async (poolId) => {
+    const toUpdate = get().sideTasks.filter((t) => t.poolId === poolId);
+    for (const task of toUpdate) {
+      await db.sideTasks.update(task.id, { poolId: undefined, updatedAt: new Date() });
+    }
+    set((state) => ({
+      sideTasks: state.sideTasks.map((t) =>
+        t.poolId === poolId ? { ...t, poolId: undefined, updatedAt: new Date() } : t
+      ),
+    }));
   },
 }));

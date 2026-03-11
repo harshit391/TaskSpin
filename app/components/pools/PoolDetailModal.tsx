@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Pool, PoolSubtask } from '../../types';
 import { usePoolStore } from '../../store/poolStore';
+import { useSideTaskStore } from '../../store/sideTaskStore';
 import { SubtaskForm } from './SubtaskForm';
 
 interface PoolDetailModalProps {
@@ -19,10 +20,16 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
   const [editDescription, setEditDescription] = useState('');
   const [editLink, setEditLink] = useState('');
   const [editDuration, setEditDuration] = useState(1);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteMode, setDeleteMode] = useState<null | 'confirm' | 'choosing'>(null);
   const [editingPool, setEditingPool] = useState(false);
   const [poolName, setPoolName] = useState(pool.name);
   const [poolDescription, setPoolDescription] = useState(pool.description || '');
+  const [showSideTaskForm, setShowSideTaskForm] = useState(false);
+  const [sideTaskName, setSideTaskName] = useState('');
+  const [sideTaskDescription, setSideTaskDescription] = useState('');
+  const [sideTaskLink, setSideTaskLink] = useState('');
+  const [sideTaskDueDate, setSideTaskDueDate] = useState('');
+  const [showCompletedSideTasks, setShowCompletedSideTasks] = useState(false);
 
   const updatePool = usePoolStore((state) => state.updatePool);
   const deletePool = usePoolStore((state) => state.deletePool);
@@ -31,6 +38,13 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
   const completeActiveSubtask = usePoolStore((state) => state.completeActiveSubtask);
   const reorderSubtasks = usePoolStore((state) => state.reorderSubtasks);
 
+  const poolSideTasks = useSideTaskStore((state) => state.getSideTasksByPoolId(pool.id));
+  const addSideTask = useSideTaskStore((state) => state.addSideTask);
+  const toggleSideTaskComplete = useSideTaskStore((state) => state.toggleComplete);
+  const deleteSideTask = useSideTaskStore((state) => state.deleteSideTask);
+  const deleteSideTasksByPoolId = useSideTaskStore((state) => state.deleteSideTasksByPoolId);
+  const dissociateSideTasksFromPool = useSideTaskStore((state) => state.dissociateSideTasksFromPool);
+
   // Get fresh pool data from store
   const currentPool = usePoolStore((state) => state.getPoolById(pool.id));
   const displayPool = currentPool || pool;
@@ -38,6 +52,25 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
   const completedCount = displayPool.subtasks.filter((s) => s.status === 'completed').length;
   const totalCount = displayPool.subtasks.length;
   const activeSubtask = displayPool.subtasks.find((s) => s.status === 'active');
+
+  const pendingPoolSideTasks = poolSideTasks.filter((t) => !t.completed);
+  const completedPoolSideTasks = poolSideTasks.filter((t) => t.completed);
+
+  const handleAddPoolSideTask = async () => {
+    if (!sideTaskName.trim()) return;
+    await addSideTask(
+      sideTaskName.trim(),
+      sideTaskDescription.trim() || undefined,
+      sideTaskLink.trim() || undefined,
+      sideTaskDueDate || undefined,
+      displayPool.id
+    );
+    setSideTaskName('');
+    setSideTaskDescription('');
+    setSideTaskLink('');
+    setSideTaskDueDate('');
+    setShowSideTaskForm(false);
+  };
 
   const handleCompleteActive = async () => {
     await completeActiveSubtask(displayPool.id);
@@ -434,6 +467,161 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
             </AnimatePresence>
           </div>
 
+          {/* Side Tasks Section */}
+          <div className="mt-6 pt-4 border-t border-[var(--border-color)]">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">
+                Side Tasks
+                {pendingPoolSideTasks.length > 0 && (
+                  <span className="ml-2 tag">{pendingPoolSideTasks.length}</span>
+                )}
+              </h3>
+            </div>
+
+            {/* Pending side tasks list */}
+            {pendingPoolSideTasks.map((task) => (
+              <div key={task.id} className="group flex items-start gap-3 p-2 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:border-[var(--accent)] transition-colors mb-2">
+                <button
+                  onClick={() => toggleSideTaskComplete(task.id)}
+                  className="mt-0.5 w-5 h-5 rounded-sm border-2 border-[var(--border-color)] hover:border-[var(--accent)] flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-[var(--text-primary)]">{task.name}</p>
+                  {task.description && <p className="mt-0.5 text-xs text-[var(--text-secondary)] line-clamp-2">{task.description}</p>}
+                  <div className="mt-1 flex items-center gap-2 flex-wrap">
+                    {task.dueDate && <span className="text-xs text-[var(--text-muted)]">Due: {task.dueDate}</span>}
+                    {task.link && (
+                      <a href={task.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-[var(--accent)] hover:underline">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                          <polyline points="15 3 21 3 21 9" />
+                          <line x1="10" y1="14" x2="21" y2="3" />
+                        </svg>
+                        Link
+                      </a>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={() => deleteSideTask(task.id)}
+                  className="p-1.5 text-[var(--text-muted)] hover:text-[var(--error)] rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Delete"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+
+            {/* Completed side tasks (collapsible) */}
+            {completedPoolSideTasks.length > 0 && (
+              <button
+                onClick={() => setShowCompletedSideTasks(!showCompletedSideTasks)}
+                className="flex items-center gap-2 text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] mb-2"
+              >
+                <svg
+                  width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                  className={`transition-transform ${showCompletedSideTasks ? 'rotate-90' : ''}`}
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+                {completedPoolSideTasks.length} completed
+              </button>
+            )}
+            {showCompletedSideTasks && completedPoolSideTasks.map((task) => (
+              <div key={task.id} className="group flex items-start gap-3 p-2 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] opacity-50 mb-2">
+                <button
+                  onClick={() => toggleSideTaskComplete(task.id)}
+                  className="mt-0.5 w-5 h-5 rounded-sm border-2 border-[var(--accent)] bg-[var(--accent)] flex items-center justify-center flex-shrink-0 cursor-pointer"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </button>
+                <p className="text-sm text-[var(--text-muted)] line-through flex-1">{task.name}</p>
+              </div>
+            ))}
+
+            {/* Add side task form */}
+            <AnimatePresence>
+              {showSideTaskForm ? (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="card space-y-3 border-[var(--accent)]/30"
+                >
+                  <input
+                    type="text"
+                    value={sideTaskName}
+                    onChange={(e) => setSideTaskName(e.target.value)}
+                    placeholder="Side task name..."
+                    className="input"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleAddPoolSideTask();
+                      if (e.key === 'Escape') setShowSideTaskForm(false);
+                    }}
+                  />
+                  <textarea
+                    value={sideTaskDescription}
+                    onChange={(e) => setSideTaskDescription(e.target.value)}
+                    placeholder="Description (optional)"
+                    rows={2}
+                    className="input resize-none"
+                  />
+                  <div className="flex gap-3">
+                    <input
+                      type="url"
+                      value={sideTaskLink}
+                      onChange={(e) => setSideTaskLink(e.target.value)}
+                      placeholder="Link (optional)"
+                      className="input flex-1"
+                    />
+                    <input
+                      type="date"
+                      value={sideTaskDueDate}
+                      onChange={(e) => setSideTaskDueDate(e.target.value)}
+                      className="input w-40"
+                    />
+                  </div>
+                  <div className="flex gap-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowSideTaskForm(false)}
+                      className="btn-ghost flex-1 text-sm py-2"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleAddPoolSideTask}
+                      disabled={!sideTaskName.trim()}
+                      className="btn-accent flex-1 text-sm py-2"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.button
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  onClick={() => setShowSideTaskForm(true)}
+                  className="btn-ghost w-full flex items-center justify-center gap-2 text-sm"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M12 5v14" />
+                    <path d="M5 12h14" />
+                  </svg>
+                  Add Side Task
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </div>
+
           {/* Footer actions */}
           <div className="mt-4 pt-4 border-t border-[var(--border-color)] flex items-center justify-between">
             {!editingPool && (
@@ -449,7 +637,21 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
               </button>
             )}
             <div className="flex-1" />
-            {confirmDelete ? (
+            {deleteMode === null && (
+              <button
+                onClick={() => {
+                  if (poolSideTasks.length > 0) {
+                    setDeleteMode('choosing');
+                  } else {
+                    setDeleteMode('confirm');
+                  }
+                }}
+                className="text-sm text-[var(--text-muted)] hover:text-[var(--error)] transition-colors"
+              >
+                Delete Pool
+              </button>
+            )}
+            {deleteMode === 'confirm' && (
               <div className="flex items-center gap-2">
                 <span className="text-sm text-[var(--error)]">Delete this pool?</span>
                 <button
@@ -459,19 +661,47 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
                   Yes, Delete
                 </button>
                 <button
-                  onClick={() => setConfirmDelete(false)}
+                  onClick={() => setDeleteMode(null)}
                   className="px-3 py-1.5 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                 >
                   Cancel
                 </button>
               </div>
-            ) : (
-              <button
-                onClick={() => setConfirmDelete(true)}
-                className="text-sm text-[var(--text-muted)] hover:text-[var(--error)] transition-colors"
-              >
-                Delete Pool
-              </button>
+            )}
+            {deleteMode === 'choosing' && (
+              <div className="flex flex-col gap-2 w-full">
+                <p className="text-sm text-[var(--warning)]">
+                  This pool has {poolSideTasks.length} associated side task{poolSideTasks.length !== 1 ? 's' : ''}. What should happen to them?
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={async () => {
+                      await dissociateSideTasksFromPool(displayPool.id);
+                      await deletePool(displayPool.id);
+                      onClose();
+                    }}
+                    className="px-3 py-1.5 text-sm bg-[var(--bg-hover)] border border-[var(--border-color)] text-[var(--text-primary)] rounded hover:border-[var(--accent)]"
+                  >
+                    Keep Side Tasks
+                  </button>
+                  <button
+                    onClick={async () => {
+                      await deleteSideTasksByPoolId(displayPool.id);
+                      await deletePool(displayPool.id);
+                      onClose();
+                    }}
+                    className="px-3 py-1.5 text-sm bg-[var(--error)] text-white rounded hover:bg-[var(--error)]/80"
+                  >
+                    Delete All
+                  </button>
+                  <button
+                    onClick={() => setDeleteMode(null)}
+                    className="px-3 py-1.5 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </motion.div>

@@ -135,6 +135,7 @@ export interface SideTask {
   name: string;
   description?: string;
   link?: string;
+  poolId?: string; // Optional association to a Pool
   dueDate?: string; // ISO date string (YYYY-MM-DD), optional
   completed: boolean;
   completedAt?: Date;

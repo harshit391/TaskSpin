@@ -31,6 +31,14 @@ export class TaskSpinDB extends Dexie {
       pools: 'id, name, createdAt',
       sideTasks: 'id, completed, dueDate, createdAt',
     });
+
+    this.version(4).stores({
+      tasks: 'id, name, createdAt',
+      settings: 'id',
+      schedules: 'id, weekStartDate, generatedAt',
+      pools: 'id, name, createdAt',
+      sideTasks: 'id, completed, dueDate, createdAt, poolId',
+    });
   }
 }
 

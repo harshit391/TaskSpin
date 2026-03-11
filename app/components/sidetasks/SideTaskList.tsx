@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSideTaskStore } from '../../store/sideTaskStore';
+import { usePoolStore } from '../../store/poolStore';
 import type { SideTask } from '../../types';
 
 const sideTaskSchema = z.object({
@@ -13,6 +14,7 @@ const sideTaskSchema = z.object({
   description: z.string().max(500).optional(),
   link: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
   dueDate: z.string().optional(),
+  poolId: z.string().optional(),
 });
 
 type SideTaskFormData = z.infer<typeof sideTaskSchema>;
@@ -24,6 +26,7 @@ export function SideTaskList() {
   const updateSideTask = useSideTaskStore((state) => state.updateSideTask);
   const deleteSideTask = useSideTaskStore((state) => state.deleteSideTask);
   const toggleComplete = useSideTaskStore((state) => state.toggleComplete);
+  const pools = usePoolStore((state) => state.pools);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -31,6 +34,7 @@ export function SideTaskList() {
   const [editDescription, setEditDescription] = useState('');
   const [editLink, setEditLink] = useState('');
   const [editDueDate, setEditDueDate] = useState('');
+  const [editPoolId, setEditPoolId] = useState('');
   const [showCompleted, setShowCompleted] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
@@ -46,7 +50,7 @@ export function SideTaskList() {
   });
 
   const onSubmit = async (data: SideTaskFormData) => {
-    await addSideTask(data.name, data.description || undefined, data.link || undefined, data.dueDate || undefined);
+    await addSideTask(data.name, data.description || undefined, data.link || undefined, data.dueDate || undefined, data.poolId || undefined);
     reset();
     setShowForm(false);
   };
@@ -60,6 +64,7 @@ export function SideTaskList() {
     setEditDescription(task.description || '');
     setEditLink(task.link || '');
     setEditDueDate(task.dueDate || '');
+    setEditPoolId(task.poolId || '');
   };
 
   const saveEdit = async () => {
@@ -69,6 +74,7 @@ export function SideTaskList() {
         description: editDescription.trim() || undefined,
         link: editLink.trim() || undefined,
         dueDate: editDueDate || undefined,
+        poolId: editPoolId || undefined,
       });
     }
     setEditingId(null);
@@ -151,6 +157,17 @@ export function SideTaskList() {
                 <input {...register('dueDate')} type="date" className="input" />
               </div>
             </div>
+            {pools.length > 0 && (
+              <div>
+                <label className="label">Pool (Optional)</label>
+                <select {...register('poolId')} className="input">
+                  <option value="">No pool</option>
+                  {pools.map((pool) => (
+                    <option key={pool.id} value={pool.id}>{pool.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="flex gap-3 pt-1">
               <button type="button" onClick={() => { reset(); setShowForm(false); }} className="btn-ghost flex-1">Cancel</button>
               <button type="submit" disabled={isSubmitting} className="btn-accent flex-1">{isSubmitting ? 'Adding...' : 'Add'}</button>
@@ -189,6 +206,14 @@ export function SideTaskList() {
                       <input type="url" value={editLink} onChange={(e) => setEditLink(e.target.value)} placeholder="Link (optional)" className="input flex-1" />
                       <input type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)} className="input w-44" />
                     </div>
+                    {pools.length > 0 && (
+                      <select value={editPoolId} onChange={(e) => setEditPoolId(e.target.value)} className="input">
+                        <option value="">No pool</option>
+                        {pools.map((pool) => (
+                          <option key={pool.id} value={pool.id}>{pool.name}</option>
+                        ))}
+                      </select>
+                    )}
                     <div className="flex justify-end gap-2">
                       <button onClick={() => setEditingId(null)} className="px-3 py-1.5 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)]">Cancel</button>
                       <button onClick={saveEdit} className="px-3 py-1.5 text-sm bg-[var(--accent)] text-white rounded hover:bg-[var(--accent)]/80">Save</button>
@@ -228,6 +253,12 @@ export function SideTaskList() {
                           Link
                         </a>
                       )}
+                      {task.poolId && (() => {
+                        const pool = pools.find((p) => p.id === task.poolId);
+                        return pool ? (
+                          <span className="tag text-xs">{pool.name}</span>
+                        ) : null;
+                      })()}
                     </div>
                   </div>
 
