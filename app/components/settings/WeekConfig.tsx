@@ -25,10 +25,10 @@ export function WeekConfig() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="heading-display heading-sub text-[var(--text-primary)]">
+        <h3 className="heading-display heading-sub text-foreground">
           Week Start Day
         </h3>
-        <p className="mt-1 text-[var(--text-secondary)]">
+        <p className="mt-1 text-(--text-secondary)">
           Choose which day your week begins. This affects schedule generation and display.
         </p>
       </div>
@@ -46,25 +46,25 @@ export function WeekConfig() {
               onClick={() => handleStartDayChange(day)}
               className={`relative p-4 rounded border text-left transition-all ${
                 isSelected
-                  ? 'border-[var(--accent)] bg-[var(--accent)]/10'
-                  : 'border-[var(--border-color)] hover:border-[var(--text-muted)] bg-[var(--bg-card)]'
+                  ? 'border-accent bg-accent/10'
+                  : 'border-(--border-color) hover:border-(--text-muted) bg-(--bg-card)'
               }`}
             >
               {isSelected && (
                 <motion.div
                   layoutId="selectedDay"
-                  className="absolute inset-0 border-2 border-[var(--accent)] rounded pointer-events-none"
+                  className="absolute inset-0 border-2 border-accent rounded pointer-events-none"
                 />
               )}
               <span
                 className={`block text-sm font-medium ${
-                  isSelected ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]'
+                  isSelected ? 'text-accent' : 'text-foreground'
                 }`}
               >
                 {DAY_FULL_NAMES[day]}
               </span>
               {isSelected && (
-                <span className="block mt-1 text-xs text-[var(--accent)]">
+                <span className="block mt-1 text-xs text-accent">
                   Week starts here
                 </span>
               )}
@@ -73,17 +73,17 @@ export function WeekConfig() {
         })}
       </div>
 
-      <div className="card bg-[var(--bg-secondary)]">
-        <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-2">
+      <div className="card bg-(--bg-secondary)">
+        <p className="text-xs text-(--text-muted) uppercase tracking-wider mb-2">
           Preview
         </p>
-        <p className="text-[var(--text-secondary)]">
+        <p className="text-(--text-secondary)">
           Your week runs from{' '}
-          <span className="text-[var(--accent)] font-medium">
+          <span className="text-accent font-medium">
             {DAY_FULL_NAMES[settings.weekConfig.startDay]}
           </span>{' '}
           to{' '}
-          <span className="text-[var(--accent)] font-medium">
+          <span className="text-accent font-medium">
             {DAY_FULL_NAMES[
               DAYS_OF_WEEK[
                 (DAYS_OF_WEEK.indexOf(settings.weekConfig.startDay) + 6) % 7

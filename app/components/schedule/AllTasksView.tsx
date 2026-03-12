@@ -141,7 +141,7 @@ export function AllTasksView({ taskFilter }: AllTasksViewProps) {
       taskFilter === 'one-time' ? 'one-time' :
       taskFilter === 'not-daily' ? 'non-daily' : '';
     return (
-      <div className="text-center py-12 text-[var(--text-muted)]">
+      <div className="text-center py-12 text-(--text-muted)">
         No {filterLabel} tasks found.
       </div>
     );
@@ -156,19 +156,19 @@ export function AllTasksView({ taskFilter }: AllTasksViewProps) {
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="max-w-lg mx-auto card border-[var(--warning)] bg-[var(--warning)]/5 space-y-4"
+        className="max-w-lg mx-auto card border-(--warning) bg-(--warning)/5 space-y-4"
       >
-        <h3 className="text-lg font-medium text-[var(--text-primary)]">
+        <h3 className="text-lg font-medium text-foreground">
           Complete Task from {DAY_LABELS[swapConfirm.day]}
         </h3>
-        <p className="text-sm text-[var(--text-secondary)]">
-          You&apos;re completing <strong className="text-[var(--text-primary)]">{task?.name}</strong> which was scheduled for {DAY_LABELS[swapConfirm.day]}.
+        <p className="text-sm text-(--text-secondary)">
+          You&apos;re completing <strong className="text-foreground">{task?.name}</strong> which was scheduled for {DAY_LABELS[swapConfirm.day]}.
         </p>
 
         {hasSwappableTasks ? (
           <>
             <div className="space-y-2">
-              <p className="text-sm font-medium text-[var(--text-primary)]">
+              <p className="text-sm font-medium text-foreground">
                 Select a task from today to swap:
               </p>
               <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -178,15 +178,15 @@ export function AllTasksView({ taskFilter }: AllTasksViewProps) {
                     onClick={() => setSelectedSwapTask(swapTask.taskId)}
                     className={`w-full text-left px-4 py-3 rounded border transition-all ${
                       selectedSwapTask === swapTask.taskId
-                        ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
-                        : 'border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:border-[var(--text-muted)]'
+                        ? 'border-accent bg-accent/10 text-accent'
+                        : 'border-(--border-color) bg-(--bg-secondary) text-foreground hover:border-(--text-muted)'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                         selectedSwapTask === swapTask.taskId
-                          ? 'border-[var(--accent)] bg-[var(--accent)]'
-                          : 'border-[var(--border-color)]'
+                          ? 'border-accent bg-accent'
+                          : 'border-(--border-color)'
                       }`}>
                         {selectedSwapTask === swapTask.taskId && (
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
@@ -207,15 +207,15 @@ export function AllTasksView({ taskFilter }: AllTasksViewProps) {
                 disabled={!selectedSwapTask}
                 className={`px-4 py-2 text-sm rounded transition-colors ${
                   selectedSwapTask
-                    ? 'bg-[var(--accent)] text-white hover:bg-[var(--accent)]/80'
-                    : 'bg-[var(--bg-secondary)] text-[var(--text-muted)] cursor-not-allowed'
+                    ? 'bg-accent text-white hover:bg-(--accent)/80'
+                    : 'bg-(--bg-secondary) text-(--text-muted) cursor-not-allowed'
                 }`}
               >
                 Swap & Complete
               </button>
               <button
                 onClick={handleCompleteWithoutSwap}
-                className="px-4 py-2 text-sm bg-[var(--bg-hover)] text-[var(--text-primary)] rounded hover:bg-[var(--bg-secondary)] transition-colors"
+                className="px-4 py-2 text-sm bg-(--bg-hover) text-foreground rounded hover:bg-(--bg-secondary) transition-colors"
               >
                 Just Complete (No Swap)
               </button>
@@ -224,7 +224,7 @@ export function AllTasksView({ taskFilter }: AllTasksViewProps) {
                   setSwapConfirm(null);
                   setSelectedSwapTask(null);
                 }}
-                className="px-4 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                className="px-4 py-2 text-sm text-(--text-muted) hover:text-foreground transition-colors"
               >
                 Cancel
               </button>
@@ -232,13 +232,13 @@ export function AllTasksView({ taskFilter }: AllTasksViewProps) {
           </>
         ) : (
           <>
-            <p className="text-sm text-[var(--text-muted)] italic">
+            <p className="text-sm text-(--text-muted) italic">
               No swappable tasks available for today (all tasks are either completed or daily).
             </p>
             <div className="flex flex-wrap gap-3 pt-2">
               <button
                 onClick={handleCompleteWithoutSwap}
-                className="px-4 py-2 text-sm bg-[var(--accent)] text-white rounded hover:bg-[var(--accent)]/80 transition-colors"
+                className="px-4 py-2 text-sm bg-accent text-white rounded hover:bg-(--accent)/80 transition-colors"
               >
                 Complete Without Swap
               </button>
@@ -247,7 +247,7 @@ export function AllTasksView({ taskFilter }: AllTasksViewProps) {
                   setSwapConfirm(null);
                   setSelectedSwapTask(null);
                 }}
-                className="px-4 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                className="px-4 py-2 text-sm text-(--text-muted) hover:text-foreground transition-colors"
               >
                 Cancel
               </button>
@@ -283,7 +283,7 @@ export function AllTasksView({ taskFilter }: AllTasksViewProps) {
               key={task.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="card border-[var(--accent)] space-y-3"
+              className="card border-accent space-y-3"
             >
               <input
                 type="text"
@@ -314,13 +314,13 @@ export function AllTasksView({ taskFilter }: AllTasksViewProps) {
               <div className="flex justify-end gap-2">
                 <button
                   onClick={handleCancelEdit}
-                  className="px-4 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                  className="px-4 py-2 text-sm text-(--text-muted) hover:text-foreground transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveEdit}
-                  className="px-4 py-2 text-sm bg-[var(--accent)] text-white rounded hover:bg-[var(--accent)]/80 transition-colors"
+                  className="px-4 py-2 text-sm bg-accent text-white rounded hover:bg-(--accent)/80 transition-colors"
                 >
                   Save
                 </button>
@@ -335,26 +335,26 @@ export function AllTasksView({ taskFilter }: AllTasksViewProps) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.03 }}
-            className="card group hover:border-[var(--accent)] transition-colors"
+            className="card group hover:border-accent transition-colors"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-lg font-medium text-[var(--text-primary)]">
+                  <h3 className="text-lg font-medium text-foreground">
                     {task.name}
                   </h3>
                   <span className={`tag ${isDaily || isOneTime ? 'tag-accent' : ''}`}>
                     {frequencyLabel}
                   </span>
                   {fixedDaysLabel && (
-                    <span className="tag bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]/30">
+                    <span className="tag bg-accent/20 text-accent border-accent/30">
                       {fixedDaysLabel}
                     </span>
                   )}
                 </div>
 
                 {task.description && (
-                  <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                  <p className="mt-1 text-sm text-(--text-secondary)">
                     {task.description}
                   </p>
                 )}
@@ -364,7 +364,7 @@ export function AllTasksView({ taskFilter }: AllTasksViewProps) {
                     href={task.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 mt-2 text-sm text-[var(--accent)] hover:underline"
+                    className="inline-flex items-center gap-1 mt-2 text-sm text-accent hover:underline"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
@@ -378,7 +378,7 @@ export function AllTasksView({ taskFilter }: AllTasksViewProps) {
                 {/* Weekly occurrences with checkboxes */}
                 {stats.occurrences.length > 0 && (
                   <div className="mt-3">
-                    <p className="text-xs text-[var(--text-muted)] mb-2">This week&apos;s occurrences:</p>
+                    <p className="text-xs text-(--text-muted) mb-2">This week&apos;s occurrences:</p>
                     <div className="flex flex-wrap gap-2">
                       {stats.occurrences.map((occ, i) => {
                         const isToday = occ.date === today;
@@ -388,15 +388,15 @@ export function AllTasksView({ taskFilter }: AllTasksViewProps) {
                             onClick={() => handleToggleOccurrence(task.id, occ.day, occ.date, occ.completed, isDaily, isOneTime)}
                             className={`flex items-center gap-2 px-3 py-1.5 rounded border text-sm transition-all ${
                               occ.completed
-                                ? 'border-[var(--success)] bg-[var(--success)]/10 text-[var(--success)]'
+                                ? 'border-(--success) bg-(--success)/10 text-(--success)'
                                 : isToday
-                                ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)]/20'
-                                : 'border-[var(--border-color)] text-[var(--text-muted)] hover:border-[var(--text-muted)]'
+                                ? 'border-accent bg-accent/10 text-accent hover:bg-accent/20'
+                                : 'border-(--border-color) text-(--text-muted) hover:border-(--text-muted)'
                             }`}
                           >
                             <span className={`w-4 h-4 rounded-sm border-2 flex items-center justify-center ${
                               occ.completed
-                                ? 'border-[var(--success)] bg-[var(--success)]'
+                                ? 'border-(--success) bg-(--success)'
                                 : 'border-current'
                             }`}>
                               {occ.completed && (
@@ -418,17 +418,17 @@ export function AllTasksView({ taskFilter }: AllTasksViewProps) {
                 {stats.scheduled > 0 && (
                   <div className="mt-3">
                     <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-[var(--text-muted)]">Progress</span>
-                      <span className={`font-medium ${stats.completed === stats.scheduled ? 'text-[var(--success)]' : 'text-[var(--text-primary)]'}`}>
+                      <span className="text-(--text-muted)">Progress</span>
+                      <span className={`font-medium ${stats.completed === stats.scheduled ? 'text-(--success)' : 'text-foreground'}`}>
                         {stats.completed}/{stats.scheduled}
                       </span>
                     </div>
-                    <div className="h-1.5 bg-[var(--bg-secondary)] rounded-full overflow-hidden max-w-xs">
+                    <div className="h-1.5 bg-(--bg-secondary) rounded-full overflow-hidden max-w-xs">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${(stats.completed / stats.scheduled) * 100}%` }}
                         className={`h-full rounded-full ${
-                          stats.completed === stats.scheduled ? 'bg-[var(--success)]' : 'bg-[var(--accent)]'
+                          stats.completed === stats.scheduled ? 'bg-(--success)' : 'bg-accent'
                         }`}
                       />
                     </div>
@@ -441,7 +441,7 @@ export function AllTasksView({ taskFilter }: AllTasksViewProps) {
                 {task.link && (
                   <button
                     onClick={() => handleOpenLink(task.link!)}
-                    className="p-2 text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded transition-colors"
+                    className="p-2 text-accent hover:bg-accent/10 rounded transition-colors"
                     title="Open link"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -453,7 +453,7 @@ export function AllTasksView({ taskFilter }: AllTasksViewProps) {
                 )}
                 <button
                   onClick={() => handleStartEdit(task)}
-                  className="p-2 text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--bg-hover)] rounded transition-colors"
+                  className="p-2 text-(--text-muted) hover:text-accent hover:bg-(--bg-hover) rounded transition-colors"
                   title="Edit task"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

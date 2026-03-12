@@ -44,12 +44,12 @@ export function TaskCard({ task, index }: TaskCardProps) {
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-medium text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors truncate">
+            <h3 className="text-lg font-medium text-foreground group-hover:text-accent transition-colors truncate">
               {task.name}
             </h3>
 
             {task.description && (
-              <p className="mt-1 text-sm text-[var(--text-secondary)] line-clamp-2">
+              <p className="mt-1 text-sm text-(--text-secondary) line-clamp-2">
                 {task.description}
               </p>
             )}
@@ -57,7 +57,7 @@ export function TaskCard({ task, index }: TaskCardProps) {
             {task.link && (
               <button
                 onClick={handleOpenLink}
-                className="inline-flex items-center gap-1 mt-2 text-sm text-[var(--accent)] hover:underline"
+                className="inline-flex items-center gap-1 mt-2 text-sm text-accent hover:underline"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
@@ -77,7 +77,7 @@ export function TaskCard({ task, index }: TaskCardProps) {
                 {frequencyLabel}
               </span>
               {fixedDaysLabel && (
-                <span className="tag bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]/30">
+                <span className="tag bg-accent/20 text-accent border-accent/30">
                   {fixedDaysLabel}
                 </span>
               )}
@@ -89,7 +89,7 @@ export function TaskCard({ task, index }: TaskCardProps) {
             {task.link && (
               <button
                 onClick={handleOpenLink}
-                className="p-2 text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded transition-colors"
+                className="p-2 text-accent hover:bg-accent/10 rounded transition-colors"
                 title="Open link"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -104,7 +104,7 @@ export function TaskCard({ task, index }: TaskCardProps) {
                 e.stopPropagation();
                 setIsModalOpen(true);
               }}
-              className="p-2 text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--bg-hover)] rounded transition-colors"
+              className="p-2 text-(--text-muted) hover:text-accent hover:bg-(--bg-hover) rounded transition-colors"
               title="View details"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

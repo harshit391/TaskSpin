@@ -13,7 +13,7 @@ export function PoolList() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="animate-pulse text-[var(--text-muted)]">Loading pools...</div>
+        <div className="animate-pulse text-(--text-muted)">Loading pools...</div>
       </div>
     );
   }
@@ -22,10 +22,10 @@ export function PoolList() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="heading-display heading-section text-[var(--text-primary)]">
+          <h2 className="heading-display heading-section text-foreground">
             Task Pools
           </h2>
-          <p className="mt-1 text-[var(--text-secondary)]">
+          <p className="mt-1 text-(--text-secondary)">
             {pools.length === 0
               ? 'Break down big goals into subtask roadmaps'
               : `${pools.length} pool${pools.length === 1 ? '' : 's'} configured`}
@@ -50,7 +50,7 @@ export function PoolList() {
             exit={{ opacity: 0 }}
             className="text-center py-16"
           >
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[var(--bg-secondary)] flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-(--bg-secondary) flex items-center justify-center">
               <svg
                 width="28"
                 height="28"
@@ -58,15 +58,15 @@ export function PoolList() {
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.5"
-                className="text-[var(--text-muted)]"
+                className="text-(--text-muted)"
               >
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
               </svg>
             </div>
-            <h3 className="heading-display heading-sub text-[var(--text-secondary)]">
+            <h3 className="heading-display heading-sub text-(--text-secondary)">
               No Pools Yet
             </h3>
-            <p className="mt-2 text-[var(--text-muted)] max-w-sm mx-auto">
+            <p className="mt-2 text-(--text-muted) max-w-sm mx-auto">
               Create a pool to break down a big task into an ordered roadmap of subtasks.
               One subtask will be active at a time and appear in your weekly schedule.
             </p>

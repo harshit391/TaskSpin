@@ -95,9 +95,9 @@ export function TaskEditModal({ isOpen, onClose, task }: TaskEditModalProps) {
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-full max-w-lg bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg shadow-2xl overflow-hidden">
+            <div className="w-full max-w-lg bg-(--bg-card) border border-(--border-color) rounded-lg shadow-2xl overflow-hidden">
               {/* Header */}
-              <div className="flex items-start justify-between p-6 border-b border-[var(--border-color)]">
+              <div className="flex items-start justify-between p-6 border-b border-(--border-color)">
                 <div className="flex-1 min-w-0 pr-4">
                   {isEditing ? (
                     <input
@@ -112,7 +112,7 @@ export function TaskEditModal({ isOpen, onClose, task }: TaskEditModalProps) {
                       }}
                     />
                   ) : (
-                    <h2 className="text-xl font-semibold text-[var(--text-primary)] break-words">
+                    <h2 className="text-xl font-semibold text-foreground wrap-break-word">
                       {task.name}
                     </h2>
                   )}
@@ -123,7 +123,7 @@ export function TaskEditModal({ isOpen, onClose, task }: TaskEditModalProps) {
                       {frequencyLabel}
                     </span>
                     {fixedDaysLabel && (
-                      <span className="tag bg-[var(--accent)]/20 text-[var(--accent)]">
+                      <span className="tag bg-accent/20 text-accent">
                         {fixedDaysLabel}
                       </span>
                     )}
@@ -133,7 +133,7 @@ export function TaskEditModal({ isOpen, onClose, task }: TaskEditModalProps) {
                 {/* Close button */}
                 <button
                   onClick={onClose}
-                  className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded transition-colors flex-shrink-0"
+                  className="p-2 text-(--text-muted) hover:text-foreground hover:bg-(--bg-hover) rounded transition-colors shrink-0"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -156,7 +156,7 @@ export function TaskEditModal({ isOpen, onClose, task }: TaskEditModalProps) {
                       className="input resize-none w-full"
                     />
                   ) : (
-                    <p className={`text-sm ${task.description ? 'text-[var(--text-secondary)]' : 'text-[var(--text-muted)] italic'}`}>
+                    <p className={`text-sm ${task.description ? 'text-(--text-secondary)' : 'text-(--text-muted) italic'}`}>
                       {task.description || 'No description'}
                     </p>
                   )}
@@ -179,13 +179,13 @@ export function TaskEditModal({ isOpen, onClose, task }: TaskEditModalProps) {
                         href={task.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-[var(--accent)] hover:underline truncate flex-1"
+                        className="text-sm text-accent hover:underline truncate flex-1"
                       >
                         {task.link}
                       </a>
                       <button
                         onClick={handleOpenLink}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[var(--accent)] text-white rounded hover:bg-[var(--accent-hover)] transition-colors flex-shrink-0"
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-accent text-white rounded hover:bg-(--accent-hover) transition-colors shrink-0"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
@@ -196,7 +196,7 @@ export function TaskEditModal({ isOpen, onClose, task }: TaskEditModalProps) {
                       </button>
                     </div>
                   ) : (
-                    <p className="text-sm text-[var(--text-muted)] italic">No link attached</p>
+                    <p className="text-sm text-(--text-muted) italic">No link attached</p>
                   )}
                 </div>
 
@@ -204,13 +204,13 @@ export function TaskEditModal({ isOpen, onClose, task }: TaskEditModalProps) {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="label">Created</label>
-                    <p className="text-sm text-[var(--text-secondary)]">
+                    <p className="text-sm text-(--text-secondary)">
                       {new Date(task.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                   <div>
                     <label className="label">Last Updated</label>
-                    <p className="text-sm text-[var(--text-secondary)]">
+                    <p className="text-sm text-(--text-secondary)">
                       {new Date(task.updatedAt).toLocaleDateString()}
                     </p>
                   </div>
@@ -218,7 +218,7 @@ export function TaskEditModal({ isOpen, onClose, task }: TaskEditModalProps) {
               </div>
 
               {/* Footer Actions */}
-              <div className="flex items-center justify-between gap-3 p-6 border-t border-[var(--border-color)] bg-[var(--bg-secondary)]">
+              <div className="flex items-center justify-between gap-3 p-6 border-t border-(--border-color) bg-(--bg-secondary)">
                 {isEditing ? (
                   <>
                     <button
@@ -236,7 +236,7 @@ export function TaskEditModal({ isOpen, onClose, task }: TaskEditModalProps) {
                   </>
                 ) : showDeleteConfirm ? (
                   <>
-                    <p className="text-sm text-[var(--text-secondary)]">Delete this task?</p>
+                    <p className="text-sm text-(--text-secondary)">Delete this task?</p>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setShowDeleteConfirm(false)}
@@ -246,7 +246,7 @@ export function TaskEditModal({ isOpen, onClose, task }: TaskEditModalProps) {
                       </button>
                       <button
                         onClick={handleDelete}
-                        className="px-6 py-3 rounded font-medium bg-[var(--error)] text-white hover:bg-[var(--error)]/80 transition-colors"
+                        className="px-6 py-3 rounded font-medium bg-(--error) text-white hover:bg-(--error)/80 transition-colors"
                       >
                         Delete
                       </button>
@@ -256,7 +256,7 @@ export function TaskEditModal({ isOpen, onClose, task }: TaskEditModalProps) {
                   <>
                     <button
                       onClick={() => setShowDeleteConfirm(true)}
-                      className="flex items-center gap-2 px-4 py-2 text-[var(--error)] hover:bg-[var(--error)]/10 rounded transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 text-(--error) hover:bg-(--error)/10 rounded transition-colors"
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <polyline points="3 6 5 6 21 6" />

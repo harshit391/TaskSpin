@@ -26,10 +26,10 @@ export function CapacityConfig() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="heading-display heading-sub text-[var(--text-primary)]">
+        <h3 className="heading-display heading-sub text-foreground">
           Daily Task Capacity
         </h3>
-        <p className="mt-1 text-[var(--text-secondary)]">
+        <p className="mt-1 text-(--text-secondary)">
           Set how many randomized tasks you can handle each day. Daily tasks are always scheduled regardless of capacity. Total weekly capacity: {totalCapacity} tasks.
         </p>
       </div>
@@ -50,12 +50,12 @@ export function CapacityConfig() {
               <div className="flex items-center gap-3">
                 <span
                   className={`w-10 text-xs font-medium uppercase tracking-wider ${
-                    isWeekend ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'
+                    isWeekend ? 'text-accent' : 'text-(--text-muted)'
                   }`}
                 >
                   {DAY_LABELS[day]}
                 </span>
-                <span className="text-[var(--text-primary)] font-medium">
+                <span className="text-foreground font-medium">
                   {DAY_FULL_NAMES[day]}
                 </span>
               </div>
@@ -64,7 +64,7 @@ export function CapacityConfig() {
                 <button
                   onClick={() => updateDayCapacity(day, capacity - 1)}
                   disabled={capacity <= 0}
-                  className="w-8 h-8 flex items-center justify-center rounded border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--text-muted)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="w-8 h-8 flex items-center justify-center rounded border border-(--border-color) text-(--text-muted) hover:text-foreground hover:border-(--text-muted) disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="5" y1="12" x2="19" y2="12" />
@@ -72,7 +72,7 @@ export function CapacityConfig() {
                 </button>
 
                 <div className="w-12 text-center">
-                  <span className="text-xl font-semibold text-[var(--text-primary)]">
+                  <span className="text-xl font-semibold text-foreground">
                     {capacity}
                   </span>
                 </div>
@@ -80,7 +80,7 @@ export function CapacityConfig() {
                 <button
                   onClick={() => updateDayCapacity(day, capacity + 1)}
                   disabled={capacity >= 20}
-                  className="w-8 h-8 flex items-center justify-center rounded border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--text-muted)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="w-8 h-8 flex items-center justify-center rounded border border-(--border-color) text-(--text-muted) hover:text-foreground hover:border-(--text-muted) disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="12" y1="5" x2="12" y2="19" />
@@ -94,8 +94,8 @@ export function CapacityConfig() {
       </div>
 
       {/* Visual capacity bar */}
-      <div className="card bg-[var(--bg-secondary)]">
-        <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mb-3">
+      <div className="card bg-(--bg-secondary)">
+        <p className="text-xs text-(--text-muted) uppercase tracking-wider mb-3">
           Weekly Distribution
         </p>
         <div className="flex items-end gap-1 h-20">
@@ -109,10 +109,10 @@ export function CapacityConfig() {
                 <motion.div
                   initial={{ height: 0 }}
                   animate={{ height: `${heightPercent}%` }}
-                  className="w-full bg-[var(--accent)] rounded-t min-h-[4px]"
+                  className="w-full bg-accent rounded-t min-h-1"
                   style={{ maxHeight: '100%' }}
                 />
-                <span className="text-[10px] text-[var(--text-muted)]">
+                <span className="text-[10px] text-(--text-muted)">
                   {DAY_LABELS[day]}
                 </span>
               </div>

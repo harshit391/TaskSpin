@@ -103,21 +103,21 @@ export function ScheduledTaskItem({ scheduledTask, day, index, expanded = false,
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: index * 0.03 }}
         onClick={handleOpenModal}
-        className={`group flex items-start gap-3 p-3 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] transition-all cursor-pointer ${
+        className={`group flex items-start gap-3 p-3 rounded border border-(--border-color) bg-(--bg-secondary) transition-all cursor-pointer ${
           scheduledTask.completed
             ? 'opacity-50'
-            : 'hover:border-[var(--accent)] hover:bg-[var(--bg-hover)]'
+            : 'hover:border-accent hover:bg-(--bg-hover)'
         }`}
       >
         {/* Checkbox - only clickable if today */}
         <div
           onClick={isToday ? handleToggleComplete : undefined}
-          className={`mt-0.5 w-5 h-5 rounded-sm border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+          className={`mt-0.5 w-5 h-5 rounded-sm border-2 flex items-center justify-center transition-all shrink-0 ${
             scheduledTask.completed
-              ? 'border-[var(--accent)] bg-[var(--accent)]'
+              ? 'border-accent bg-accent'
               : isToday
-              ? 'border-[var(--border-color)] hover:border-[var(--accent)] cursor-pointer'
-              : 'border-[var(--border-color)] opacity-40 cursor-not-allowed'
+              ? 'border-(--border-color) hover:border-accent cursor-pointer'
+              : 'border-(--border-color) opacity-40 cursor-not-allowed'
           }`}
           title={isToday ? (scheduledTask.completed ? 'Mark incomplete' : 'Mark complete') : 'Can only complete today\'s tasks'}
         >
@@ -144,21 +144,21 @@ export function ScheduledTaskItem({ scheduledTask, day, index, expanded = false,
           <p
             className={`text-sm font-medium transition-all ${
               scheduledTask.completed
-                ? 'text-[var(--text-muted)] line-through'
-                : 'text-[var(--text-primary)]'
+                ? 'text-(--text-muted) line-through'
+                : 'text-foreground'
             } ${expanded ? '' : 'truncate'}`}
           >
             {task.name}
           </p>
           {expanded && task.description && (
-            <p className="mt-1 text-xs text-[var(--text-secondary)] line-clamp-2">
+            <p className="mt-1 text-xs text-(--text-secondary) line-clamp-2">
               {task.description}
             </p>
           )}
           {expanded && task.link && (
             <button
               onClick={handleOpenLink}
-              className="inline-flex items-center gap-1 mt-1 text-xs text-[var(--accent)] hover:underline"
+              className="inline-flex items-center gap-1 mt-1 text-xs text-accent hover:underline"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
@@ -170,21 +170,21 @@ export function ScheduledTaskItem({ scheduledTask, day, index, expanded = false,
           )}
           {expanded && (
             <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-[var(--bg-hover)] text-[var(--text-muted)]">
+              <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-(--bg-hover) text-(--text-muted)">
                 {frequencyLabel}
               </span>
               {isPoolTask && poolLabel && (
-                <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-[var(--accent)]/20 text-[var(--accent)]">
+                <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-accent/20 text-accent">
                   {poolLabel}
                 </span>
               )}
               {!isPoolTask && task.frequencyType === 'one-time' && (
-                <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-[var(--accent)]/20 text-[var(--accent)]">
+                <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-accent/20 text-accent">
                   ONE-TIME
                 </span>
               )}
               {task.fixedDays && task.fixedDays.length > 0 && (
-                <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-[var(--accent)]/20 text-[var(--accent)]">
+                <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-accent/20 text-accent">
                   FIXED
                 </span>
               )}
@@ -193,11 +193,11 @@ export function ScheduledTaskItem({ scheduledTask, day, index, expanded = false,
         </div>
 
         {/* Quick Actions - visible on hover */}
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
           {task.link && (
             <button
               onClick={handleOpenLink}
-              className="p-1.5 text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded transition-colors"
+              className="p-1.5 text-accent hover:bg-accent/10 rounded transition-colors"
               title="Open link"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -212,7 +212,7 @@ export function ScheduledTaskItem({ scheduledTask, day, index, expanded = false,
               e.stopPropagation();
               setIsModalOpen(true);
             }}
-            className="p-1.5 text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--bg-hover)] rounded transition-colors"
+            className="p-1.5 text-(--text-muted) hover:text-accent hover:bg-(--bg-hover) rounded transition-colors"
             title="View details"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -225,11 +225,11 @@ export function ScheduledTaskItem({ scheduledTask, day, index, expanded = false,
 
         {/* Badge indicators (compact view) */}
         {!expanded && (
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex items-center gap-1 shrink-0">
             {task.link && (
               <button
                 onClick={handleOpenLink}
-                className="p-1 text-[var(--accent)]"
+                className="p-1 text-accent"
                 title="Has link"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -248,7 +248,7 @@ export function ScheduledTaskItem({ scheduledTask, day, index, expanded = false,
               <span className="tag text-[10px]">DAILY</span>
             )}
             {task.fixedDays && task.fixedDays.length > 0 && (
-              <span className="tag text-[10px] bg-[var(--accent)]/20 text-[var(--accent)]">FIXED</span>
+              <span className="tag text-[10px] bg-accent/20 text-accent">FIXED</span>
             )}
           </div>
         )}

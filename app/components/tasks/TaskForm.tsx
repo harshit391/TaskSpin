@@ -127,7 +127,7 @@ export function TaskForm({ onSuccess }: TaskFormProps) {
                 autoFocus
               />
               {errors.name && (
-                <p className="mt-2 text-sm text-[var(--error)]">{errors.name.message}</p>
+                <p className="mt-2 text-sm text-(--error)">{errors.name.message}</p>
               )}
             </div>
 
@@ -140,7 +140,7 @@ export function TaskForm({ onSuccess }: TaskFormProps) {
                 className="input resize-none"
               />
               {errors.description && (
-                <p className="mt-2 text-sm text-[var(--error)]">{errors.description.message}</p>
+                <p className="mt-2 text-sm text-(--error)">{errors.description.message}</p>
               )}
             </div>
 
@@ -153,7 +153,7 @@ export function TaskForm({ onSuccess }: TaskFormProps) {
                 className="input"
               />
               {errors.link && (
-                <p className="mt-2 text-sm text-[var(--error)]">{errors.link.message}</p>
+                <p className="mt-2 text-sm text-(--error)">{errors.link.message}</p>
               )}
             </div>
 
@@ -165,8 +165,8 @@ export function TaskForm({ onSuccess }: TaskFormProps) {
                     key={option.type}
                     className={`flex items-center justify-center px-3 py-2 text-xs font-medium uppercase tracking-wider border rounded cursor-pointer transition-all ${
                       frequencyType === option.type
-                        ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
-                        : 'border-[var(--border-color)] text-[var(--text-muted)] hover:border-[var(--text-muted)]'
+                        ? 'border-accent bg-accent/10 text-accent'
+                        : 'border-(--border-color) text-(--text-muted) hover:border-(--text-muted)'
                     }`}
                   >
                     <input
@@ -213,18 +213,18 @@ export function TaskForm({ onSuccess }: TaskFormProps) {
                     <div
                       onClick={() => setUseFixedDays(!useFixedDays)}
                       className={`w-10 h-6 rounded-full transition-colors relative ${
-                        useFixedDays ? 'bg-[var(--accent)]' : 'bg-[var(--bg-secondary)] border border-[var(--border-color)]'
+                        useFixedDays ? 'bg-accent' : 'bg-(--bg-secondary) border border-(--border-color)'
                       }`}
                     >
                       <motion.div
                         animate={{ x: useFixedDays ? 18 : 2 }}
                         transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                         className={`absolute top-1 w-4 h-4 rounded-full ${
-                          useFixedDays ? 'bg-white' : 'bg-[var(--text-muted)]'
+                          useFixedDays ? 'bg-white' : 'bg-(--text-muted)'
                         }`}
                       />
                     </div>
-                    <span className="text-sm text-[var(--text-secondary)]">
+                    <span className="text-sm text-(--text-secondary)">
                       Fix to specific days
                     </span>
                   </label>
@@ -236,7 +236,7 @@ export function TaskForm({ onSuccess }: TaskFormProps) {
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
                       >
-                        <p className="text-xs text-[var(--text-muted)] mb-2">
+                        <p className="text-xs text-(--text-muted) mb-2">
                           Select {maxDays} day{maxDays > 1 ? 's' : ''} ({selectedDays.length}/{maxDays} selected)
                         </p>
                         <div className="flex flex-wrap gap-2">
@@ -251,10 +251,10 @@ export function TaskForm({ onSuccess }: TaskFormProps) {
                                 disabled={isDisabled}
                                 className={`px-3 py-1.5 text-xs font-medium uppercase tracking-wider border rounded transition-all ${
                                   isSelected
-                                    ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
+                                    ? 'border-accent bg-accent text-white'
                                     : isDisabled
-                                    ? 'border-[var(--border-color)] text-[var(--text-muted)] opacity-40 cursor-not-allowed'
-                                    : 'border-[var(--border-color)] text-[var(--text-muted)] hover:border-[var(--text-muted)]'
+                                    ? 'border-(--border-color) text-(--text-muted) opacity-40 cursor-not-allowed'
+                                    : 'border-(--border-color) text-(--text-muted) hover:border-(--text-muted)'
                                 }`}
                               >
                                 {DAY_LABELS[day]}

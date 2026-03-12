@@ -107,9 +107,9 @@ export function TaskDetailModal({
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-full max-w-lg bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg shadow-2xl overflow-hidden">
+            <div className="w-full max-w-lg bg-(--bg-card) border border-(--border-color) rounded-lg shadow-2xl overflow-hidden">
               {/* Header */}
-              <div className="flex items-start justify-between p-6 border-b border-[var(--border-color)]">
+              <div className="flex items-start justify-between p-6 border-b border-(--border-color)">
                 <div className="flex-1 min-w-0 pr-4">
                   {isEditing ? (
                     <input
@@ -124,7 +124,7 @@ export function TaskDetailModal({
                       }}
                     />
                   ) : (
-                    <h2 className="text-xl font-semibold text-[var(--text-primary)] break-words">
+                    <h2 className="text-xl font-semibold text-foreground wrap-break-word">
                       {task.name}
                     </h2>
                   )}
@@ -135,12 +135,12 @@ export function TaskDetailModal({
                       {frequencyLabel}
                     </span>
                     {fixedDaysLabel && (
-                      <span className="tag bg-[var(--accent)]/20 text-[var(--accent)]">
+                      <span className="tag bg-accent/20 text-accent">
                         {fixedDaysLabel}
                       </span>
                     )}
                     {scheduledTask.completed && (
-                      <span className="tag bg-[var(--success)]/20 text-[var(--success)]">
+                      <span className="tag bg-(--success)/20 text-(--success)">
                         COMPLETED
                       </span>
                     )}
@@ -150,7 +150,7 @@ export function TaskDetailModal({
                 {/* Close button */}
                 <button
                   onClick={onClose}
-                  className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded transition-colors flex-shrink-0"
+                  className="p-2 text-(--text-muted) hover:text-foreground hover:bg-(--bg-hover) rounded transition-colors shrink-0"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -173,7 +173,7 @@ export function TaskDetailModal({
                       className="input resize-none w-full"
                     />
                   ) : (
-                    <p className={`text-sm ${task.description ? 'text-[var(--text-secondary)]' : 'text-[var(--text-muted)] italic'}`}>
+                    <p className={`text-sm ${task.description ? 'text-(--text-secondary)' : 'text-(--text-muted) italic'}`}>
                       {task.description || 'No description'}
                     </p>
                   )}
@@ -196,13 +196,13 @@ export function TaskDetailModal({
                         href={task.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-[var(--accent)] hover:underline truncate flex-1"
+                        className="text-sm text-accent hover:underline truncate flex-1"
                       >
                         {task.link}
                       </a>
                       <button
                         onClick={handleOpenLink}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[var(--accent)] text-white rounded hover:bg-[var(--accent-hover)] transition-colors flex-shrink-0"
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-accent text-white rounded hover:bg-(--accent-hover) transition-colors shrink-0"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
@@ -213,21 +213,21 @@ export function TaskDetailModal({
                       </button>
                     </div>
                   ) : (
-                    <p className="text-sm text-[var(--text-muted)] italic">No link attached</p>
+                    <p className="text-sm text-(--text-muted) italic">No link attached</p>
                   )}
                 </div>
 
                 {/* Scheduled Day Info */}
                 <div>
                   <label className="label">Scheduled For</label>
-                  <p className="text-sm text-[var(--text-secondary)]">
-                    {DAY_LABELS[day]} {isToday && <span className="text-[var(--accent)]">(Today)</span>}
+                  <p className="text-sm text-(--text-secondary)">
+                    {DAY_LABELS[day]} {isToday && <span className="text-accent">(Today)</span>}
                   </p>
                 </div>
               </div>
 
               {/* Footer Actions */}
-              <div className="flex items-center justify-between gap-3 p-6 border-t border-[var(--border-color)] bg-[var(--bg-secondary)]">
+              <div className="flex items-center justify-between gap-3 p-6 border-t border-(--border-color) bg-(--bg-secondary)">
                 {isEditing ? (
                   <>
                     <button
@@ -261,10 +261,10 @@ export function TaskDetailModal({
                       disabled={!isToday || (scheduledTask.completed && task.frequencyType === 'one-time')}
                       className={`flex items-center gap-2 px-6 py-3 rounded font-medium transition-all ${
                         !isToday
-                          ? 'bg-[var(--bg-hover)] text-[var(--text-muted)] cursor-not-allowed'
+                          ? 'bg-(--bg-hover) text-(--text-muted) cursor-not-allowed'
                           : scheduledTask.completed
-                          ? 'bg-[var(--warning)] text-white hover:bg-[var(--warning)]/80'
-                          : 'bg-[var(--success)] text-white hover:bg-[var(--success)]/80'
+                          ? 'bg-(--warning) text-white hover:bg-(--warning)/80'
+                          : 'bg-(--success) text-white hover:bg-(--success)/80'
                       }`}
                       title={!isToday ? 'Can only complete today\'s tasks' : ''}
                     >

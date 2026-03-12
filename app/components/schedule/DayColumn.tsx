@@ -60,24 +60,24 @@ export function DayColumn({ scheduledDay, index, isToday, expanded = false, task
       transition={{ delay: index * 0.05 }}
       className={`flex flex-col rounded border transition-all ${
         isToday
-          ? 'border-[var(--accent)] bg-[var(--accent)]/5'
-          : 'border-[var(--border-color)] bg-[var(--bg-card)]'
+          ? 'border-accent bg-accent/5'
+          : 'border-(--border-color) bg-(--bg-card)'
       }`}
     >
       {/* Day Header */}
-      <div className={`p-4 border-b ${isToday ? 'border-[var(--accent)]/30' : 'border-[var(--border-color)]'}`}>
+      <div className={`p-4 border-b ${isToday ? 'border-accent/30' : 'border-(--border-color)'}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span
               className={`heading-display text-2xl ${
-                isToday ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]'
+                isToday ? 'text-accent' : 'text-foreground'
               }`}
             >
               {dayNumber}
             </span>
             <span
               className={`text-xs font-medium uppercase tracking-wider ${
-                isToday ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'
+                isToday ? 'text-accent' : 'text-(--text-muted)'
               }`}
             >
               {DAY_LABELS[scheduledDay.day]}
@@ -89,19 +89,19 @@ export function DayColumn({ scheduledDay, index, isToday, expanded = false, task
 
         {/* Progress indicator */}
         <div className="mt-3">
-          <div className="flex items-center justify-between text-xs text-[var(--text-muted)] mb-1">
+          <div className="flex items-center justify-between text-xs text-(--text-muted) mb-1">
             <span>{completedCount}/{totalCount} done</span>
             <span title="Capacity for non-daily tasks">Cap: {capacity}</span>
           </div>
-          <div className="h-1 bg-[var(--bg-secondary)] rounded-full overflow-hidden">
+          <div className="h-1 bg-(--bg-secondary) rounded-full overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: totalCount > 0 ? `${(completedCount / totalCount) * 100}%` : '0%' }}
               transition={{ delay: 0.3 + index * 0.05 }}
               className={`h-full rounded-full ${
                 completedCount === totalCount && totalCount > 0
-                  ? 'bg-[var(--success)]'
-                  : 'bg-[var(--accent)]'
+                  ? 'bg-(--success)'
+                  : 'bg-accent'
               }`}
             />
           </div>
@@ -109,9 +109,9 @@ export function DayColumn({ scheduledDay, index, isToday, expanded = false, task
       </div>
 
       {/* Tasks */}
-      <div className={`flex-1 p-3 space-y-2 ${expanded ? 'min-h-[300px]' : 'min-h-[200px] max-h-[400px]'} overflow-y-auto`}>
+      <div className={`flex-1 p-3 space-y-2 ${expanded ? 'min-h-75' : 'min-h-50 max-h-100'} overflow-y-auto`}>
         {filteredTasks.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
+          <div className="flex items-center justify-center h-full text-(--text-muted) text-sm">
             {taskFilter === 'all' ? 'No tasks' :
               taskFilter === 'daily' ? 'No daily tasks' :
               taskFilter === 'one-time' ? 'No one-time tasks' :

@@ -170,10 +170,10 @@ export function DataManagement() {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="heading-display heading-sub text-[var(--text-primary)]">
+        <h3 className="heading-display heading-sub text-foreground">
           Data Management
         </h3>
-        <p className="mt-1 text-[var(--text-secondary)]">
+        <p className="mt-1 text-(--text-secondary)">
           Export your data as a backup or import from a previous backup.
         </p>
       </div>
@@ -182,8 +182,8 @@ export function DataManagement() {
         <div
           className={`p-3 rounded border ${
             message.type === 'success'
-              ? 'border-[var(--success)]/30 bg-[var(--success)]/10 text-[var(--success)]'
-              : 'border-[var(--error)]/30 bg-[var(--error)]/10 text-[var(--error)]'
+              ? 'border-(--success)/30 bg-(--success)/10 text-(--success)'
+              : 'border-(--error)/30 bg-(--error)/10 text-(--error)'
           }`}
         >
           {message.text}
@@ -191,7 +191,7 @@ export function DataManagement() {
       )}
 
       <div className="space-y-3">
-        <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Export</p>
+        <p className="text-xs text-(--text-muted) uppercase tracking-wider">Export</p>
         <div className="flex flex-wrap gap-3">
           <button
             onClick={handleExport}
@@ -220,7 +220,7 @@ export function DataManagement() {
       </div>
 
       <div className="space-y-3">
-        <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Import</p>
+        <p className="text-xs text-(--text-muted) uppercase tracking-wider">Import</p>
         <div className="flex flex-wrap gap-3">
           <button
             onClick={handleImportClick}
@@ -256,7 +256,7 @@ export function DataManagement() {
         </div>
       </div>
 
-      <p className="text-xs text-[var(--text-muted)]">
+      <p className="text-xs text-(--text-muted)">
         Note: Importing will replace all existing data. Make sure to export a backup first.
       </p>
 
@@ -265,7 +265,7 @@ export function DataManagement() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="card max-w-lg w-full max-h-[80vh] flex flex-col">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-[var(--text-primary)]">
+              <h3 className="text-lg font-medium text-foreground">
                 Paste JSON Data
               </h3>
               <button
@@ -274,7 +274,7 @@ export function DataManagement() {
                   setPasteData('');
                   setMessage(null);
                 }}
-                className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                className="p-1 text-(--text-muted) hover:text-foreground"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18" />
@@ -287,8 +287,8 @@ export function DataManagement() {
               <div
                 className={`p-3 rounded border mb-4 ${
                   message.type === 'success'
-                    ? 'border-[var(--success)]/30 bg-[var(--success)]/10 text-[var(--success)]'
-                    : 'border-[var(--error)]/30 bg-[var(--error)]/10 text-[var(--error)]'
+                    ? 'border-(--success)/30 bg-(--success)/10 text-(--success)'
+                    : 'border-(--error)/30 bg-(--error)/10 text-(--error)'
                 }`}
               >
                 {message.text}
@@ -299,7 +299,7 @@ export function DataManagement() {
               value={pasteData}
               onChange={(e) => setPasteData(e.target.value)}
               placeholder="Paste your JSON data here..."
-              className="input flex-1 min-h-[200px] resize-none font-mono text-sm"
+              className="input flex-1 min-h-50 resize-none font-mono text-sm"
             />
 
             <div className="flex justify-end gap-3 mt-4">

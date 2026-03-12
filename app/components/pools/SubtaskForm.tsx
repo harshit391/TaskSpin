@@ -55,7 +55,7 @@ export function SubtaskForm({ poolId, onSuccess, onCancel }: SubtaskFormProps) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       onSubmit={handleSubmit(onSubmit)}
-      className="card space-y-4 border-[var(--accent)]/30"
+      className="card space-y-4 border-accent/30"
     >
       <div>
         <label className="label">Subtask Name</label>
@@ -67,7 +67,7 @@ export function SubtaskForm({ poolId, onSuccess, onCancel }: SubtaskFormProps) {
           autoFocus
         />
         {errors.name && (
-          <p className="mt-1 text-sm text-[var(--error)]">{errors.name.message}</p>
+          <p className="mt-1 text-sm text-(--error)">{errors.name.message}</p>
         )}
       </div>
 
@@ -90,7 +90,7 @@ export function SubtaskForm({ poolId, onSuccess, onCancel }: SubtaskFormProps) {
           className="input"
         />
         {errors.link && (
-          <p className="mt-1 text-sm text-[var(--error)]">{errors.link.message}</p>
+          <p className="mt-1 text-sm text-(--error)">{errors.link.message}</p>
         )}
       </div>
 
@@ -103,7 +103,7 @@ export function SubtaskForm({ poolId, onSuccess, onCancel }: SubtaskFormProps) {
           max={365}
           className="input w-24"
         />
-        <p className="mt-1 text-xs text-[var(--text-muted)]">
+        <p className="mt-1 text-xs text-(--text-muted)">
           How many days this subtask may take
         </p>
       </div>

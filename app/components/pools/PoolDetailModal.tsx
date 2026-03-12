@@ -146,7 +146,7 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
   const statusIcon = (status: PoolSubtask['status']) => {
     if (status === 'completed') {
       return (
-        <div className="w-6 h-6 rounded-full bg-[var(--success)] flex items-center justify-center flex-shrink-0">
+        <div className="w-6 h-6 rounded-full bg-(--success) flex items-center justify-center shrink-0">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
             <polyline points="20 6 9 17 4 12" />
           </svg>
@@ -155,13 +155,13 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
     }
     if (status === 'active') {
       return (
-        <div className="w-6 h-6 rounded-full border-2 border-[var(--accent)] bg-[var(--accent)]/20 flex items-center justify-center flex-shrink-0">
-          <div className="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse" />
+        <div className="w-6 h-6 rounded-full border-2 border-accent bg-accent/20 flex items-center justify-center shrink-0">
+          <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
         </div>
       );
     }
     return (
-      <div className="w-6 h-6 rounded-full border-2 border-[var(--border-color)] flex-shrink-0" />
+      <div className="w-6 h-6 rounded-full border-2 border-(--border-color) shrink-0" />
     );
   };
 
@@ -205,11 +205,11 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
                 </div>
               ) : (
                 <>
-                  <h2 className="heading-display heading-sub text-[var(--text-primary)] truncate">
+                  <h2 className="heading-display heading-sub text-foreground truncate">
                     {displayPool.name}
                   </h2>
                   {displayPool.description && (
-                    <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                    <p className="mt-1 text-sm text-(--text-secondary)">
                       {displayPool.description}
                     </p>
                   )}
@@ -228,7 +228,7 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
             </div>
             <button
               onClick={onClose}
-              className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+              className="p-2 text-(--text-muted) hover:text-foreground transition-colors"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="18" y1="6" x2="6" y2="18" />
@@ -240,15 +240,15 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
           {/* Progress bar */}
           {totalCount > 0 && (
             <div className="mb-4">
-              <div className="h-2 bg-[var(--bg-secondary)] rounded-full overflow-hidden">
+              <div className="h-2 bg-(--bg-secondary) rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: totalCount > 0 ? `${(completedCount / totalCount) * 100}%` : '0%' }}
                   transition={{ duration: 0.5 }}
                   className={`h-full rounded-full ${
                     completedCount === totalCount && totalCount > 0
-                      ? 'bg-[var(--success)]'
-                      : 'bg-[var(--accent)]'
+                      ? 'bg-(--success)'
+                      : 'bg-accent'
                   }`}
                 />
               </div>
@@ -271,14 +271,14 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
           {/* Subtask roadmap */}
           <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
             {displayPool.subtasks.length === 0 ? (
-              <div className="text-center py-8 text-[var(--text-muted)]">
+              <div className="text-center py-8 text-(--text-muted)">
                 <p>No subtasks yet. Add subtasks to build your roadmap.</p>
               </div>
             ) : (
               displayPool.subtasks.map((subtask, index) => {
                 if (editingSubtask === subtask.id) {
                   return (
-                    <div key={subtask.id} className="card border-[var(--accent)] space-y-3">
+                    <div key={subtask.id} className="card border-accent space-y-3">
                       <input
                         type="text"
                         value={editName}
@@ -305,7 +305,7 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
                         className="input w-full"
                       />
                       <div className="flex items-center gap-3">
-                        <label className="text-sm text-[var(--text-secondary)]">Duration (days):</label>
+                        <label className="text-sm text-(--text-secondary)">Duration (days):</label>
                         <input
                           type="number"
                           value={editDuration}
@@ -316,10 +316,10 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
                         />
                       </div>
                       <div className="flex justify-end gap-2">
-                        <button onClick={() => setEditingSubtask(null)} className="px-3 py-1.5 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+                        <button onClick={() => setEditingSubtask(null)} className="px-3 py-1.5 text-sm text-(--text-muted) hover:text-foreground">
                           Cancel
                         </button>
-                        <button onClick={handleSaveSubtask} className="px-3 py-1.5 text-sm bg-[var(--accent)] text-white rounded hover:bg-[var(--accent)]/80">
+                        <button onClick={handleSaveSubtask} className="px-3 py-1.5 text-sm bg-accent text-white rounded hover:bg-(--accent)/80">
                           Save
                         </button>
                       </div>
@@ -335,15 +335,15 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
                     transition={{ delay: index * 0.03 }}
                     className={`flex items-start gap-3 px-4 py-3 rounded-lg border transition-colors group ${
                       subtask.status === 'active'
-                        ? 'border-[var(--accent)]/40 bg-[var(--accent)]/5'
+                        ? 'border-accent/40 bg-accent/5'
                         : subtask.status === 'completed'
-                        ? 'border-[var(--success)]/20 bg-[var(--success)]/5'
-                        : 'border-[var(--border-color)] hover:border-[var(--text-muted)]'
+                        ? 'border-(--success)/20 bg-(--success)/5'
+                        : 'border-(--border-color) hover:border-(--text-muted)'
                     }`}
                   >
                     {/* Order number & status */}
                     <div className="flex items-center gap-2 pt-0.5">
-                      <span className="text-xs text-[var(--text-muted)] w-5 text-right">{index + 1}.</span>
+                      <span className="text-xs text-(--text-muted) w-5 text-right">{index + 1}.</span>
                       {statusIcon(subtask.status)}
                     </div>
 
@@ -351,18 +351,18 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
                     <div className="flex-1 min-w-0">
                       <p className={`font-medium ${
                         subtask.status === 'completed'
-                          ? 'text-[var(--text-muted)] line-through'
+                          ? 'text-(--text-muted) line-through'
                           : subtask.status === 'active'
-                          ? 'text-[var(--accent)]'
-                          : 'text-[var(--text-primary)]'
+                          ? 'text-accent'
+                          : 'text-foreground'
                       }`}>
                         {subtask.name}
                       </p>
                       {subtask.description && (
-                        <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{subtask.description}</p>
+                        <p className="mt-0.5 text-sm text-(--text-secondary)">{subtask.description}</p>
                       )}
                       <div className="mt-1 flex items-center gap-2 flex-wrap">
-                        <span className="text-xs text-[var(--text-muted)]">
+                        <span className="text-xs text-(--text-muted)">
                           {subtask.estimatedDuration} day{subtask.estimatedDuration > 1 ? 's' : ''}
                         </span>
                         {subtask.link && (
@@ -370,7 +370,7 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
                             href={subtask.link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-[var(--accent)] hover:underline"
+                            className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
                           >
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
@@ -381,7 +381,7 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
                           </a>
                         )}
                         {subtask.status === 'completed' && subtask.completedAt && (
-                          <span className="text-xs text-[var(--success)]">
+                          <span className="text-xs text-(--success)">
                             Completed {new Date(subtask.completedAt).toLocaleDateString()}
                           </span>
                         )}
@@ -394,7 +394,7 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
                         <>
                           <button
                             onClick={() => handleMoveUp(subtask)}
-                            className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                            className="p-1 text-(--text-muted) hover:text-foreground"
                             title="Move up"
                           >
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -403,7 +403,7 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
                           </button>
                           <button
                             onClick={() => handleMoveDown(subtask)}
-                            className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                            className="p-1 text-(--text-muted) hover:text-foreground"
                             title="Move down"
                           >
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -414,7 +414,7 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
                       )}
                       <button
                         onClick={() => handleStartEditSubtask(subtask)}
-                        className="p-1 text-[var(--text-muted)] hover:text-[var(--accent)]"
+                        className="p-1 text-(--text-muted) hover:text-accent"
                         title="Edit subtask"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -425,7 +425,7 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
                       {subtask.status !== 'completed' && (
                         <button
                           onClick={() => handleDeleteSubtask(subtask.id)}
-                          className="p-1 text-[var(--text-muted)] hover:text-[var(--error)]"
+                          className="p-1 text-(--text-muted) hover:text-(--error)"
                           title="Delete subtask"
                         >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -468,9 +468,9 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
           </div>
 
           {/* Side Tasks Section */}
-          <div className="mt-6 pt-4 border-t border-[var(--border-color)]">
+          <div className="mt-6 pt-4 border-t border-(--border-color)">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">
+              <h3 className="text-xs font-medium uppercase tracking-wider text-(--text-muted)">
                 Side Tasks
                 {pendingPoolSideTasks.length > 0 && (
                   <span className="ml-2 tag">{pendingPoolSideTasks.length}</span>
@@ -480,18 +480,18 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
 
             {/* Pending side tasks list */}
             {pendingPoolSideTasks.map((task) => (
-              <div key={task.id} className="group flex items-start gap-3 p-2 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:border-[var(--accent)] transition-colors mb-2">
+              <div key={task.id} className="group flex items-start gap-3 p-2 rounded border border-(--border-color) bg-(--bg-secondary) hover:border-accent transition-colors mb-2">
                 <button
                   onClick={() => toggleSideTaskComplete(task.id)}
-                  className="mt-0.5 w-5 h-5 rounded-sm border-2 border-[var(--border-color)] hover:border-[var(--accent)] flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer"
+                  className="mt-0.5 w-5 h-5 rounded-sm border-2 border-(--border-color) hover:border-accent flex items-center justify-center transition-colors shrink-0 cursor-pointer"
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[var(--text-primary)]">{task.name}</p>
-                  {task.description && <p className="mt-0.5 text-xs text-[var(--text-secondary)] line-clamp-2">{task.description}</p>}
+                  <p className="text-sm font-medium text-foreground">{task.name}</p>
+                  {task.description && <p className="mt-0.5 text-xs text-(--text-secondary) line-clamp-2">{task.description}</p>}
                   <div className="mt-1 flex items-center gap-2 flex-wrap">
-                    {task.dueDate && <span className="text-xs text-[var(--text-muted)]">Due: {task.dueDate}</span>}
+                    {task.dueDate && <span className="text-xs text-(--text-muted)">Due: {task.dueDate}</span>}
                     {task.link && (
-                      <a href={task.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-[var(--accent)] hover:underline">
+                      <a href={task.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-accent hover:underline">
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                           <polyline points="15 3 21 3 21 9" />
@@ -504,7 +504,7 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
                 </div>
                 <button
                   onClick={() => deleteSideTask(task.id)}
-                  className="p-1.5 text-[var(--text-muted)] hover:text-[var(--error)] rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="p-1.5 text-(--text-muted) hover:text-(--error) rounded opacity-0 group-hover:opacity-100 transition-opacity"
                   title="Delete"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -519,7 +519,7 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
             {completedPoolSideTasks.length > 0 && (
               <button
                 onClick={() => setShowCompletedSideTasks(!showCompletedSideTasks)}
-                className="flex items-center gap-2 text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] mb-2"
+                className="flex items-center gap-2 text-xs text-(--text-muted) hover:text-(--text-secondary) mb-2"
               >
                 <svg
                   width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
@@ -531,16 +531,16 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
               </button>
             )}
             {showCompletedSideTasks && completedPoolSideTasks.map((task) => (
-              <div key={task.id} className="group flex items-start gap-3 p-2 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] opacity-50 mb-2">
+              <div key={task.id} className="group flex items-start gap-3 p-2 rounded border border-(--border-color) bg-(--bg-secondary) opacity-50 mb-2">
                 <button
                   onClick={() => toggleSideTaskComplete(task.id)}
-                  className="mt-0.5 w-5 h-5 rounded-sm border-2 border-[var(--accent)] bg-[var(--accent)] flex items-center justify-center flex-shrink-0 cursor-pointer"
+                  className="mt-0.5 w-5 h-5 rounded-sm border-2 border-accent bg-accent flex items-center justify-center shrink-0 cursor-pointer"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 </button>
-                <p className="text-sm text-[var(--text-muted)] line-through flex-1">{task.name}</p>
+                <p className="text-sm text-(--text-muted) line-through flex-1">{task.name}</p>
               </div>
             ))}
 
@@ -551,7 +551,7 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="card space-y-3 border-[var(--accent)]/30"
+                  className="card space-y-3 border-accent/30"
                 >
                   <input
                     type="text"
@@ -624,7 +624,7 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
           </div>
 
           {/* Footer actions */}
-          <div className="mt-4 pt-4 border-t border-[var(--border-color)] flex items-center justify-between">
+          <div className="mt-4 pt-4 border-t border-(--border-color) flex items-center justify-between">
             {!editingPool && (
               <button
                 onClick={() => {
@@ -632,7 +632,7 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
                   setPoolDescription(displayPool.description || '');
                   setEditingPool(true);
                 }}
-                className="text-sm text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors"
+                className="text-sm text-(--text-muted) hover:text-accent transition-colors"
               >
                 Edit Pool
               </button>
@@ -647,23 +647,23 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
                     setDeleteMode('confirm');
                   }
                 }}
-                className="text-sm text-[var(--text-muted)] hover:text-[var(--error)] transition-colors"
+                className="text-sm text-(--text-muted) hover:text-(--error) transition-colors"
               >
                 Delete Pool
               </button>
             )}
             {deleteMode === 'confirm' && (
               <div className="flex items-center gap-2">
-                <span className="text-sm text-[var(--error)]">Delete this pool?</span>
+                <span className="text-sm text-(--error)">Delete this pool?</span>
                 <button
                   onClick={handleDeletePool}
-                  className="px-3 py-1.5 text-sm bg-[var(--error)] text-white rounded hover:bg-[var(--error)]/80"
+                  className="px-3 py-1.5 text-sm bg-(--error) text-white rounded hover:bg-(--error)/80"
                 >
                   Yes, Delete
                 </button>
                 <button
                   onClick={() => setDeleteMode(null)}
-                  className="px-3 py-1.5 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                  className="px-3 py-1.5 text-sm text-(--text-muted) hover:text-foreground"
                 >
                   Cancel
                 </button>
@@ -671,7 +671,7 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
             )}
             {deleteMode === 'choosing' && (
               <div className="flex flex-col gap-2 w-full">
-                <p className="text-sm text-[var(--warning)]">
+                <p className="text-sm text-(--warning)">
                   This pool has {poolSideTasks.length} associated side task{poolSideTasks.length !== 1 ? 's' : ''}. What should happen to them?
                 </p>
                 <div className="flex items-center gap-2">
@@ -681,7 +681,7 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
                       await deletePool(displayPool.id);
                       onClose();
                     }}
-                    className="px-3 py-1.5 text-sm bg-[var(--bg-hover)] border border-[var(--border-color)] text-[var(--text-primary)] rounded hover:border-[var(--accent)]"
+                    className="px-3 py-1.5 text-sm bg-(--bg-hover) border border-(--border-color) text-foreground rounded hover:border-accent"
                   >
                     Keep Side Tasks
                   </button>
@@ -691,13 +691,13 @@ export function PoolDetailModal({ isOpen, onClose, pool }: PoolDetailModalProps)
                       await deletePool(displayPool.id);
                       onClose();
                     }}
-                    className="px-3 py-1.5 text-sm bg-[var(--error)] text-white rounded hover:bg-[var(--error)]/80"
+                    className="px-3 py-1.5 text-sm bg-(--error) text-white rounded hover:bg-(--error)/80"
                   >
                     Delete All
                   </button>
                   <button
                     onClick={() => setDeleteMode(null)}
-                    className="px-3 py-1.5 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                    className="px-3 py-1.5 text-sm text-(--text-muted) hover:text-foreground"
                   >
                     Cancel
                   </button>

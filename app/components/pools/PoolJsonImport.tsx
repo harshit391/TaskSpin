@@ -195,7 +195,7 @@ export function PoolJsonImport() {
             >
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
-                <h3 className="heading-display heading-sub text-[var(--text-primary)]">
+                <h3 className="heading-display heading-sub text-foreground">
                   Import Pool from JSON
                 </h3>
                 <button
@@ -204,7 +204,7 @@ export function PoolJsonImport() {
                     setMessage(null);
                     setJsonText('');
                   }}
-                  className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                  className="p-2 text-(--text-muted) hover:text-foreground"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -213,14 +213,14 @@ export function PoolJsonImport() {
                 </button>
               </div>
 
-              <p className="text-sm text-[var(--text-secondary)] mb-3">
+              <p className="text-sm text-(--text-secondary) mb-3">
                 Paste a single pool object or an array of pools. The first subtask in each pool will be automatically set as active.
               </p>
 
               {/* Format reference toggle */}
               <button
                 onClick={() => setShowFormat(!showFormat)}
-                className="flex items-center gap-2 text-sm text-[var(--accent)] hover:underline mb-3 self-start"
+                className="flex items-center gap-2 text-sm text-accent hover:underline mb-3 self-start"
               >
                 <svg
                   width="14"
@@ -250,8 +250,8 @@ export function PoolJsonImport() {
                         onClick={() => { setFormatTab('single'); setCopied(false); }}
                         className={`px-3 py-1.5 text-xs font-medium uppercase tracking-wider rounded transition-colors ${
                           formatTab === 'single'
-                            ? 'bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30'
-                            : 'text-[var(--text-muted)] border border-[var(--border-color)] hover:text-[var(--text-secondary)]'
+                            ? 'bg-accent/10 text-accent border border-accent/30'
+                            : 'text-(--text-muted) border border-(--border-color) hover:text-(--text-secondary)'
                         }`}
                       >
                         Single Pool
@@ -260,8 +260,8 @@ export function PoolJsonImport() {
                         onClick={() => { setFormatTab('multiple'); setCopied(false); }}
                         className={`px-3 py-1.5 text-xs font-medium uppercase tracking-wider rounded transition-colors ${
                           formatTab === 'multiple'
-                            ? 'bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30'
-                            : 'text-[var(--text-muted)] border border-[var(--border-color)] hover:text-[var(--text-secondary)]'
+                            ? 'bg-accent/10 text-accent border border-accent/30'
+                            : 'text-(--text-muted) border border-(--border-color) hover:text-(--text-secondary)'
                         }`}
                       >
                         Multiple Pools
@@ -269,7 +269,7 @@ export function PoolJsonImport() {
                     </div>
 
                     <div className="relative">
-                      <pre className="p-3 pr-10 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] text-xs text-[var(--text-secondary)] overflow-x-auto max-h-48 overflow-y-auto font-mono">
+                      <pre className="p-3 pr-10 rounded border border-(--border-color) bg-(--bg-secondary) text-xs text-(--text-secondary) overflow-x-auto max-h-48 overflow-y-auto font-mono">
                         {formatTab === 'single' ? EXAMPLE_SINGLE : EXAMPLE_MULTIPLE}
                       </pre>
                       <button
@@ -278,7 +278,7 @@ export function PoolJsonImport() {
                           setCopied(true);
                           setTimeout(() => setCopied(false), 1500);
                         }}
-                        className="absolute top-2 right-2 p-1.5 rounded border border-[var(--border-color)] bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[var(--accent)] transition-colors"
+                        className="absolute top-2 right-2 p-1.5 rounded border border-(--border-color) bg-(--bg-card) text-(--text-muted) hover:text-accent hover:border-accent transition-colors"
                         title="Copy to clipboard"
                       >
                         {copied ? (
@@ -295,11 +295,11 @@ export function PoolJsonImport() {
                     </div>
 
                     <div className="mt-2 space-y-1">
-                      <p className="text-xs text-[var(--text-muted)]">
-                        <strong className="text-[var(--text-secondary)]">Required:</strong> <code className="text-[var(--accent)]">name</code> (string) for each pool and subtask
+                      <p className="text-xs text-(--text-muted)">
+                        <strong className="text-(--text-secondary)">Required:</strong> <code className="text-accent">name</code> (string) for each pool and subtask
                       </p>
-                      <p className="text-xs text-[var(--text-muted)]">
-                        <strong className="text-[var(--text-secondary)]">Optional:</strong> <code className="text-[var(--accent)]">description</code> (string), <code className="text-[var(--accent)]">link</code> (URL string), <code className="text-[var(--accent)]">estimatedDuration</code> (days, default 7)
+                      <p className="text-xs text-(--text-muted)">
+                        <strong className="text-(--text-secondary)">Optional:</strong> <code className="text-accent">description</code> (string), <code className="text-accent">link</code> (URL string), <code className="text-accent">estimatedDuration</code> (days, default 7)
                       </p>
                     </div>
                   </motion.div>
@@ -311,8 +311,8 @@ export function PoolJsonImport() {
                 <div
                   className={`p-3 rounded border mb-3 text-sm whitespace-pre-line ${
                     message.type === 'success'
-                      ? 'border-[var(--success)]/30 bg-[var(--success)]/10 text-[var(--success)]'
-                      : 'border-[var(--error)]/30 bg-[var(--error)]/10 text-[var(--error)]'
+                      ? 'border-(--success)/30 bg-(--success)/10 text-(--success)'
+                      : 'border-(--error)/30 bg-(--error)/10 text-(--error)'
                   }`}
                 >
                   {message.text}
@@ -324,7 +324,7 @@ export function PoolJsonImport() {
                 value={jsonText}
                 onChange={(e) => setJsonText(e.target.value)}
                 placeholder='Paste JSON here... e.g. { "name": "My Pool", "subtasks": [...] }'
-                className="input flex-1 min-h-[180px] resize-none font-mono text-sm"
+                className="input flex-1 min-h-45 resize-none font-mono text-sm"
               />
 
               {/* Actions */}

@@ -86,7 +86,7 @@ export function PoolForm({ onSuccess }: PoolFormProps) {
                 autoFocus
               />
               {errors.name && (
-                <p className="mt-2 text-sm text-[var(--error)]">{errors.name.message}</p>
+                <p className="mt-2 text-sm text-(--error)">{errors.name.message}</p>
               )}
             </div>
 
@@ -99,7 +99,7 @@ export function PoolForm({ onSuccess }: PoolFormProps) {
                 className="input resize-none"
               />
               {errors.description && (
-                <p className="mt-2 text-sm text-[var(--error)]">{errors.description.message}</p>
+                <p className="mt-2 text-sm text-(--error)">{errors.description.message}</p>
               )}
             </div>
 
