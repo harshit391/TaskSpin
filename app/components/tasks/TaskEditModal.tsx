@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { Task } from '../../types';
 import { FREQUENCY_OPTIONS, DAY_LABELS } from '../../types';
 import { useTaskStore } from '../../store/taskStore';
+import { useSideTaskStore } from '../../store/sideTaskStore';
+import { usePoolStore } from '../../store/poolStore';
 
 interface TaskEditModalProps {
   isOpen: boolean;
@@ -18,9 +20,15 @@ export function TaskEditModal({ isOpen, onClose, task }: TaskEditModalProps) {
   const [editDescription, setEditDescription] = useState(task.description || '');
   const [editLink, setEditLink] = useState(task.link || '');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showMoveToSide, setShowMoveToSide] = useState(false);
+  const [moveDueDate, setMoveDueDate] = useState('');
+  const [movePoolId, setMovePoolId] = useState('');
+  const [isMoving, setIsMoving] = useState(false);
 
   const updateTask = useTaskStore((state) => state.updateTask);
   const deleteTask = useTaskStore((state) => state.deleteTask);
+  const addSideTask = useSideTaskStore((state) => state.addSideTask);
+  const pools = usePoolStore((state) => state.pools);
 
   // Reset form when task changes or modal opens
   useEffect(() => {
@@ -30,6 +38,9 @@ export function TaskEditModal({ isOpen, onClose, task }: TaskEditModalProps) {
       setEditLink(task.link || '');
       setIsEditing(false);
       setShowDeleteConfirm(false);
+      setShowMoveToSide(false);
+      setMoveDueDate('');
+      setMovePoolId('');
     }
   }, [isOpen, task]);
 
@@ -70,6 +81,23 @@ export function TaskEditModal({ isOpen, onClose, task }: TaskEditModalProps) {
   const handleOpenLink = () => {
     if (task.link) {
       window.open(task.link, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleMoveToSideTask = async () => {
+    setIsMoving(true);
+    try {
+      await addSideTask(
+        task.name,
+        task.description || undefined,
+        task.link || undefined,
+        moveDueDate || undefined,
+        movePoolId || undefined
+      );
+      await deleteTask(task.id);
+      onClose();
+    } finally {
+      setIsMoving(false);
     }
   };
 
@@ -218,9 +246,9 @@ export function TaskEditModal({ isOpen, onClose, task }: TaskEditModalProps) {
               </div>
 
               {/* Footer Actions */}
-              <div className="flex items-center justify-between gap-3 p-6 border-t border-(--border-color) bg-(--bg-secondary)">
+              <div className="p-6 border-t border-(--border-color) bg-(--bg-secondary)">
                 {isEditing ? (
-                  <>
+                  <div className="flex items-center justify-between gap-3">
                     <button
                       onClick={handleCancelEdit}
                       className="btn-ghost"
@@ -233,9 +261,9 @@ export function TaskEditModal({ isOpen, onClose, task }: TaskEditModalProps) {
                     >
                       Save Changes
                     </button>
-                  </>
+                  </div>
                 ) : showDeleteConfirm ? (
-                  <>
+                  <div className="flex items-center justify-between gap-3">
                     <p className="text-sm text-(--text-secondary)">Delete this task?</p>
                     <div className="flex items-center gap-2">
                       <button
@@ -251,19 +279,83 @@ export function TaskEditModal({ isOpen, onClose, task }: TaskEditModalProps) {
                         Delete
                       </button>
                     </div>
-                  </>
+                  </div>
+                ) : showMoveToSide ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-(--text-secondary)">Move to side tasks with optional details:</p>
+                    <div className="flex gap-3">
+                      <div className="flex-1">
+                        <label className="label">Due Date (Optional)</label>
+                        <input
+                          type="date"
+                          value={moveDueDate}
+                          onChange={(e) => setMoveDueDate(e.target.value)}
+                          className="input w-full"
+                        />
+                      </div>
+                      {pools.length > 0 && (
+                        <div className="flex-1">
+                          <label className="label">Pool (Optional)</label>
+                          <select
+                            value={movePoolId}
+                            onChange={(e) => setMovePoolId(e.target.value)}
+                            className="input w-full"
+                          >
+                            <option value="">No pool</option>
+                            {pools.map((pool) => (
+                              <option key={pool.id} value={pool.id}>{pool.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => setShowMoveToSide(false)}
+                        className="btn-ghost"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleMoveToSideTask}
+                        disabled={isMoving}
+                        className="btn-accent flex items-center gap-2"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M15 3h6v6" />
+                          <path d="M10 14L21 3" />
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        </svg>
+                        {isMoving ? 'Moving...' : 'Move'}
+                      </button>
+                    </div>
+                  </div>
                 ) : (
-                  <>
-                    <button
-                      onClick={() => setShowDeleteConfirm(true)}
-                      className="flex items-center gap-2 px-4 py-2 text-(--error) hover:bg-(--error)/10 rounded transition-colors"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                      </svg>
-                      Delete
-                    </button>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="flex items-center gap-2 px-4 py-2 text-(--error) hover:bg-(--error)/10 rounded transition-colors"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                        Delete
+                      </button>
+                      <button
+                        onClick={() => setShowMoveToSide(true)}
+                        className="flex items-center gap-2 px-4 py-2 text-(--text-secondary) hover:text-accent hover:bg-accent/10 rounded transition-colors"
+                        title="Move to Side Tasks"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M15 3h6v6" />
+                          <path d="M10 14L21 3" />
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        </svg>
+                        Side Task
+                      </button>
+                    </div>
 
                     <button
                       onClick={() => setIsEditing(true)}
@@ -275,7 +367,7 @@ export function TaskEditModal({ isOpen, onClose, task }: TaskEditModalProps) {
                       </svg>
                       Edit Task
                     </button>
-                  </>
+                  </div>
                 )}
               </div>
             </div>

@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSideTaskStore } from '../../store/sideTaskStore';
 import { usePoolStore } from '../../store/poolStore';
+import { MoveToTaskModal } from './MoveToTaskModal';
 import type { SideTask } from '../../types';
 
 const sideTaskSchema = z.object({
@@ -36,6 +37,7 @@ export function SideTaskList() {
   const [editDueDate, setEditDueDate] = useState('');
   const [editPoolId, setEditPoolId] = useState('');
   const [showCompleted, setShowCompleted] = useState(false);
+  const [movingTask, setMovingTask] = useState<SideTask | null>(null);
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -270,6 +272,13 @@ export function SideTaskList() {
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                       </svg>
                     </button>
+                    <button onClick={() => setMovingTask(task)} className="p-1.5 text-(--text-muted) hover:text-accent rounded" title="Move to Main Tasks">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M15 3h6v6" />
+                        <path d="M10 14L21 3" />
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      </svg>
+                    </button>
                     <button onClick={() => deleteSideTask(task.id)} className="p-1.5 text-(--text-muted) hover:text-(--error) rounded" title="Delete">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <polyline points="3 6 5 6 21 6" />
@@ -336,6 +345,15 @@ export function SideTaskList() {
             )}
           </AnimatePresence>
         </div>
+      )}
+
+      {/* Move to Main Tasks Modal */}
+      {movingTask && (
+        <MoveToTaskModal
+          isOpen={!!movingTask}
+          onClose={() => setMovingTask(null)}
+          sideTask={movingTask}
+        />
       )}
     </div>
   );
