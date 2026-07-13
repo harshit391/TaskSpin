@@ -8,7 +8,7 @@ import { useTasks } from "@/hooks/useTasks";
 import { ProjectCard } from "@/components/ProjectCard";
 
 export default function ProjectsDashboard() {
-  const { projects, isLoading: projectsLoading } = useProjects();
+  const { projects, isLoading: projectsLoading, editProject, removeProject } = useProjects();
   const { tasks, isLoading: tasksLoading } = useTasks();
 
   const isLoading = projectsLoading || tasksLoading;
@@ -90,6 +90,8 @@ export default function ProjectsDashboard() {
                 totalTasks={totalTasks}
                 completedTasks={completedTasks}
                 index={i}
+                onEdit={editProject}
+                onDelete={removeProject}
               />
             ))}
           </div>

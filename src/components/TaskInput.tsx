@@ -7,11 +7,20 @@ interface TaskInputProps {
   onAdd: (title: string) => void;
   onAddBatch: (titles: string[], projectName?: string) => void;
   isLoading: boolean;
+  inputRef?: React.RefObject<HTMLTextAreaElement | null>;
 }
 
-export function TaskInput({ onAdd, onAddBatch, isLoading }: TaskInputProps) {
+export function TaskInput({ onAdd, onAddBatch, isLoading, inputRef }: TaskInputProps) {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const mergedRef = useCallback(
+    (el: HTMLTextAreaElement | null) => {
+      (textareaRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
+      if (inputRef) (inputRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
+    },
+    [inputRef]
+  );
 
   const allLines = value
     .split("\n")
@@ -70,7 +79,7 @@ export function TaskInput({ onAdd, onAddBatch, isLoading }: TaskInputProps) {
       <div className="flex gap-3 items-end">
         <div className="flex-1 relative">
           <textarea
-            ref={textareaRef}
+            ref={mergedRef}
             value={value}
             onChange={handleChange}
             onKeyDown={handleKeyDown}

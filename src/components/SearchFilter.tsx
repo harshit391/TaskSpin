@@ -18,6 +18,7 @@ interface SearchFilterProps {
   onProjectsChange: (projects: string[]) => void;
   projects: Project[];
   counts: { all: number; active: number; completed: number };
+  searchInputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
 const statusOptions: { key: FilterTab; label: string }[] = [
@@ -44,6 +45,7 @@ export function SearchFilter({
   onProjectsChange,
   projects,
   counts,
+  searchInputRef,
 }: SearchFilterProps) {
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const hasActiveFilters = dateFilter !== "all" || selectedProjects.length > 0;
@@ -66,6 +68,7 @@ export function SearchFilter({
           <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
         </svg>
         <input
+          ref={searchInputRef}
           type="text"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}

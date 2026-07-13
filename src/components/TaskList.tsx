@@ -8,11 +8,12 @@ interface TaskListProps {
   tasks: Task[];
   projects: Project[];
   onToggle: (id: string, completed: boolean) => void;
+  onEdit: (id: string, title: string) => void;
   onDelete: (id: string) => void;
   onAssign: (id: string, projectId: string | null) => void;
 }
 
-export function TaskList({ tasks, projects, onToggle, onDelete, onAssign }: TaskListProps) {
+export function TaskList({ tasks, projects, onToggle, onEdit, onDelete, onAssign }: TaskListProps) {
   if (tasks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4">
@@ -44,6 +45,7 @@ export function TaskList({ tasks, projects, onToggle, onDelete, onAssign }: Task
             task={task}
             projects={projects}
             onToggle={onToggle}
+            onEdit={onEdit}
             onDelete={onDelete}
             onAssign={onAssign}
           />

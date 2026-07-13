@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchTasks, createTask, createTasksBatch, toggleTask, assignTaskToProject, deleteTask } from "@/lib/api";
+import { fetchTasks, createTask, createTasksBatch, toggleTask, updateTaskTitle, assignTaskToProject, deleteTask } from "@/lib/api";
 import { Task } from "@/types/task";
 import { showToast } from "@/hooks/useToast";
 
@@ -130,6 +130,28 @@ export function useTasks() {
     },
   });
 
+  const editMutation = useMutation({
+    mutationFn: ({ id, title }: { id: string; title: string }) =>
+      updateTaskTitle(id, title),
+    onMutate: async ({ id, title }) => {
+      await queryClient.cancelQueries({ queryKey: TASKS_KEY });
+      const previous = queryClient.getQueryData<Task[]>(TASKS_KEY);
+      queryClient.setQueryData<Task[]>(TASKS_KEY, (old) =>
+        old?.map((t) => (t.id === id ? { ...t, title } : t))
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(TASKS_KEY, context.previous);
+      }
+      showToast("Failed to edit task", "error");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: TASKS_KEY });
+    },
+  });
+
   const assignMutation = useMutation({
     mutationFn: ({ id, projectId }: { id: string; projectId: string | null }) =>
       assignTaskToProject(id, projectId),
@@ -163,6 +185,8 @@ export function useTasks() {
     isAdding: addMutation.isPending || batchMutation.isPending,
     toggleTask: (id: string, completed: boolean) =>
       toggleMutation.mutate({ id, completed }),
+    editTask: (id: string, title: string) =>
+      editMutation.mutate({ id, title }),
     assignToProject: (id: string, projectId: string | null) =>
       assignMutation.mutate({ id, projectId }),
     deleteTask: deleteMutation.mutate,

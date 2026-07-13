@@ -4,7 +4,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Project, ProjectFilter } from "@/types/task";
+import { Project, ProjectFilter, Task } from "@/types/task";
 import { ProjectForm } from "./ProjectForm";
 
 interface SidebarProps {
@@ -16,6 +16,7 @@ interface SidebarProps {
   isAddingProject: boolean;
   inboxCount: number;
   allCount: number;
+  activeTasks: Task[];
 }
 
 export function Sidebar({
@@ -27,6 +28,7 @@ export function Sidebar({
   isAddingProject,
   inboxCount,
   allCount,
+  activeTasks,
 }: SidebarProps) {
   const [showForm, setShowForm] = useState(false);
   const pathname = usePathname();
@@ -126,7 +128,7 @@ export function Sidebar({
             >
               <SidebarItem
                 label={project.name}
-                count={project._count?.tasks ?? 0}
+                count={activeTasks.filter((t) => t.projectId === project.id).length}
                 isActive={selectedFilter === project.id}
                 onClick={() => onFilterChange(project.id)}
                 icon={

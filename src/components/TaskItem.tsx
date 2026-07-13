@@ -8,13 +8,18 @@ interface TaskItemProps {
   task: Task;
   projects: Project[];
   onToggle: (id: string, completed: boolean) => void;
+  onEdit: (id: string, title: string) => void;
   onDelete: (id: string) => void;
   onAssign: (id: string, projectId: string | null) => void;
 }
 
-export function TaskItem({ task, projects, onToggle, onDelete, onAssign }: TaskItemProps) {
+export function TaskItem({ task, projects, onToggle, onEdit, onDelete, onAssign }: TaskItemProps) {
   const [showMenu, setShowMenu] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState(task.title);
   const menuRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!showMenu) return;
@@ -26,6 +31,31 @@ export function TaskItem({ task, projects, onToggle, onDelete, onAssign }: TaskI
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [showMenu]);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  const handleSave = () => {
+    const trimmed = editValue.trim();
+    if (trimmed && trimmed !== task.title) {
+      onEdit(task.id, trimmed);
+    } else {
+      setEditValue(task.title);
+    }
+    setEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleSave();
+    if (e.key === "Escape") {
+      setEditValue(task.title);
+      setEditing(false);
+    }
+  };
 
   return (
     <motion.div
@@ -59,25 +89,57 @@ export function TaskItem({ task, projects, onToggle, onDelete, onAssign }: TaskI
 
       {/* Title + Project Badge */}
       <div className="flex-1 min-w-0">
-        <span
-          className={`block text-sm sm:text-base lg:text-lg transition-all truncate ${
-            task.completed ? "line-through text-text-muted" : "text-text-primary"
-          }`}
-        >
-          {task.title}
-        </span>
-        {task.project && (
+        {editing ? (
+          <input
+            ref={inputRef}
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={handleSave}
+            onKeyDown={handleKeyDown}
+            className="w-full text-sm sm:text-base lg:text-lg bg-bg-primary border border-accent rounded-[3px] px-2 py-0.5 text-text-primary focus:outline-none"
+          />
+        ) : (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            onDoubleClick={() => { setEditValue(task.title); setEditing(true); }}
+            className={`block text-left text-sm sm:text-base lg:text-lg transition-all w-full ${
+              expanded ? "whitespace-normal break-words" : "truncate"
+            } ${
+              task.completed ? "line-through text-text-muted" : "text-text-primary"
+            }`}
+            title={expanded ? undefined : task.title}
+            aria-label={expanded ? "Collapse task title" : "Expand task title"}
+          >
+            {task.title}
+          </button>
+        )}
+        {task.project && !editing && (
           <span className="inline-flex items-center gap-1 mt-1">
             <span
               className="w-2 h-2 rounded-full flex-shrink-0"
               style={{ backgroundColor: task.project.color }}
             />
-            <span className="text-[11px] text-text-muted truncate max-w-[120px] hidden sm:inline">
+            <span className="text-[11px] text-text-muted hidden sm:inline">
+              {task.project.name}
+            </span>
+            <span className="text-[11px] text-text-muted truncate max-w-[100px] sm:hidden">
               {task.project.name}
             </span>
           </span>
         )}
       </div>
+
+      {/* Edit Button */}
+      <button
+        onClick={() => { setEditValue(task.title); setEditing(true); }}
+        aria-label={`Edit "${task.title}"`}
+        className="flex-shrink-0 text-text-muted hover:text-accent transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-[2px] min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
 
       {/* Move to project button */}
       <div className="relative flex-shrink-0" ref={menuRef}>

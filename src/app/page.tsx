@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, Suspense } from "react";
+import { useState, useMemo, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "@/components/Header";
@@ -10,8 +10,10 @@ import { TaskInput } from "@/components/TaskInput";
 import { TaskList } from "@/components/TaskList";
 import { ProgressBar } from "@/components/ProgressBar";
 import { SpinModal } from "@/components/SpinModal";
+import { ShortcutsModal } from "@/components/ShortcutsModal";
 import { useTasks } from "@/hooks/useTasks";
 import { useProjects } from "@/hooks/useProjects";
+import { useKeyboardShortcuts, Shortcut } from "@/hooks/useKeyboardShortcuts";
 import { FilterTab, ProjectFilter } from "@/types/task";
 
 function isToday(dateStr: string): boolean {
@@ -67,8 +69,15 @@ function HomeContent() {
   // Spin modal state
   const [spinOpen, setSpinOpen] = useState(false);
 
+  // Shortcuts modal state
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+
+  // Refs for keyboard shortcuts
+  const taskInputRef = useRef<HTMLTextAreaElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   // Data hooks
-  const { tasks, isLoading, isError, addTask, addTasksBatch, isAdding, toggleTask, assignToProject, deleteTask } = useTasks();
+  const { tasks, isLoading, isError, addTask, addTasksBatch, isAdding, toggleTask, editTask, assignToProject, deleteTask } = useTasks();
   const { projects, addProject, removeProject, isAdding: isAddingProject } = useProjects();
 
   // Apply all filters
@@ -117,7 +126,8 @@ function HomeContent() {
 
   const completedCount = filteredTasks.filter((t) => t.completed).length;
   const activeCount = filteredTasks.filter((t) => !t.completed).length;
-  const inboxCount = tasks.filter((t) => t.projectId === null).length;
+  const activeTasks = tasks.filter((t) => !t.completed);
+  const inboxCount = activeTasks.filter((t) => t.projectId === null).length;
 
   // Counts for status pills (based on sidebar + search + date + project multi-select, but NOT status)
   const statusCounts = useMemo(() => {
@@ -149,11 +159,27 @@ function HomeContent() {
     setSidebarOpen(false);
   };
 
+  // Keyboard shortcuts
+  const shortcuts: Shortcut[] = useMemo(() => [
+    { key: "n", action: () => taskInputRef.current?.focus(), description: "New task", category: "Tasks" },
+    { key: "/", action: () => searchInputRef.current?.focus(), description: "Focus search", category: "Navigation" },
+    { key: "s", action: () => setSpinOpen(true), description: "Open TaskSpin", category: "Navigation" },
+    { key: "m", action: () => setSidebarOpen((v) => !v), description: "Toggle sidebar", category: "Navigation" },
+    { key: "1", action: () => setStatusFilter("all"), description: "All tasks", category: "Filters" },
+    { key: "2", action: () => setStatusFilter("active"), description: "Active tasks", category: "Filters" },
+    { key: "3", action: () => setStatusFilter("completed"), description: "Completed tasks", category: "Filters" },
+    { key: "f", action: () => (document.querySelector('[aria-label="Toggle filters"]') as HTMLButtonElement)?.click(), description: "Toggle filter panel", category: "Filters" },
+    { key: "?", action: () => setShortcutsOpen(true), description: "Shortcuts help", category: "Help" },
+  ], []);
+
+  useKeyboardShortcuts(shortcuts, !spinOpen && !shortcutsOpen);
+
   return (
     <>
       <Header
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         onSpin={() => setSpinOpen(true)}
+        onShortcuts={() => setShortcutsOpen(true)}
       />
 
       <div className="flex-1 flex pt-[72px] min-h-0">
@@ -167,8 +193,10 @@ function HomeContent() {
             onDeleteProject={removeProject}
             isAddingProject={isAddingProject}
             inboxCount={inboxCount}
-            allCount={tasks.length}
+            allCount={activeTasks.length}
+            activeTasks={activeTasks}
           />
+
         </div>
 
         {/* Mobile Sidebar Overlay */}
@@ -197,7 +225,8 @@ function HomeContent() {
                   onDeleteProject={removeProject}
                   isAddingProject={isAddingProject}
                   inboxCount={inboxCount}
-                  allCount={tasks.length}
+                  allCount={activeTasks.length}
+                  activeTasks={activeTasks}
                 />
               </motion.div>
             </>
@@ -222,7 +251,7 @@ function HomeContent() {
             )}
 
             {/* Add Task Input */}
-            <TaskInput onAdd={addTask} onAddBatch={(titles, projectName) => addTasksBatch(titles, projectName)} isLoading={isAdding} />
+            <TaskInput onAdd={addTask} onAddBatch={(titles, projectName) => addTasksBatch(titles, projectName)} isLoading={isAdding} inputRef={taskInputRef} />
 
             {/* Search & Filter */}
             <SearchFilter
@@ -236,6 +265,7 @@ function HomeContent() {
               onProjectsChange={setSelectedProjects}
               projects={projects}
               counts={statusCounts}
+              searchInputRef={searchInputRef}
             />
 
             {/* Task List */}
@@ -266,6 +296,7 @@ function HomeContent() {
                   tasks={filteredTasks}
                   projects={projects}
                   onToggle={toggleTask}
+                  onEdit={editTask}
                   onDelete={deleteTask}
                   onAssign={assignToProject}
                 />
@@ -283,6 +314,12 @@ function HomeContent() {
         projects={projects}
         onComplete={(id) => toggleTask(id, true)}
         currentProjectFilter={projectFilter}
+      />
+
+      {/* Shortcuts Modal */}
+      <ShortcutsModal
+        isOpen={shortcutsOpen}
+        onClose={() => setShortcutsOpen(false)}
       />
     </>
   );

@@ -51,6 +51,16 @@ export async function assignTaskToProject(id: string, projectId: string | null):
   return res.json();
 }
 
+export async function updateTaskTitle(id: string, title: string): Promise<Task> {
+  const res = await fetch(`${TASKS_BASE}/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title }),
+  });
+  if (!res.ok) throw new Error("Failed to update task");
+  return res.json();
+}
+
 export async function deleteTask(id: string): Promise<void> {
   const res = await fetch(`${TASKS_BASE}/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error("Failed to delete task");
