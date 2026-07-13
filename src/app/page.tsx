@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
@@ -35,9 +36,27 @@ function isThisMonth(dateStr: string): boolean {
 }
 
 export default function Home() {
+  return (
+    <Suspense>
+      <HomeContent />
+    </Suspense>
+  );
+}
+
+function HomeContent() {
+  // Read project from URL query param (from dashboard card click)
+  const searchParams = useSearchParams();
+
   // Sidebar state
   const [projectFilter, setProjectFilter] = useState<ProjectFilter>("all");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const projectParam = searchParams.get("project");
+    if (projectParam) {
+      setProjectFilter(projectParam);
+    }
+  }, [searchParams]);
 
   // Search & filter state
   const [searchQuery, setSearchQuery] = useState("");

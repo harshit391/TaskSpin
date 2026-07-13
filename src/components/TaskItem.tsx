@@ -29,11 +29,11 @@ export function TaskItem({ task, projects, onToggle, onDelete, onAssign }: TaskI
 
   return (
     <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
+      layout="position"
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: -50, scale: 0.95 }}
-      transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+      exit={{ opacity: 0, height: 0, marginBottom: 0, overflow: "hidden" }}
+      transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
       className={`group flex items-center gap-3 sm:gap-4 bg-bg-card border border-border rounded-[2px] p-3.5 sm:p-5 transition-all hover:border-border-subtle hover:bg-bg-hover ${
         task.completed ? "opacity-50" : ""
       }`}

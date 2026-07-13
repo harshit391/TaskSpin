@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Project, ProjectFilter } from "@/types/task";
 import { ProjectForm } from "./ProjectForm";
@@ -27,6 +29,7 @@ export function Sidebar({
   allCount,
 }: SidebarProps) {
   const [showForm, setShowForm] = useState(false);
+  const pathname = usePathname();
 
   const handleAddProject = (name: string, color: string) => {
     onAddProject(name, color);
@@ -61,6 +64,24 @@ export function Sidebar({
           </svg>
         }
       />
+
+      {/* Projects Dashboard Link */}
+      <Link
+        href="/projects"
+        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[3px] text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+          pathname === "/projects"
+            ? "bg-bg-hover text-text-primary"
+            : "text-text-secondary hover:bg-bg-hover/50 hover:text-text-primary"
+        }`}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <rect x="3" y="3" width="7" height="7" rx="1" strokeLinecap="round" />
+          <rect x="14" y="3" width="7" height="7" rx="1" strokeLinecap="round" />
+          <rect x="3" y="14" width="7" height="7" rx="1" strokeLinecap="round" />
+          <rect x="14" y="14" width="7" height="7" rx="1" strokeLinecap="round" />
+        </svg>
+        <span className="flex-1 text-sm truncate">Projects Dashboard</span>
+      </Link>
 
       {/* Divider */}
       <div className="h-px bg-border my-3!" />

@@ -37,7 +37,7 @@ export function TaskList({ tasks, projects, onToggle, onDelete, onAssign }: Task
 
   return (
     <div className="space-y-2" role="list" aria-label="Task list">
-      <AnimatePresence mode="popLayout">
+      <AnimatePresence initial={false}>
         {tasks.map((task) => (
           <TaskItem
             key={task.id}
