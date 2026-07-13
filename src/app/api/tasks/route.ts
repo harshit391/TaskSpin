@@ -21,7 +21,11 @@ export async function POST(request: Request) {
   }
 
   const task = await prisma.task.create({
-    data: { title },
+    data: {
+      title,
+      ...(body.projectId ? { projectId: body.projectId } : {}),
+    },
+    include: { project: true },
   });
 
   return NextResponse.json(task, { status: 201 });

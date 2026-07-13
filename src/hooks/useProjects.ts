@@ -58,5 +58,9 @@ export function useProjects() {
       editMutation.mutate({ id, data }),
     removeProject: removeMutation.mutate,
     isAdding: addMutation.isPending,
+    isMutating:
+      addMutation.isPending ||
+      editMutation.isPending ||
+      removeMutation.isPending,
   };
 }

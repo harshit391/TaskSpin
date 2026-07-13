@@ -16,15 +16,16 @@ export function useTasks() {
   });
 
   const addMutation = useMutation({
-    mutationFn: createTask,
-    onMutate: async (title) => {
+    mutationFn: ({ title, projectId }: { title: string; projectId?: string | null }) =>
+      createTask(title, projectId),
+    onMutate: async ({ title, projectId }) => {
       await queryClient.cancelQueries({ queryKey: TASKS_KEY });
       const previous = queryClient.getQueryData<Task[]>(TASKS_KEY);
       const optimistic: Task = {
         id: `temp-${Date.now()}`,
         title,
         completed: false,
-        projectId: null,
+        projectId: projectId ?? null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -33,7 +34,7 @@ export function useTasks() {
       );
       return { previous };
     },
-    onError: (_err, _title, context) => {
+    onError: (_err, _vars, context) => {
       if (context?.previous) {
         queryClient.setQueryData(TASKS_KEY, context.previous);
       }
@@ -179,10 +180,18 @@ export function useTasks() {
     tasks: query.data ?? [],
     isLoading: query.isLoading,
     isError: query.isError,
-    addTask: addMutation.mutate,
+    addTask: (title: string, projectId?: string | null) =>
+      addMutation.mutate({ title, projectId }),
     addTasksBatch: (titles: string[], projectName?: string) =>
       batchMutation.mutate({ titles, projectName }),
     isAdding: addMutation.isPending || batchMutation.isPending,
+    isMutating:
+      addMutation.isPending ||
+      batchMutation.isPending ||
+      toggleMutation.isPending ||
+      editMutation.isPending ||
+      assignMutation.isPending ||
+      deleteMutation.isPending,
     toggleTask: (id: string, completed: boolean) =>
       toggleMutation.mutate({ id, completed }),
     editTask: (id: string, title: string) =>
