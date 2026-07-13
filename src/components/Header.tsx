@@ -1,0 +1,64 @@
+"use client";
+
+import { motion } from "framer-motion";
+
+interface HeaderProps {
+  onToggleSidebar: () => void;
+  onSpin: () => void;
+}
+
+export function Header({ onToggleSidebar, onSpin }: HeaderProps) {
+  return (
+    <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-bg-primary/80 backdrop-blur-sm">
+      <div className="w-[92%] sm:w-[88%] md:w-[85%] lg:w-[82%] max-w-5xl mx-auto flex items-center justify-between py-4">
+        <div className="flex items-center gap-3">
+          {/* Mobile sidebar toggle */}
+          <button
+            onClick={onToggleSidebar}
+            className="sm:hidden min-w-[44px] min-h-[44px] inline-flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-[2px]"
+            aria-label="Toggle sidebar"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M3 12h18M3 6h18M3 18h18" strokeLinecap="round" />
+            </svg>
+          </button>
+
+          <motion.h1
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring", bounce: 0.3 }}
+            className="font-[family-name:var(--font-oswald)] text-2xl sm:text-3xl font-semibold uppercase tracking-[0.02em] leading-none"
+          >
+            Task<span className="text-accent">Spin</span>
+          </motion.h1>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* Spin Button */}
+          <button
+            onClick={onSpin}
+            className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-white text-xs sm:text-sm font-medium uppercase tracking-[0.05em] px-3 sm:px-4 py-2 rounded-[4px] transition-all hover:shadow-[0_0_20px_var(--color-accent-glow)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent min-h-[44px]"
+            aria-label="Random task selector"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M18 2l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M18 14l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="hidden sm:inline">Spin</span>
+          </button>
+
+          {/* Status indicator */}
+          <div className="hidden sm:flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+            <span className="text-xs text-text-muted uppercase tracking-widest">
+              Online
+            </span>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
