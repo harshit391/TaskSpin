@@ -184,7 +184,7 @@ function HomeContent() {
 
       <div className="flex-1 flex pt-[72px] min-h-0">
         {/* Desktop Sidebar */}
-        <div className="hidden sm:block w-64 flex-shrink-0 border-r border-border bg-bg-secondary overflow-hidden">
+        <div className="hidden sm:block w-64 flex-shrink-0 border-r border-border bg-bg-secondary overflow-y-auto">
           <Sidebar
             projects={projects}
             selectedFilter={projectFilter}

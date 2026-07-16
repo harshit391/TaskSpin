@@ -94,13 +94,23 @@ export function Sidebar({
           Projects
         </span>
         <button
-          onClick={() => setShowForm(true)}
+          onClick={() => setShowForm(!showForm)}
           className="text-text-muted hover:text-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-sm p-0.5"
-          aria-label="Add new project"
+          aria-label={showForm ? "Close project form" : "Add new project"}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <motion.svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+            animate={{ rotate: showForm ? 45 : 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          >
             <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-          </svg>
+          </motion.svg>
         </button>
       </div>
 
@@ -109,7 +119,6 @@ export function Sidebar({
         {showForm && (
           <ProjectForm
             onSubmit={handleAddProject}
-            onCancel={() => setShowForm(false)}
             isLoading={isAddingProject}
           />
         )}

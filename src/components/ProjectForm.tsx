@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 
 const PRESET_COLORS = [
@@ -16,13 +16,20 @@ const PRESET_COLORS = [
 
 interface ProjectFormProps {
   onSubmit: (name: string, color: string) => void;
-  onCancel: () => void;
   isLoading?: boolean;
 }
 
-export function ProjectForm({ onSubmit, onCancel, isLoading }: ProjectFormProps) {
+export function ProjectForm({ onSubmit, isLoading }: ProjectFormProps) {
   const [name, setName] = useState("");
   const [color, setColor] = useState(PRESET_COLORS[0]);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 150);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +41,7 @@ export function ProjectForm({ onSubmit, onCancel, isLoading }: ProjectFormProps)
 
   return (
     <motion.form
+      ref={formRef}
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: "auto" }}
       exit={{ opacity: 0, height: 0 }}
@@ -66,22 +74,13 @@ export function ProjectForm({ onSubmit, onCancel, isLoading }: ProjectFormProps)
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={!name.trim() || isLoading}
-          className="flex-1 bg-accent hover:bg-accent-hover text-white text-xs font-medium uppercase tracking-[0.05em] px-3 py-2 rounded-[4px] transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-        >
-          Create
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-3 py-2 text-xs font-medium uppercase tracking-[0.05em] text-text-muted hover:text-text-primary border border-border hover:border-text-muted rounded-[4px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-        >
-          Cancel
-        </button>
-      </div>
+      <button
+        type="submit"
+        disabled={!name.trim() || isLoading}
+        className="w-full bg-accent hover:bg-accent-hover text-white text-xs font-medium uppercase tracking-[0.05em] px-3 py-2 rounded-[4px] transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      >
+        Create
+      </button>
     </motion.form>
   );
 }

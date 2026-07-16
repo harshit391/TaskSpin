@@ -64,7 +64,7 @@ export function TaskItem({ task, projects, onToggle, onEdit, onDelete, onAssign 
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, height: 0, marginBottom: 0, overflow: "hidden" }}
       transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
-      className={`group flex items-center gap-3 sm:gap-4 bg-bg-card border border-border rounded-[2px] p-3.5 sm:p-5 transition-all hover:border-border-subtle hover:bg-bg-hover ${
+      className={`group flex items-start sm:items-center gap-3 sm:gap-4 bg-bg-card border border-border rounded-[2px] p-3.5 sm:p-5 transition-all hover:border-border-subtle hover:bg-bg-hover ${
         task.completed ? "opacity-50" : ""
       }`}
     >
@@ -103,7 +103,7 @@ export function TaskItem({ task, projects, onToggle, onEdit, onDelete, onAssign 
             onClick={() => setExpanded(!expanded)}
             onDoubleClick={() => { setEditValue(task.title); setEditing(true); }}
             className={`block text-left text-sm sm:text-base lg:text-lg transition-all w-full ${
-              expanded ? "whitespace-normal break-words" : "truncate"
+              expanded ? "whitespace-normal break-words" : "line-clamp-2 sm:line-clamp-1"
             } ${
               task.completed ? "line-through text-text-muted" : "text-text-primary"
             }`}

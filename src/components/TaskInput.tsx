@@ -63,6 +63,10 @@ export function TaskInput({ onAdd, onAddBatch, isLoading, inputRef }: TaskInputP
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
+      if (taskCount === 0) {
+        // No tasks to submit yet (e.g. only #ProjectName typed) — insert newline
+        return;
+      }
       e.preventDefault();
       handleSubmit();
     }
