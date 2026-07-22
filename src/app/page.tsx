@@ -12,6 +12,7 @@ import { ProgressBar } from "@/components/ProgressBar";
 import { BulkActionBar } from "@/components/BulkActionBar";
 import { SpinModal } from "@/components/SpinModal";
 import { ShortcutsModal } from "@/components/ShortcutsModal";
+import { FollowUpModal } from "@/components/FollowUpModal";
 import { useTasks } from "@/hooks/useTasks";
 import { useProjects } from "@/hooks/useProjects";
 import { useKeyboardShortcuts, Shortcut } from "@/hooks/useKeyboardShortcuts";
@@ -64,7 +65,7 @@ function HomeContent() {
 
   // Search & filter state
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<FilterTab>("all");
+  const [statusFilter, setStatusFilter] = useState<FilterTab>("active");
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
 
@@ -74,6 +75,9 @@ function HomeContent() {
   // Shortcuts modal state
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
+  // Follow-up modal state
+  const [followUpTask, setFollowUpTask] = useState<{ id: string; title: string; projectId?: string | null } | null>(null);
+
   // Refs for keyboard shortcuts
   const taskInputRef = useRef<HTMLTextAreaElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -81,6 +85,17 @@ function HomeContent() {
   // Data hooks
   const { tasks, isLoading, isError, addTask, addTasksBatch, isAdding, isMutating, toggleTask, editTask, assignToProject, deleteTask, bulkDelete, bulkUpdate } = useTasks();
   const { projects, addProject, removeProject, isAdding: isAddingProject, isMutating: isProjectMutating } = useProjects();
+
+  // Wrap toggleTask to show follow-up modal on completion
+  const handleToggleTask = useCallback((id: string, completed: boolean) => {
+    toggleTask(id, completed);
+    if (completed) {
+      const task = tasks.find(t => t.id === id);
+      if (task) {
+        setFollowUpTask({ id: task.id, title: task.title, projectId: task.projectId });
+      }
+    }
+  }, [toggleTask, tasks]);
 
   // Selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -175,7 +190,7 @@ function HomeContent() {
       ? filteredTasks.filter(t => selectedIds.has(t.id))
       : filteredTasks;
     const text = tasksToCopy
-      .map((t, i) => `${i + 1}. [${t.completed ? "x" : " "}] ${t.title}`)
+      .map((t, i) => `${i + 1}. ${t.title}`)
       .join("\n");
     navigator.clipboard.writeText(text).then(() => {
       showToast(`${tasksToCopy.length} tasks copied to clipboard`, "info");
@@ -374,7 +389,7 @@ function HomeContent() {
                   selectedIds={selectedIds}
                   selectionActive={selectionActive}
                   onToggleSelect={toggleSelection}
-                  onToggle={toggleTask}
+                  onToggle={handleToggleTask}
                   onEdit={editTask}
                   onDelete={deleteTask}
                   onAssign={assignToProject}
@@ -401,17 +416,31 @@ function HomeContent() {
         onClose={() => setShortcutsOpen(false)}
       />
 
+      {/* Follow-Up Modal */}
+      <FollowUpModal
+        isOpen={followUpTask !== null}
+        completedTaskTitle={followUpTask?.title ?? ""}
+        onAdd={(title) => {
+          const pid = followUpTask?.projectId ?? (projectFilter !== "all" && projectFilter !== "inbox" ? projectFilter : undefined);
+          addTask(title, pid);
+          setFollowUpTask(null);
+        }}
+        onSkip={() => setFollowUpTask(null)}
+      />
+
       {/* Bulk Action Bar */}
       <AnimatePresence>
         {selectionActive && (
           <BulkActionBar
             selectedCount={selectedIds.size}
+            totalCount={filteredTasks.length}
             projects={projects}
             onDelete={handleBulkDelete}
             onMarkComplete={handleBulkComplete}
             onMarkIncomplete={handleBulkIncomplete}
             onMoveToProject={handleBulkMove}
             onCopy={copyTasksToClipboard}
+            onSelectAll={selectAll}
             onDeselectAll={deselectAll}
           />
         )}

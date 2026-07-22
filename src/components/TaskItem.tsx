@@ -114,7 +114,7 @@ export function TaskItem({
           : "border-border hover:border-border-subtle hover:bg-bg-hover"
       } ${task.completed ? "opacity-50" : ""}`}
     >
-      {/* Selection Checkbox */}
+      {/* Selection Checkbox (circular, distinct from completion) */}
       <AnimatePresence>
         {selectionActive && (
           <motion.button
@@ -124,16 +124,14 @@ export function TaskItem({
             transition={{ type: "spring", bounce: 0.15, duration: 0.3 }}
             onClick={(e) => { e.stopPropagation(); onToggleSelect(task.id); }}
             aria-label={`Select "${task.title}"`}
-            className={`flex-shrink-0 w-5 h-5 border-2 rounded-[2px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent min-w-[44px] min-h-[44px] flex items-center justify-center overflow-hidden ${
+            className={`flex-shrink-0 w-5 h-5 border-2 rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 min-w-[44px] min-h-[44px] flex items-center justify-center overflow-hidden ${
               isSelected
-                ? "bg-accent border-accent"
-                : "border-border-subtle hover:border-accent"
+                ? "bg-blue-500 border-blue-500"
+                : "border-border-subtle hover:border-blue-400"
             }`}
           >
             {isSelected && (
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" aria-hidden="true">
-                <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <span className="w-2 h-2 rounded-full bg-white" aria-hidden="true" />
             )}
           </motion.button>
         )}

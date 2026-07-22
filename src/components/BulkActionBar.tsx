@@ -6,23 +6,27 @@ import { Project } from "@/types/task";
 
 interface BulkActionBarProps {
   selectedCount: number;
+  totalCount: number;
   projects: Project[];
   onDelete: () => void;
   onMarkComplete: () => void;
   onMarkIncomplete: () => void;
   onMoveToProject: (projectId: string | null) => void;
   onCopy: () => void;
+  onSelectAll: () => void;
   onDeselectAll: () => void;
 }
 
 export function BulkActionBar({
   selectedCount,
+  totalCount,
   projects,
   onDelete,
   onMarkComplete,
   onMarkIncomplete,
   onMoveToProject,
   onCopy,
+  onSelectAll,
   onDeselectAll,
 }: BulkActionBarProps) {
   const [showMoveMenu, setShowMoveMenu] = useState(false);
@@ -53,6 +57,17 @@ export function BulkActionBar({
       <span className="text-accent font-medium text-sm whitespace-nowrap" aria-live="polite">
         {selectedCount} selected
       </span>
+
+      {/* Select All */}
+      {selectedCount < totalCount && (
+        <button
+          onClick={onSelectAll}
+          aria-label="Select all tasks"
+          className="text-[11px] font-medium text-blue-400 hover:text-blue-300 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded-[2px] px-1.5 py-0.5"
+        >
+          All
+        </button>
+      )}
 
       <div className="w-px h-5 bg-border" />
 
