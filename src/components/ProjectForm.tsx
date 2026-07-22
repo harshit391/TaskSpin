@@ -4,14 +4,11 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 
 const PRESET_COLORS = [
-  "#FF2D6F",
-  "#8B5CF6",
-  "#3B82F6",
-  "#10B981",
-  "#F59E0B",
-  "#EF4444",
-  "#6366F1",
-  "#EC4899",
+  "#FF2D6F", "#8B5CF6", "#3B82F6", "#10B981", "#F59E0B",
+  "#EF4444", "#6366F1", "#EC4899", "#14B8A6", "#F97316",
+  "#06B6D4", "#84CC16", "#A855F7", "#0EA5E9", "#D946EF",
+  "#22C55E", "#E11D48", "#7C3AED", "#0891B2", "#CA8A04",
+  "#DC2626", "#4F46E5", "#DB2777", "#059669", "#EA580C",
 ];
 
 interface ProjectFormProps {
@@ -19,9 +16,13 @@ interface ProjectFormProps {
   isLoading?: boolean;
 }
 
+function randomColor() {
+  return PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)];
+}
+
 export function ProjectForm({ onSubmit, isLoading }: ProjectFormProps) {
   const [name, setName] = useState("");
-  const [color, setColor] = useState(PRESET_COLORS[0]);
+  const [color] = useState(randomColor);
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
@@ -57,20 +58,13 @@ export function ProjectForm({ onSubmit, isLoading }: ProjectFormProps) {
         className="w-full bg-bg-secondary border border-border rounded-[4px] px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus-visible:border-accent focus-visible:shadow-[0_0_0_2px_var(--color-accent-glow)]"
       />
 
-      {/* Color picker */}
-      <div className="flex gap-2 flex-wrap">
-        {PRESET_COLORS.map((c) => (
-          <button
-            key={c}
-            type="button"
-            onClick={() => setColor(c)}
-            className={`w-6 h-6 rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-              color === c ? "ring-2 ring-white scale-110" : "opacity-60 hover:opacity-100"
-            }`}
-            style={{ backgroundColor: c }}
-            aria-label={`Select color ${c}`}
-          />
-        ))}
+      {/* Color preview */}
+      <div className="flex items-center gap-2">
+        <span
+          className="w-4 h-4 rounded-full"
+          style={{ backgroundColor: color }}
+        />
+        <span className="text-[11px] text-text-muted">Auto-assigned color</span>
       </div>
 
       {/* Actions */}

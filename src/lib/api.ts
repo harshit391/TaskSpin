@@ -21,11 +21,11 @@ export async function createTask(title: string, projectId?: string | null): Prom
   return res.json();
 }
 
-export async function createTasksBatch(titles: string[], projectName?: string): Promise<Task[]> {
+export async function createTasksBatch(titles: string[], projectName?: string, projectId?: string | null): Promise<Task[]> {
   const res = await fetch(`${TASKS_BASE}/batch`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ titles, projectName }),
+    body: JSON.stringify({ titles, projectName, ...(projectId ? { projectId } : {}) }),
   });
   if (!res.ok) throw new Error("Failed to create tasks");
   return res.json();

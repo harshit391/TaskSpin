@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let projectId: string | null = null;
+  let projectId: string | null = body.projectId || null;
 
   // If a projectName is provided, find or create the project
   if (body.projectName) {

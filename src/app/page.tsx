@@ -339,7 +339,10 @@ function HomeContent() {
                 const pid = projectFilter !== "all" && projectFilter !== "inbox" ? projectFilter : undefined;
                 addTask(title, pid);
               }}
-              onAddBatch={(titles, projectName) => addTasksBatch(titles, projectName)}
+              onAddBatch={(titles, projectName) => {
+                const pid = !projectName && projectFilter !== "all" && projectFilter !== "inbox" ? projectFilter : undefined;
+                addTasksBatch(titles, projectName, pid);
+              }}
               isLoading={isAdding}
               inputRef={taskInputRef}
             />

@@ -49,16 +49,16 @@ export function useTasks() {
   });
 
   const batchMutation = useMutation({
-    mutationFn: ({ titles, projectName }: { titles: string[]; projectName?: string }) =>
-      createTasksBatch(titles, projectName),
-    onMutate: async ({ titles }) => {
+    mutationFn: ({ titles, projectName, projectId }: { titles: string[]; projectName?: string; projectId?: string | null }) =>
+      createTasksBatch(titles, projectName, projectId),
+    onMutate: async ({ titles, projectId }) => {
       await queryClient.cancelQueries({ queryKey: TASKS_KEY });
       const previous = queryClient.getQueryData<Task[]>(TASKS_KEY);
       const optimistic: Task[] = titles.map((title, i) => ({
         id: `temp-${Date.now()}-${i}`,
         title,
         completed: false,
-        projectId: null,
+        projectId: projectId ?? null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }));
@@ -239,8 +239,8 @@ export function useTasks() {
     isError: query.isError,
     addTask: (title: string, projectId?: string | null) =>
       addMutation.mutate({ title, projectId }),
-    addTasksBatch: (titles: string[], projectName?: string) =>
-      batchMutation.mutate({ titles, projectName }),
+    addTasksBatch: (titles: string[], projectName?: string, projectId?: string | null) =>
+      batchMutation.mutate({ titles, projectName, projectId }),
     isAdding: addMutation.isPending || batchMutation.isPending,
     isMutating:
       addMutation.isPending ||
