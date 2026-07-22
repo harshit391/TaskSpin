@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchTasks, createTask, createTasksBatch, toggleTask, updateTaskTitle, assignTaskToProject, deleteTask } from "@/lib/api";
+import { fetchTasks, createTask, createTasksBatch, toggleTask, updateTaskTitle, assignTaskToProject, deleteTask, bulkDeleteTasks, bulkUpdateTasks } from "@/lib/api";
 import { Task } from "@/types/task";
 import { showToast } from "@/hooks/useToast";
 
@@ -176,6 +176,63 @@ export function useTasks() {
     },
   });
 
+  const bulkDeleteMutation = useMutation({
+    mutationFn: (ids: string[]) => bulkDeleteTasks(ids),
+    onMutate: async (ids) => {
+      await queryClient.cancelQueries({ queryKey: TASKS_KEY });
+      const previous = queryClient.getQueryData<Task[]>(TASKS_KEY);
+      const idSet = new Set(ids);
+      queryClient.setQueryData<Task[]>(TASKS_KEY, (old) =>
+        old?.filter((t) => !idSet.has(t.id))
+      );
+      return { previous };
+    },
+    onError: (_err, _ids, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(TASKS_KEY, context.previous);
+      }
+      showToast("Failed to delete tasks", "error");
+    },
+    onSuccess: (_data, ids) => {
+      showToast(`${ids.length} tasks deleted`, "info");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: TASKS_KEY });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+
+  const bulkUpdateMutation = useMutation({
+    mutationFn: ({ ids, data }: { ids: string[]; data: { completed?: boolean; projectId?: string | null } }) =>
+      bulkUpdateTasks(ids, data),
+    onMutate: async ({ ids, data }) => {
+      await queryClient.cancelQueries({ queryKey: TASKS_KEY });
+      const previous = queryClient.getQueryData<Task[]>(TASKS_KEY);
+      const idSet = new Set(ids);
+      queryClient.setQueryData<Task[]>(TASKS_KEY, (old) =>
+        old?.map((t) => (idSet.has(t.id) ? { ...t, ...data } : t))
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(TASKS_KEY, context.previous);
+      }
+      showToast("Failed to update tasks", "error");
+    },
+    onSuccess: (_data, { ids, data }) => {
+      if (data.completed !== undefined) {
+        showToast(`${ids.length} tasks ${data.completed ? "completed" : "reopened"}`, "success");
+      } else if (data.projectId !== undefined) {
+        showToast(`${ids.length} tasks moved`, "success");
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: TASKS_KEY });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+
   return {
     tasks: query.data ?? [],
     isLoading: query.isLoading,
@@ -191,7 +248,9 @@ export function useTasks() {
       toggleMutation.isPending ||
       editMutation.isPending ||
       assignMutation.isPending ||
-      deleteMutation.isPending,
+      deleteMutation.isPending ||
+      bulkDeleteMutation.isPending ||
+      bulkUpdateMutation.isPending,
     toggleTask: (id: string, completed: boolean) =>
       toggleMutation.mutate({ id, completed }),
     editTask: (id: string, title: string) =>
@@ -199,5 +258,8 @@ export function useTasks() {
     assignToProject: (id: string, projectId: string | null) =>
       assignMutation.mutate({ id, projectId }),
     deleteTask: deleteMutation.mutate,
+    bulkDelete: (ids: string[]) => bulkDeleteMutation.mutate(ids),
+    bulkUpdate: (ids: string[], data: { completed?: boolean; projectId?: string | null }) =>
+      bulkUpdateMutation.mutate({ ids, data }),
   };
 }

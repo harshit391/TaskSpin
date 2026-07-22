@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef, Suspense } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "@/components/Header";
@@ -9,11 +9,13 @@ import { SearchFilter, DateFilter } from "@/components/SearchFilter";
 import { TaskInput } from "@/components/TaskInput";
 import { TaskList } from "@/components/TaskList";
 import { ProgressBar } from "@/components/ProgressBar";
+import { BulkActionBar } from "@/components/BulkActionBar";
 import { SpinModal } from "@/components/SpinModal";
 import { ShortcutsModal } from "@/components/ShortcutsModal";
 import { useTasks } from "@/hooks/useTasks";
 import { useProjects } from "@/hooks/useProjects";
 import { useKeyboardShortcuts, Shortcut } from "@/hooks/useKeyboardShortcuts";
+import { showToast } from "@/hooks/useToast";
 import { FilterTab, ProjectFilter } from "@/types/task";
 
 function isToday(dateStr: string): boolean {
@@ -77,8 +79,25 @@ function HomeContent() {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Data hooks
-  const { tasks, isLoading, isError, addTask, addTasksBatch, isAdding, isMutating, toggleTask, editTask, assignToProject, deleteTask } = useTasks();
+  const { tasks, isLoading, isError, addTask, addTasksBatch, isAdding, isMutating, toggleTask, editTask, assignToProject, deleteTask, bulkDelete, bulkUpdate } = useTasks();
   const { projects, addProject, removeProject, isAdding: isAddingProject, isMutating: isProjectMutating } = useProjects();
+
+  // Selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const selectionActive = selectedIds.size > 0;
+
+  const toggleSelection = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const deselectAll = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
 
   // Apply all filters
   const filteredTasks = useMemo(() => {
@@ -116,6 +135,52 @@ function HomeContent() {
 
     return result;
   }, [tasks, projectFilter, searchQuery, statusFilter, dateFilter, selectedProjects]);
+
+  // Prune stale selections when filter changes
+  useEffect(() => {
+    const visibleIds = new Set(filteredTasks.map(t => t.id));
+    setSelectedIds(prev => {
+      const pruned = new Set([...prev].filter(id => visibleIds.has(id)));
+      return pruned.size === prev.size ? prev : pruned;
+    });
+  }, [filteredTasks]);
+
+  const selectAll = useCallback(() => {
+    setSelectedIds(new Set(filteredTasks.map(t => t.id)));
+  }, [filteredTasks]);
+
+  // Bulk action handlers
+  const handleBulkDelete = useCallback(() => {
+    bulkDelete([...selectedIds]);
+    deselectAll();
+  }, [selectedIds, bulkDelete, deselectAll]);
+
+  const handleBulkComplete = useCallback(() => {
+    bulkUpdate([...selectedIds], { completed: true });
+    deselectAll();
+  }, [selectedIds, bulkUpdate, deselectAll]);
+
+  const handleBulkIncomplete = useCallback(() => {
+    bulkUpdate([...selectedIds], { completed: false });
+    deselectAll();
+  }, [selectedIds, bulkUpdate, deselectAll]);
+
+  const handleBulkMove = useCallback((projectId: string | null) => {
+    bulkUpdate([...selectedIds], { projectId });
+    deselectAll();
+  }, [selectedIds, bulkUpdate, deselectAll]);
+
+  const copyTasksToClipboard = useCallback(() => {
+    const tasksToCopy = selectionActive
+      ? filteredTasks.filter(t => selectedIds.has(t.id))
+      : filteredTasks;
+    const text = tasksToCopy
+      .map((t, i) => `${i + 1}. [${t.completed ? "x" : " "}] ${t.title}`)
+      .join("\n");
+    navigator.clipboard.writeText(text).then(() => {
+      showToast(`${tasksToCopy.length} tasks copied to clipboard`, "info");
+    });
+  }, [selectionActive, filteredTasks, selectedIds]);
 
   // Counts for the current sidebar-scoped view (before search/status/date filters)
   const sidebarScoped = useMemo(() => {
@@ -162,6 +227,7 @@ function HomeContent() {
   // Keyboard shortcuts
   const shortcuts: Shortcut[] = useMemo(() => [
     { key: "n", action: () => taskInputRef.current?.focus(), description: "New task", category: "Tasks" },
+    { key: "c", action: copyTasksToClipboard, description: "Copy tasks", category: "Tasks" },
     { key: "/", action: () => searchInputRef.current?.focus(), description: "Focus search", category: "Navigation" },
     { key: "s", action: () => setSpinOpen(true), description: "Open TaskSpin", category: "Navigation" },
     { key: "m", action: () => setSidebarOpen((v) => !v), description: "Toggle sidebar", category: "Navigation" },
@@ -169,8 +235,10 @@ function HomeContent() {
     { key: "2", action: () => setStatusFilter("active"), description: "Active tasks", category: "Filters" },
     { key: "3", action: () => setStatusFilter("completed"), description: "Completed tasks", category: "Filters" },
     { key: "f", action: () => (document.querySelector('[aria-label="Toggle filters"]') as HTMLButtonElement)?.click(), description: "Toggle filter panel", category: "Filters" },
+    { key: "a", ctrl: true, action: selectAll, description: "Select all", category: "Selection" },
+    { key: "Escape", action: () => { if (selectionActive) deselectAll(); }, description: "Deselect all", category: "Selection" },
     { key: "?", action: () => setShortcutsOpen(true), description: "Shortcuts help", category: "Help" },
-  ], []);
+  ], [copyTasksToClipboard, selectAll, selectionActive, deselectAll]);
 
   useKeyboardShortcuts(shortcuts, !spinOpen && !shortcutsOpen);
 
@@ -303,6 +371,9 @@ function HomeContent() {
                 <TaskList
                   tasks={filteredTasks}
                   projects={projects}
+                  selectedIds={selectedIds}
+                  selectionActive={selectionActive}
+                  onToggleSelect={toggleSelection}
                   onToggle={toggleTask}
                   onEdit={editTask}
                   onDelete={deleteTask}
@@ -329,6 +400,22 @@ function HomeContent() {
         isOpen={shortcutsOpen}
         onClose={() => setShortcutsOpen(false)}
       />
+
+      {/* Bulk Action Bar */}
+      <AnimatePresence>
+        {selectionActive && (
+          <BulkActionBar
+            selectedCount={selectedIds.size}
+            projects={projects}
+            onDelete={handleBulkDelete}
+            onMarkComplete={handleBulkComplete}
+            onMarkIncomplete={handleBulkIncomplete}
+            onMoveToProject={handleBulkMove}
+            onCopy={copyTasksToClipboard}
+            onDeselectAll={deselectAll}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Syncing Overlay */}
       <AnimatePresence>

@@ -7,13 +7,26 @@ import { TaskItem } from "./TaskItem";
 interface TaskListProps {
   tasks: Task[];
   projects: Project[];
+  selectedIds: Set<string>;
+  selectionActive: boolean;
+  onToggleSelect: (id: string) => void;
   onToggle: (id: string, completed: boolean) => void;
   onEdit: (id: string, title: string) => void;
   onDelete: (id: string) => void;
   onAssign: (id: string, projectId: string | null) => void;
 }
 
-export function TaskList({ tasks, projects, onToggle, onEdit, onDelete, onAssign }: TaskListProps) {
+export function TaskList({
+  tasks,
+  projects,
+  selectedIds,
+  selectionActive,
+  onToggleSelect,
+  onToggle,
+  onEdit,
+  onDelete,
+  onAssign,
+}: TaskListProps) {
   if (tasks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4">
@@ -44,6 +57,9 @@ export function TaskList({ tasks, projects, onToggle, onEdit, onDelete, onAssign
             key={task.id}
             task={task}
             projects={projects}
+            isSelected={selectedIds.has(task.id)}
+            selectionActive={selectionActive}
+            onToggleSelect={onToggleSelect}
             onToggle={onToggle}
             onEdit={onEdit}
             onDelete={onDelete}

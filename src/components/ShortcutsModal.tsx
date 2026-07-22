@@ -8,7 +8,13 @@ interface ShortcutsModalProps {
 }
 
 const shortcuts = [
-  { category: "Tasks", items: [{ key: "n", description: "New task" }] },
+  {
+    category: "Tasks",
+    items: [
+      { key: "n", description: "New task" },
+      { key: "c", description: "Copy tasks to clipboard" },
+    ],
+  },
   {
     category: "Navigation",
     items: [
@@ -24,6 +30,13 @@ const shortcuts = [
       { key: "2", description: "Active tasks" },
       { key: "3", description: "Completed tasks" },
       { key: "f", description: "Toggle filter panel" },
+    ],
+  },
+  {
+    category: "Selection",
+    items: [
+      { key: "Ctrl+A", description: "Select all visible tasks" },
+      { key: "Esc", description: "Deselect all" },
     ],
   },
   { category: "Help", items: [{ key: "?", description: "This panel" }] },

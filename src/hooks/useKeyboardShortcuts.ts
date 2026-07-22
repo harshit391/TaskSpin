@@ -4,6 +4,7 @@ import { useEffect } from "react";
 
 export interface Shortcut {
   key: string;
+  ctrl?: boolean;
   action: () => void;
   description: string;
   category: string;
@@ -14,13 +15,16 @@ export function useKeyboardShortcuts(shortcuts: Shortcut[], enabled: boolean) {
     if (!enabled) return;
 
     const handler = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
-
       const target = e.target as HTMLElement;
       const tag = target.tagName.toLowerCase();
       if (tag === "input" || tag === "textarea" || target.isContentEditable) return;
 
-      const shortcut = shortcuts.find((s) => s.key === e.key);
+      const shortcut = shortcuts.find((s) => {
+        if (s.ctrl && !(e.ctrlKey || e.metaKey)) return false;
+        if (!s.ctrl && (e.ctrlKey || e.metaKey || e.altKey)) return false;
+        return s.key === e.key;
+      });
+
       if (shortcut) {
         e.preventDefault();
         shortcut.action();

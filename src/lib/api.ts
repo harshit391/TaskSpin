@@ -66,6 +66,29 @@ export async function deleteTask(id: string): Promise<void> {
   if (!res.ok) throw new Error("Failed to delete task");
 }
 
+export async function bulkDeleteTasks(ids: string[]): Promise<{ count: number }> {
+  const res = await fetch(`${TASKS_BASE}/bulk-delete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids }),
+  });
+  if (!res.ok) throw new Error("Failed to delete tasks");
+  return res.json();
+}
+
+export async function bulkUpdateTasks(
+  ids: string[],
+  data: { completed?: boolean; projectId?: string | null }
+): Promise<{ count: number }> {
+  const res = await fetch(`${TASKS_BASE}/bulk-update`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids, data }),
+  });
+  if (!res.ok) throw new Error("Failed to update tasks");
+  return res.json();
+}
+
 // ─── Projects ────────────────────────────────────────────
 
 export async function fetchProjects(): Promise<Project[]> {
