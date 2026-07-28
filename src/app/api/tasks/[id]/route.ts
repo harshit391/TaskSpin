@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { calculateNextOccurrence } from "@/lib/recurrence";
 
 export async function PATCH(
   request: Request,
@@ -11,7 +12,22 @@ export async function PATCH(
   const task = await prisma.task.update({
     where: { id },
     data: body,
+    include: { project: true },
   });
+
+  if (body.completed === true && task.recurrenceType) {
+    const hiddenUntil = calculateNextOccurrence(task.recurrenceType, task.recurrenceDays);
+    await prisma.task.create({
+      data: {
+        title: task.title,
+        projectId: task.projectId,
+        recurrenceType: task.recurrenceType,
+        recurrenceDays: task.recurrenceDays,
+        hiddenUntil,
+        sourceTaskId: task.id,
+      },
+    });
+  }
 
   return NextResponse.json(task);
 }

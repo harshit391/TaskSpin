@@ -40,8 +40,16 @@ export async function POST(request: Request) {
     projectId = project.id;
   }
 
+  const recurrenceType = body.recurrenceType || null;
+  const recurrenceDays = body.recurrenceDays || null;
+
   const tasks = await prisma.task.createManyAndReturn({
-    data: titles.map((title) => ({ title, projectId })),
+    data: titles.map((title) => ({
+      title,
+      projectId,
+      ...(recurrenceType ? { recurrenceType } : {}),
+      ...(recurrenceDays ? { recurrenceDays } : {}),
+    })),
   });
 
   return NextResponse.json(tasks, { status: 201 });

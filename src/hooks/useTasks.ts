@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchTasks, createTask, createTasksBatch, toggleTask, updateTaskTitle, assignTaskToProject, deleteTask, bulkDeleteTasks, bulkUpdateTasks } from "@/lib/api";
+import { fetchTasks, createTask, createTasksBatch, toggleTask, updateTaskTitle, assignTaskToProject, deleteTask, bulkDeleteTasks, bulkUpdateTasks, setTaskRecurrence } from "@/lib/api";
 import { Task } from "@/types/task";
 import { showToast } from "@/hooks/useToast";
 
@@ -16,9 +16,9 @@ export function useTasks() {
   });
 
   const addMutation = useMutation({
-    mutationFn: ({ title, projectId }: { title: string; projectId?: string | null }) =>
-      createTask(title, projectId),
-    onMutate: async ({ title, projectId }) => {
+    mutationFn: ({ title, projectId, recurrence }: { title: string; projectId?: string | null; recurrence?: { type: string; days?: number } }) =>
+      createTask(title, projectId, recurrence),
+    onMutate: async ({ title, projectId, recurrence }) => {
       await queryClient.cancelQueries({ queryKey: TASKS_KEY });
       const previous = queryClient.getQueryData<Task[]>(TASKS_KEY);
       const optimistic: Task = {
@@ -28,6 +28,10 @@ export function useTasks() {
         projectId: projectId ?? null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        recurrenceType: recurrence?.type ?? null,
+        recurrenceDays: recurrence?.days ?? null,
+        hiddenUntil: null,
+        sourceTaskId: null,
       };
       queryClient.setQueryData<Task[]>(TASKS_KEY, (old) =>
         old ? [optimistic, ...old] : [optimistic]
@@ -49,9 +53,9 @@ export function useTasks() {
   });
 
   const batchMutation = useMutation({
-    mutationFn: ({ titles, projectName, projectId }: { titles: string[]; projectName?: string; projectId?: string | null }) =>
-      createTasksBatch(titles, projectName, projectId),
-    onMutate: async ({ titles, projectId }) => {
+    mutationFn: ({ titles, projectName, projectId, recurrence }: { titles: string[]; projectName?: string; projectId?: string | null; recurrence?: { type: string; days?: number } }) =>
+      createTasksBatch(titles, projectName, projectId, recurrence),
+    onMutate: async ({ titles, projectId, recurrence }) => {
       await queryClient.cancelQueries({ queryKey: TASKS_KEY });
       const previous = queryClient.getQueryData<Task[]>(TASKS_KEY);
       const optimistic: Task[] = titles.map((title, i) => ({
@@ -61,6 +65,10 @@ export function useTasks() {
         projectId: projectId ?? null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        recurrenceType: recurrence?.type ?? null,
+        recurrenceDays: recurrence?.days ?? null,
+        hiddenUntil: null,
+        sourceTaskId: null,
       }));
       queryClient.setQueryData<Task[]>(TASKS_KEY, (old) =>
         old ? [...optimistic, ...old] : optimistic
@@ -101,6 +109,35 @@ export function useTasks() {
         queryClient.setQueryData(TASKS_KEY, context.previous);
       }
       showToast("Failed to update task", "error");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: TASKS_KEY });
+    },
+  });
+
+  const recurrenceMutation = useMutation({
+    mutationFn: ({ id, recurrenceType, recurrenceDays }: { id: string; recurrenceType: string | null; recurrenceDays?: number }) =>
+      setTaskRecurrence(id, recurrenceType, recurrenceDays),
+    onMutate: async ({ id, recurrenceType, recurrenceDays }) => {
+      await queryClient.cancelQueries({ queryKey: TASKS_KEY });
+      const previous = queryClient.getQueryData<Task[]>(TASKS_KEY);
+      queryClient.setQueryData<Task[]>(TASKS_KEY, (old) =>
+        old?.map((t) =>
+          t.id === id
+            ? { ...t, recurrenceType, recurrenceDays: recurrenceDays ?? null }
+            : t
+        )
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(TASKS_KEY, context.previous);
+      }
+      showToast("Failed to set recurrence", "error");
+    },
+    onSuccess: (_data, { recurrenceType }) => {
+      showToast(recurrenceType ? "Recurrence set" : "Recurrence removed", "success");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: TASKS_KEY });
@@ -237,10 +274,10 @@ export function useTasks() {
     tasks: query.data ?? [],
     isLoading: query.isLoading,
     isError: query.isError,
-    addTask: (title: string, projectId?: string | null) =>
-      addMutation.mutate({ title, projectId }),
-    addTasksBatch: (titles: string[], projectName?: string, projectId?: string | null) =>
-      batchMutation.mutate({ titles, projectName, projectId }),
+    addTask: (title: string, projectId?: string | null, recurrence?: { type: string; days?: number }) =>
+      addMutation.mutate({ title, projectId, recurrence }),
+    addTasksBatch: (titles: string[], projectName?: string, projectId?: string | null, recurrence?: { type: string; days?: number }) =>
+      batchMutation.mutate({ titles, projectName, projectId, recurrence }),
     isAdding: addMutation.isPending || batchMutation.isPending,
     isMutating:
       addMutation.isPending ||
@@ -250,13 +287,16 @@ export function useTasks() {
       assignMutation.isPending ||
       deleteMutation.isPending ||
       bulkDeleteMutation.isPending ||
-      bulkUpdateMutation.isPending,
+      bulkUpdateMutation.isPending ||
+      recurrenceMutation.isPending,
     toggleTask: (id: string, completed: boolean) =>
       toggleMutation.mutate({ id, completed }),
     editTask: (id: string, title: string) =>
       editMutation.mutate({ id, title }),
     assignToProject: (id: string, projectId: string | null) =>
       assignMutation.mutate({ id, projectId }),
+    setRecurrence: (id: string, recurrenceType: string | null, recurrenceDays?: number) =>
+      recurrenceMutation.mutate({ id, recurrenceType, recurrenceDays }),
     deleteTask: deleteMutation.mutate,
     bulkDelete: (ids: string[]) => bulkDeleteMutation.mutate(ids),
     bulkUpdate: (ids: string[], data: { completed?: boolean; projectId?: string | null }) =>

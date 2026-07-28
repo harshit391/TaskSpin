@@ -14,6 +14,7 @@ interface TaskListProps {
   onEdit: (id: string, title: string) => void;
   onDelete: (id: string) => void;
   onAssign: (id: string, projectId: string | null) => void;
+  onSetRecurrence: (id: string, recurrenceType: string | null, recurrenceDays?: number) => void;
 }
 
 export function TaskList({
@@ -26,6 +27,7 @@ export function TaskList({
   onEdit,
   onDelete,
   onAssign,
+  onSetRecurrence,
 }: TaskListProps) {
   if (tasks.length === 0) {
     return (
@@ -64,6 +66,7 @@ export function TaskList({
             onEdit={onEdit}
             onDelete={onDelete}
             onAssign={onAssign}
+            onSetRecurrence={onSetRecurrence}
           />
         ))}
       </AnimatePresence>

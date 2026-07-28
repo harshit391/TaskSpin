@@ -2,15 +2,17 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { recurrenceDescription } from "@/lib/recurrence";
 
 interface FollowUpModalProps {
   isOpen: boolean;
   completedTaskTitle: string;
+  recurrenceInfo?: { type: string; days?: number | null } | null;
   onAdd: (title: string) => void;
   onSkip: () => void;
 }
 
-export function FollowUpModal({ isOpen, completedTaskTitle, onAdd, onSkip }: FollowUpModalProps) {
+export function FollowUpModal({ isOpen, completedTaskTitle, recurrenceInfo, onAdd, onSkip }: FollowUpModalProps) {
   const [value, setValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -60,6 +62,17 @@ export function FollowUpModal({ isOpen, completedTaskTitle, onAdd, onSkip }: Fol
               <p className="text-sm text-text-secondary line-clamp-2">
                 {completedTaskTitle}
               </p>
+              {recurrenceInfo && (
+                <p className="text-[11px] text-accent flex items-center gap-1 pt-0.5">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 2l4 4-4 4" />
+                    <path d="M3 11V9a4 4 0 014-4h14" />
+                    <path d="M7 22l-4-4 4-4" />
+                    <path d="M21 13v2a4 4 0 01-4 4H3" />
+                  </svg>
+                  This task will return {recurrenceDescription(recurrenceInfo.type, recurrenceInfo.days)}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">

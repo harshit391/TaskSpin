@@ -15,6 +15,10 @@ export interface Task {
   updatedAt: string;
   projectId: string | null;
   project?: Project | null;
+  recurrenceType: string | null;
+  recurrenceDays: number | null;
+  hiddenUntil: string | null;
+  sourceTaskId: string | null;
 }
 
 export type FilterTab = "all" | "active" | "completed";

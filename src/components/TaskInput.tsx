@@ -2,16 +2,27 @@
 
 import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { recurrenceLabel } from "@/lib/recurrence";
 
 interface TaskInputProps {
-  onAdd: (title: string) => void;
-  onAddBatch: (titles: string[], projectName?: string) => void;
+  onAdd: (title: string, recurrence?: { type: string; days?: number }) => void;
+  onAddBatch: (titles: string[], projectName?: string, recurrence?: { type: string; days?: number }) => void;
   isLoading: boolean;
   inputRef?: React.RefObject<HTMLTextAreaElement | null>;
 }
 
+const RECURRENCE_OPTIONS = [
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "quarterly", label: "Quarterly" },
+  { value: "custom", label: "Custom" },
+] as const;
+
 export function TaskInput({ onAdd, onAddBatch, isLoading, inputRef }: TaskInputProps) {
   const [value, setValue] = useState("");
+  const [recurrenceType, setRecurrenceType] = useState<string | null>(null);
+  const [recurrenceDays, setRecurrenceDays] = useState(7);
+  const [showRecurrencePicker, setShowRecurrencePicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const mergedRef = useCallback(
@@ -34,6 +45,10 @@ export function TaskInput({ onAdd, onAddBatch, isLoading, inputRef }: TaskInputP
   const taskCount = taskLines.length;
   const isMultiple = taskCount > 1 || (hasProjectPrefix && taskCount >= 1);
 
+  const recurrence = recurrenceType
+    ? { type: recurrenceType, ...(recurrenceType === "custom" ? { days: recurrenceDays } : {}) }
+    : undefined;
+
   const autoResize = useCallback(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -51,11 +66,13 @@ export function TaskInput({ onAdd, onAddBatch, isLoading, inputRef }: TaskInputP
     if (taskCount === 0) return;
 
     if (isMultiple || hasProjectPrefix) {
-      onAddBatch(taskLines, projectName);
+      onAddBatch(taskLines, projectName, recurrence);
     } else {
-      onAdd(taskLines[0]);
+      onAdd(taskLines[0], recurrence);
     }
     setValue("");
+    setRecurrenceType(null);
+    setShowRecurrencePicker(false);
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
@@ -63,12 +80,29 @@ export function TaskInput({ onAdd, onAddBatch, isLoading, inputRef }: TaskInputP
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
-      if (taskCount === 0) {
-        // No tasks to submit yet (e.g. only #ProjectName typed) — insert newline
-        return;
-      }
+      if (taskCount === 0) return;
       e.preventDefault();
       handleSubmit();
+    }
+  };
+
+  const toggleRecurrencePicker = () => {
+    if (showRecurrencePicker) {
+      setShowRecurrencePicker(false);
+    } else {
+      setShowRecurrencePicker(true);
+    }
+  };
+
+  const selectRecurrence = (type: string) => {
+    if (recurrenceType === type) {
+      setRecurrenceType(null);
+      setShowRecurrencePicker(false);
+    } else {
+      setRecurrenceType(type);
+      if (type !== "custom") {
+        setShowRecurrencePicker(false);
+      }
     }
   };
 
@@ -94,6 +128,24 @@ export function TaskInput({ onAdd, onAddBatch, isLoading, inputRef }: TaskInputP
           />
         </div>
         <button
+          type="button"
+          onClick={toggleRecurrencePicker}
+          className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-[4px] border transition-all ${
+            recurrenceType
+              ? "border-accent bg-accent/10 text-accent"
+              : "border-border bg-bg-secondary text-text-muted hover:text-text-primary hover:border-text-muted"
+          }`}
+          aria-label="Set recurrence"
+          title="Set recurrence"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 2l4 4-4 4" />
+            <path d="M3 11V9a4 4 0 014-4h14" />
+            <path d="M7 22l-4-4 4-4" />
+            <path d="M21 13v2a4 4 0 01-4 4H3" />
+          </svg>
+        </button>
+        <button
           type="submit"
           disabled={taskCount === 0 || isLoading}
           className="bg-accent hover:bg-accent-hover text-white text-xs sm:text-sm font-medium uppercase tracking-[0.05em] px-4 sm:px-6 py-2.5 sm:py-3 rounded-[4px] transition-all hover:shadow-[0_0_20px_var(--color-accent-glow)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-accent min-w-[44px] min-h-[44px] self-end"
@@ -111,7 +163,57 @@ export function TaskInput({ onAdd, onAddBatch, isLoading, inputRef }: TaskInputP
         </button>
       </div>
 
-      {/* Hint + Project badge + Task count */}
+      {/* Recurrence picker */}
+      <AnimatePresence>
+        {showRecurrencePicker && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              {RECURRENCE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => selectRecurrence(opt.value)}
+                  className={`px-2.5 py-1 text-[11px] font-medium rounded-full border transition-all ${
+                    recurrenceType === opt.value
+                      ? "bg-accent text-white border-accent"
+                      : "border-border text-text-secondary hover:border-accent hover:text-accent"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+              <AnimatePresence>
+                {recurrenceType === "custom" && (
+                  <motion.div
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: "auto" }}
+                    exit={{ opacity: 0, width: 0 }}
+                    className="flex items-center gap-1 overflow-hidden"
+                  >
+                    <input
+                      type="number"
+                      min={1}
+                      max={365}
+                      value={recurrenceDays}
+                      onChange={(e) => setRecurrenceDays(Math.max(1, Math.min(365, Number(e.target.value) || 1)))}
+                      className="w-12 text-center text-[11px] bg-bg-primary border border-border rounded-[3px] px-1 py-1 text-text-primary focus:outline-none focus:border-accent"
+                      aria-label="Number of days"
+                    />
+                    <span className="text-[11px] text-text-muted">days</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Hint + badges */}
       <AnimatePresence>
         {value.length > 0 && (
           <motion.div
@@ -127,6 +229,23 @@ export function TaskInput({ onAdd, onAddBatch, isLoading, inputRef }: TaskInputP
               {" "}on first line
             </span>
             <div className="flex items-center gap-2">
+              {recurrenceType && (
+                <motion.button
+                  type="button"
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  onClick={() => { setRecurrenceType(null); setShowRecurrencePicker(false); }}
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-accent bg-accent/10 border border-accent/20 rounded-full px-2 py-0.5 hover:bg-accent/20 transition-colors"
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 2l4 4-4 4" />
+                    <path d="M3 11V9a4 4 0 014-4h14" />
+                    <path d="M7 22l-4-4 4-4" />
+                    <path d="M21 13v2a4 4 0 01-4 4H3" />
+                  </svg>
+                  {recurrenceLabel(recurrenceType, recurrenceDays)}
+                </motion.button>
+              )}
               {hasProjectPrefix && projectName && (
                 <motion.span
                   initial={{ scale: 0.8, opacity: 0 }}

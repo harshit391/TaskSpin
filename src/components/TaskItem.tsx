@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Task, Project } from "@/types/task";
+import { recurrenceLabel } from "@/lib/recurrence";
 
 interface TaskItemProps {
   task: Task;
@@ -14,7 +15,15 @@ interface TaskItemProps {
   onEdit: (id: string, title: string) => void;
   onDelete: (id: string) => void;
   onAssign: (id: string, projectId: string | null) => void;
+  onSetRecurrence: (id: string, recurrenceType: string | null, recurrenceDays?: number) => void;
 }
+
+const RECURRENCE_OPTIONS = [
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "quarterly", label: "Quarterly" },
+  { value: "custom", label: "Custom" },
+] as const;
 
 export function TaskItem({
   task,
@@ -26,12 +35,16 @@ export function TaskItem({
   onEdit,
   onDelete,
   onAssign,
+  onSetRecurrence,
 }: TaskItemProps) {
   const [showMenu, setShowMenu] = useState(false);
+  const [showRecurrenceMenu, setShowRecurrenceMenu] = useState(false);
+  const [customDays, setCustomDays] = useState(task.recurrenceDays ?? 7);
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(task.title);
   const menuRef = useRef<HTMLDivElement>(null);
+  const recurrenceMenuRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFired = useRef(false);
@@ -46,6 +59,17 @@ export function TaskItem({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [showMenu]);
+
+  useEffect(() => {
+    if (!showRecurrenceMenu) return;
+    const handleClick = (e: MouseEvent) => {
+      if (recurrenceMenuRef.current && !recurrenceMenuRef.current.contains(e.target as Node)) {
+        setShowRecurrenceMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showRecurrenceMenu]);
 
   useEffect(() => {
     if (editing && inputRef.current) {
@@ -96,6 +120,15 @@ export function TaskItem({
       onToggleSelect(task.id);
     }
   }, [selectionActive, task.id, onToggleSelect]);
+
+  const handleRecurrenceSelect = (type: string) => {
+    if (type === "custom") {
+      onSetRecurrence(task.id, "custom", customDays);
+    } else {
+      onSetRecurrence(task.id, type);
+    }
+    setShowRecurrenceMenu(false);
+  };
 
   return (
     <motion.div
@@ -156,7 +189,7 @@ export function TaskItem({
         )}
       </button>
 
-      {/* Title + Project Badge */}
+      {/* Title + Project Badge + Recurrence Badge */}
       <div className="flex-1 min-w-0">
         {editing ? (
           <input
@@ -186,19 +219,36 @@ export function TaskItem({
             {task.title}
           </button>
         )}
-        {task.project && !editing && (
-          <span className="inline-flex items-center gap-1 mt-1">
-            <span
-              className="w-2 h-2 rounded-full flex-shrink-0"
-              style={{ backgroundColor: task.project.color }}
-            />
-            <span className="text-[11px] text-text-muted hidden sm:inline">
-              {task.project.name}
-            </span>
-            <span className="text-[11px] text-text-muted truncate max-w-[100px] sm:hidden">
-              {task.project.name}
-            </span>
-          </span>
+        {!editing && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {task.project && (
+              <span className="inline-flex items-center gap-1 mt-1">
+                <span
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: task.project.color }}
+                />
+                <span className="text-[11px] text-text-muted hidden sm:inline">
+                  {task.project.name}
+                </span>
+                <span className="text-[11px] text-text-muted truncate max-w-[100px] sm:hidden">
+                  {task.project.name}
+                </span>
+              </span>
+            )}
+            {task.recurrenceType && (
+              <span className="inline-flex items-center gap-0.5 mt-1">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
+                  <path d="M17 2l4 4-4 4" />
+                  <path d="M3 11V9a4 4 0 014-4h14" />
+                  <path d="M7 22l-4-4 4-4" />
+                  <path d="M21 13v2a4 4 0 01-4 4H3" />
+                </svg>
+                <span className="text-[10px] text-text-muted">
+                  {recurrenceLabel(task.recurrenceType, task.recurrenceDays)}
+                </span>
+              </span>
+            )}
+          </div>
         )}
       </div>
 
@@ -265,6 +315,81 @@ export function TaskItem({
                     <span className="truncate">{project.name}</span>
                   </button>
                 ))}
+              </motion.div>
+            )}
+          </div>
+
+          {/* Recurrence button */}
+          <div className="relative flex-shrink-0" ref={recurrenceMenuRef}>
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowRecurrenceMenu(!showRecurrenceMenu); }}
+              aria-label="Set recurrence"
+              className={`transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-[2px] min-w-[44px] min-h-[44px] inline-flex items-center justify-center ${
+                task.recurrenceType ? "text-accent" : "text-text-muted hover:text-text-secondary"
+              }`}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M17 2l4 4-4 4" />
+                <path d="M3 11V9a4 4 0 014-4h14" />
+                <path d="M7 22l-4-4 4-4" />
+                <path d="M21 13v2a4 4 0 01-4 4H3" />
+              </svg>
+            </button>
+
+            {showRecurrenceMenu && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="absolute right-0 top-full mt-1 z-40 min-w-[150px] bg-bg-card border border-border rounded-[4px] shadow-lg overflow-hidden"
+              >
+                {RECURRENCE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => handleRecurrenceSelect(opt.value)}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors hover:bg-bg-hover ${
+                      task.recurrenceType === opt.value ? "text-accent" : "text-text-secondary"
+                    }`}
+                  >
+                    {opt.label}
+                    {opt.value === "custom" && task.recurrenceType === "custom" && (
+                      <span className="text-text-muted ml-auto">{task.recurrenceDays}d</span>
+                    )}
+                  </button>
+                ))}
+
+                {/* Custom days input */}
+                <div className="px-3 py-2 border-t border-border flex items-center gap-1.5">
+                  <span className="text-[11px] text-text-muted">Every</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={365}
+                    value={customDays}
+                    onChange={(e) => setCustomDays(Math.max(1, Math.min(365, Number(e.target.value) || 1)))}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-10 text-center text-[11px] bg-bg-primary border border-border rounded-[3px] px-1 py-0.5 text-text-primary focus:outline-none focus:border-accent"
+                  />
+                  <span className="text-[11px] text-text-muted">days</span>
+                  <button
+                    onClick={() => { onSetRecurrence(task.id, "custom", customDays); setShowRecurrenceMenu(false); }}
+                    className="ml-auto text-[10px] font-medium text-accent hover:text-accent-hover"
+                  >
+                    Set
+                  </button>
+                </div>
+
+                {task.recurrenceType && (
+                  <>
+                    <div className="h-px bg-border" />
+                    <button
+                      onClick={() => { onSetRecurrence(task.id, null); setShowRecurrenceMenu(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors hover:bg-bg-hover text-error"
+                    >
+                      Remove recurrence
+                    </button>
+                  </>
+                )}
               </motion.div>
             )}
           </div>

@@ -11,21 +11,41 @@ export async function fetchTasks(): Promise<Task[]> {
   return res.json();
 }
 
-export async function createTask(title: string, projectId?: string | null): Promise<Task> {
+export async function createTask(
+  title: string,
+  projectId?: string | null,
+  recurrence?: { type: string; days?: number }
+): Promise<Task> {
   const res = await fetch(TASKS_BASE, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, ...(projectId ? { projectId } : {}) }),
+    body: JSON.stringify({
+      title,
+      ...(projectId ? { projectId } : {}),
+      ...(recurrence?.type ? { recurrenceType: recurrence.type } : {}),
+      ...(recurrence?.type === "custom" && recurrence.days ? { recurrenceDays: recurrence.days } : {}),
+    }),
   });
   if (!res.ok) throw new Error("Failed to create task");
   return res.json();
 }
 
-export async function createTasksBatch(titles: string[], projectName?: string, projectId?: string | null): Promise<Task[]> {
+export async function createTasksBatch(
+  titles: string[],
+  projectName?: string,
+  projectId?: string | null,
+  recurrence?: { type: string; days?: number }
+): Promise<Task[]> {
   const res = await fetch(`${TASKS_BASE}/batch`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ titles, projectName, ...(projectId ? { projectId } : {}) }),
+    body: JSON.stringify({
+      titles,
+      projectName,
+      ...(projectId ? { projectId } : {}),
+      ...(recurrence?.type ? { recurrenceType: recurrence.type } : {}),
+      ...(recurrence?.type === "custom" && recurrence.days ? { recurrenceDays: recurrence.days } : {}),
+    }),
   });
   if (!res.ok) throw new Error("Failed to create tasks");
   return res.json();
@@ -58,6 +78,23 @@ export async function updateTaskTitle(id: string, title: string): Promise<Task> 
     body: JSON.stringify({ title }),
   });
   if (!res.ok) throw new Error("Failed to update task");
+  return res.json();
+}
+
+export async function setTaskRecurrence(
+  id: string,
+  recurrenceType: string | null,
+  recurrenceDays?: number
+): Promise<Task> {
+  const res = await fetch(`${TASKS_BASE}/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      recurrenceType,
+      recurrenceDays: recurrenceType === "custom" ? (recurrenceDays ?? 7) : null,
+    }),
+  });
+  if (!res.ok) throw new Error("Failed to set recurrence");
   return res.json();
 }
 

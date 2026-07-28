@@ -76,14 +76,14 @@ function HomeContent() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   // Follow-up modal state
-  const [followUpTask, setFollowUpTask] = useState<{ id: string; title: string; projectId?: string | null } | null>(null);
+  const [followUpTask, setFollowUpTask] = useState<{ id: string; title: string; projectId?: string | null; recurrenceType?: string | null; recurrenceDays?: number | null } | null>(null);
 
   // Refs for keyboard shortcuts
   const taskInputRef = useRef<HTMLTextAreaElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Data hooks
-  const { tasks, isLoading, isError, addTask, addTasksBatch, isAdding, isMutating, toggleTask, editTask, assignToProject, deleteTask, bulkDelete, bulkUpdate } = useTasks();
+  const { tasks, isLoading, isError, addTask, addTasksBatch, isAdding, isMutating, toggleTask, editTask, assignToProject, setRecurrence, deleteTask, bulkDelete, bulkUpdate } = useTasks();
   const { projects, addProject, removeProject, isAdding: isAddingProject, isMutating: isProjectMutating } = useProjects();
 
   // Wrap toggleTask to show follow-up modal on completion
@@ -92,7 +92,7 @@ function HomeContent() {
     if (completed) {
       const task = tasks.find(t => t.id === id);
       if (task) {
-        setFollowUpTask({ id: task.id, title: task.title, projectId: task.projectId });
+        setFollowUpTask({ id: task.id, title: task.title, projectId: task.projectId, recurrenceType: task.recurrenceType, recurrenceDays: task.recurrenceDays });
       }
     }
   }, [toggleTask, tasks]);
@@ -335,13 +335,13 @@ function HomeContent() {
 
             {/* Add Task Input */}
             <TaskInput
-              onAdd={(title) => {
+              onAdd={(title, recurrence) => {
                 const pid = projectFilter !== "all" && projectFilter !== "inbox" ? projectFilter : undefined;
-                addTask(title, pid);
+                addTask(title, pid, recurrence);
               }}
-              onAddBatch={(titles, projectName) => {
+              onAddBatch={(titles, projectName, recurrence) => {
                 const pid = !projectName && projectFilter !== "all" && projectFilter !== "inbox" ? projectFilter : undefined;
-                addTasksBatch(titles, projectName, pid);
+                addTasksBatch(titles, projectName, pid, recurrence);
               }}
               isLoading={isAdding}
               inputRef={taskInputRef}
@@ -396,6 +396,7 @@ function HomeContent() {
                   onEdit={editTask}
                   onDelete={deleteTask}
                   onAssign={assignToProject}
+                  onSetRecurrence={setRecurrence}
                 />
               )}
             </div>
@@ -423,6 +424,7 @@ function HomeContent() {
       <FollowUpModal
         isOpen={followUpTask !== null}
         completedTaskTitle={followUpTask?.title ?? ""}
+        recurrenceInfo={followUpTask?.recurrenceType ? { type: followUpTask.recurrenceType, days: followUpTask.recurrenceDays } : null}
         onAdd={(title) => {
           const pid = followUpTask?.projectId ?? (projectFilter !== "all" && projectFilter !== "inbox" ? projectFilter : undefined);
           addTask(title, pid);
