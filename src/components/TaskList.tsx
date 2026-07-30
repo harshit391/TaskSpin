@@ -52,7 +52,7 @@ export function TaskList({
   }
 
   return (
-    <div className="space-y-2" role="list" aria-label="Task list">
+    <div className="space-y-1.5 sm:space-y-2" role="list" aria-label="Task list">
       <AnimatePresence initial={false}>
         {tasks.map((task) => (
           <TaskItem
