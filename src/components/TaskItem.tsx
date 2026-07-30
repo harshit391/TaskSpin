@@ -157,7 +157,7 @@ export function TaskItem({
       onPointerUp={handlePointerUp}
       onPointerLeave={clearLongPress}
       onClick={handleClick}
-      className={`group flex items-center gap-2.5 sm:gap-4 bg-bg-card border rounded-[2px] px-3 py-2 sm:px-5 sm:py-3.5 transition-all select-none ${
+      className={`group flex items-start sm:items-center gap-2.5 sm:gap-4 bg-bg-card border rounded-[2px] px-3 py-2.5 sm:px-5 sm:py-3.5 transition-all select-none ${
         isSelected
           ? "border-accent/40 bg-accent/5"
           : "border-border/60 sm:border-border hover:border-border-subtle hover:bg-bg-hover"
@@ -218,14 +218,14 @@ export function TaskItem({
             className="w-full text-sm sm:text-base lg:text-lg bg-bg-primary border border-accent rounded-[3px] px-2 py-0.5 text-text-primary focus:outline-none"
           />
         ) : (
-          <div className="flex items-center gap-1.5 min-w-0">
+          <>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 if (!selectionActive) setExpanded(!expanded);
               }}
               onDoubleClick={() => { setEditValue(task.title); setEditing(true); }}
-              className={`flex-1 min-w-0 text-left text-sm sm:text-base lg:text-lg transition-all ${
+              className={`block text-left text-sm sm:text-base lg:text-lg transition-all w-full ${
                 expanded ? "whitespace-normal break-words" : "truncate"
               } ${
                 task.completed ? "line-through text-text-muted" : "text-text-primary"
@@ -235,56 +235,36 @@ export function TaskItem({
             >
               {task.title}
             </button>
-            {/* Inline badges (collapsed state only) */}
-            {!expanded && (
-              <div className="flex items-center gap-1.5 flex-shrink-0">
+            {/* Project badge + recurrence (always visible below title) */}
+            {(task.project || task.recurrenceType) && (
+              <div className="flex items-center gap-2 mt-0.5">
                 {task.project && (
-                  <span
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: task.project.color }}
-                    title={task.project.name}
-                  />
+                  <span className="inline-flex items-center gap-1">
+                    <span
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: task.project.color }}
+                    />
+                    <span className="text-[11px] text-text-muted truncate max-w-[120px]">
+                      {task.project.name}
+                    </span>
+                  </span>
                 )}
                 {task.recurrenceType && (
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted flex-shrink-0" aria-hidden="true">
-                    <path d="M17 2l4 4-4 4" />
-                    <path d="M3 11V9a4 4 0 014-4h14" />
-                    <path d="M7 22l-4-4 4-4" />
-                    <path d="M21 13v2a4 4 0 01-4 4H3" />
-                  </svg>
+                  <span className="inline-flex items-center gap-0.5">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
+                      <path d="M17 2l4 4-4 4" />
+                      <path d="M3 11V9a4 4 0 014-4h14" />
+                      <path d="M7 22l-4-4 4-4" />
+                      <path d="M21 13v2a4 4 0 01-4 4H3" />
+                    </svg>
+                    <span className="text-[10px] text-text-muted">
+                      {recurrenceLabel(task.recurrenceType, task.recurrenceDays)}
+                    </span>
+                  </span>
                 )}
               </div>
             )}
-          </div>
-        )}
-        {/* Expanded detail badges */}
-        {expanded && !editing && (
-          <div className="flex items-center gap-2 flex-wrap mt-1">
-            {task.project && (
-              <span className="inline-flex items-center gap-1">
-                <span
-                  className="w-2 h-2 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: task.project.color }}
-                />
-                <span className="text-[11px] text-text-muted">
-                  {task.project.name}
-                </span>
-              </span>
-            )}
-            {task.recurrenceType && (
-              <span className="inline-flex items-center gap-0.5">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
-                  <path d="M17 2l4 4-4 4" />
-                  <path d="M3 11V9a4 4 0 014-4h14" />
-                  <path d="M7 22l-4-4 4-4" />
-                  <path d="M21 13v2a4 4 0 01-4 4H3" />
-                </svg>
-                <span className="text-[10px] text-text-muted">
-                  {recurrenceLabel(task.recurrenceType, task.recurrenceDays)}
-                </span>
-              </span>
-            )}
-          </div>
+          </>
         )}
       </div>
 
