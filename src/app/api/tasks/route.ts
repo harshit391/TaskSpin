@@ -29,6 +29,7 @@ export async function POST(request: Request) {
       ...(body.projectId ? { projectId: body.projectId } : {}),
       ...(body.recurrenceType ? { recurrenceType: body.recurrenceType } : {}),
       ...(body.recurrenceDays ? { recurrenceDays: body.recurrenceDays } : {}),
+      ...(body.recurrenceStartDate ? { recurrenceStartDate: new Date(body.recurrenceStartDate) } : {}),
     },
     include: { project: true },
   });

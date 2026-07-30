@@ -25,8 +25,9 @@ model Task {
   updatedAt      DateTime  @updatedAt
   projectId      String?
   project        Project?  @relation(fields: [projectId], references: [id])
-  recurrenceType String?
-  recurrenceDays Int?
-  hiddenUntil    DateTime?
-  sourceTaskId   String?
+  recurrenceType      String?
+  recurrenceDays      Int?
+  recurrenceStartDate DateTime?
+  hiddenUntil         DateTime?
+  sourceTaskId        String?
 }

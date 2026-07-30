@@ -9,20 +9,30 @@ export async function PATCH(
   const { id } = await params;
   const body = await request.json();
 
+  const data = { ...body };
+  if (data.recurrenceStartDate) {
+    data.recurrenceStartDate = new Date(data.recurrenceStartDate);
+  }
+
   const task = await prisma.task.update({
     where: { id },
-    data: body,
+    data,
     include: { project: true },
   });
 
   if (body.completed === true && task.recurrenceType) {
-    const hiddenUntil = calculateNextOccurrence(task.recurrenceType, task.recurrenceDays);
+    const hiddenUntil = calculateNextOccurrence(
+      task.recurrenceType,
+      task.recurrenceDays,
+      task.recurrenceStartDate
+    );
     await prisma.task.create({
       data: {
         title: task.title,
         projectId: task.projectId,
         recurrenceType: task.recurrenceType,
         recurrenceDays: task.recurrenceDays,
+        recurrenceStartDate: task.recurrenceStartDate,
         hiddenUntil,
         sourceTaskId: task.id,
       },

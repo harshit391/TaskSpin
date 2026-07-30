@@ -84,7 +84,8 @@ export async function updateTaskTitle(id: string, title: string): Promise<Task> 
 export async function setTaskRecurrence(
   id: string,
   recurrenceType: string | null,
-  recurrenceDays?: number
+  recurrenceDays?: number,
+  recurrenceStartDate?: string | null
 ): Promise<Task> {
   const res = await fetch(`${TASKS_BASE}/${id}`, {
     method: "PATCH",
@@ -92,6 +93,7 @@ export async function setTaskRecurrence(
     body: JSON.stringify({
       recurrenceType,
       recurrenceDays: recurrenceType === "custom" ? (recurrenceDays ?? 7) : null,
+      recurrenceStartDate: recurrenceType ? (recurrenceStartDate || null) : null,
     }),
   });
   if (!res.ok) throw new Error("Failed to set recurrence");

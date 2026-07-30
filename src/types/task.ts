@@ -17,6 +17,7 @@ export interface Task {
   project?: Project | null;
   recurrenceType: string | null;
   recurrenceDays: number | null;
+  recurrenceStartDate: string | null;
   hiddenUntil: string | null;
   sourceTaskId: string | null;
 }

@@ -14,7 +14,7 @@ interface TaskListProps {
   onEdit: (id: string, title: string) => void;
   onDelete: (id: string) => void;
   onAssign: (id: string, projectId: string | null) => void;
-  onSetRecurrence: (id: string, recurrenceType: string | null, recurrenceDays?: number) => void;
+  onSetRecurrence: (id: string, recurrenceType: string | null, recurrenceDays?: number, recurrenceStartDate?: string | null) => void;
 }
 
 export function TaskList({

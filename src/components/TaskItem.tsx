@@ -15,7 +15,7 @@ interface TaskItemProps {
   onEdit: (id: string, title: string) => void;
   onDelete: (id: string) => void;
   onAssign: (id: string, projectId: string | null) => void;
-  onSetRecurrence: (id: string, recurrenceType: string | null, recurrenceDays?: number) => void;
+  onSetRecurrence: (id: string, recurrenceType: string | null, recurrenceDays?: number, recurrenceStartDate?: string | null) => void;
 }
 
 const RECURRENCE_OPTIONS = [
@@ -41,6 +41,7 @@ export function TaskItem({
   const [showRecurrenceMenu, setShowRecurrenceMenu] = useState(false);
   const [showOverflowMenu, setShowOverflowMenu] = useState(false);
   const [customDays, setCustomDays] = useState(task.recurrenceDays ?? 7);
+  const [startDate, setStartDate] = useState(task.recurrenceStartDate ? task.recurrenceStartDate.split("T")[0] : "");
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(task.title);
@@ -137,10 +138,11 @@ export function TaskItem({
   }, [selectionActive, task.id, onToggleSelect]);
 
   const handleRecurrenceSelect = (type: string) => {
+    const sd = startDate || null;
     if (type === "custom") {
-      onSetRecurrence(task.id, "custom", customDays);
+      onSetRecurrence(task.id, "custom", customDays, sd);
     } else {
-      onSetRecurrence(task.id, type);
+      onSetRecurrence(task.id, type, undefined, sd);
     }
     setShowRecurrenceMenu(false);
     setShowOverflowMenu(false);
@@ -431,11 +433,29 @@ export function TaskItem({
                               />
                               <span className="text-[11px] text-text-muted">days</span>
                               <button
-                                onClick={(e) => { e.stopPropagation(); onSetRecurrence(task.id, "custom", customDays); setShowRecurrenceMenu(false); setShowOverflowMenu(false); }}
+                                onClick={(e) => { e.stopPropagation(); onSetRecurrence(task.id, "custom", customDays, startDate || null); setShowRecurrenceMenu(false); setShowOverflowMenu(false); }}
                                 className="ml-auto text-[10px] font-medium text-accent hover:text-accent-hover"
                               >
                                 Set
                               </button>
+                            </div>
+                            <div className="px-5 py-2 border-t border-border flex items-center gap-1.5">
+                              <span className="text-[11px] text-text-muted">From</span>
+                              <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex-1 text-[11px] bg-bg-primary border border-border rounded-[3px] px-1.5 py-0.5 text-text-primary focus:outline-none focus:border-accent"
+                              />
+                              {startDate && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setStartDate(""); }}
+                                  className="text-[10px] text-text-muted hover:text-text-secondary"
+                                >
+                                  Clear
+                                </button>
+                              )}
                             </div>
                             {task.recurrenceType && (
                               <button
@@ -587,11 +607,30 @@ export function TaskItem({
                     />
                     <span className="text-[11px] text-text-muted">days</span>
                     <button
-                      onClick={() => { onSetRecurrence(task.id, "custom", customDays); setShowRecurrenceMenu(false); }}
+                      onClick={() => { onSetRecurrence(task.id, "custom", customDays, startDate || null); setShowRecurrenceMenu(false); }}
                       className="ml-auto text-[10px] font-medium text-accent hover:text-accent-hover"
                     >
                       Set
                     </button>
+                  </div>
+
+                  <div className="px-3 py-2 border-t border-border flex items-center gap-1.5">
+                    <span className="text-[11px] text-text-muted">From</span>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex-1 text-[11px] bg-bg-primary border border-border rounded-[3px] px-1.5 py-0.5 text-text-primary focus:outline-none focus:border-accent"
+                    />
+                    {startDate && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setStartDate(""); }}
+                        className="text-[10px] text-text-muted hover:text-text-secondary"
+                      >
+                        Clear
+                      </button>
+                    )}
                   </div>
 
                   {task.recurrenceType && (

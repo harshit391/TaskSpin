@@ -1,22 +1,42 @@
 export type RecurrenceType = "weekly" | "monthly" | "quarterly" | "custom";
 
-export function calculateNextOccurrence(type: string, days: number | null): Date {
-  const next = new Date();
+function addPeriod(date: Date, type: string, days: number | null): Date {
+  const result = new Date(date);
   switch (type) {
     case "weekly":
-      next.setDate(next.getDate() + 7);
+      result.setDate(result.getDate() + 7);
       break;
     case "monthly":
-      next.setMonth(next.getMonth() + 1);
+      result.setMonth(result.getMonth() + 1);
       break;
     case "quarterly":
-      next.setMonth(next.getMonth() + 3);
+      result.setMonth(result.getMonth() + 3);
       break;
     case "custom":
-      next.setDate(next.getDate() + (days ?? 7));
+      result.setDate(result.getDate() + (days ?? 7));
       break;
   }
-  return next;
+  return result;
+}
+
+export function calculateNextOccurrence(
+  type: string,
+  days: number | null,
+  anchorDate?: Date | string | null
+): Date {
+  const now = new Date();
+
+  if (!anchorDate) {
+    return addPeriod(now, type, days);
+  }
+
+  let anchor = new Date(anchorDate);
+  if (anchor > now) return anchor;
+
+  while (anchor <= now) {
+    anchor = addPeriod(anchor, type, days);
+  }
+  return anchor;
 }
 
 export function recurrenceLabel(type: string, days?: number | null): string {
