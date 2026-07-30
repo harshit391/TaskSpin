@@ -489,13 +489,13 @@ export function TaskItem({
             </AnimatePresence>
           </div>
 
-          {/* Desktop: Individual action buttons (hover-reveal) */}
+          {/* Desktop: Individual action buttons (always visible) */}
           <div className="hidden sm:contents">
             {/* Edit Button */}
             <button
               onClick={(e) => { e.stopPropagation(); setEditValue(task.title); setEditing(true); }}
               aria-label={`Edit "${task.title}"`}
-              className="flex-shrink-0 text-text-muted hover:text-accent transition-colors opacity-0 group-hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-[2px] min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
+              className="flex-shrink-0 text-text-muted hover:text-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-[2px] min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" strokeLinecap="round" strokeLinejoin="round" />
@@ -508,7 +508,7 @@ export function TaskItem({
               <button
                 onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
                 aria-label="Move to project"
-                className="text-text-muted hover:text-text-secondary transition-colors opacity-0 group-hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-[2px] min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
+                className="text-text-muted hover:text-text-secondary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-[2px] min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                   <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" strokeLinecap="round" strokeLinejoin="round" />
@@ -560,8 +560,8 @@ export function TaskItem({
               <button
                 onClick={(e) => { e.stopPropagation(); setShowRecurrenceMenu(!showRecurrenceMenu); }}
                 aria-label="Set recurrence"
-                className={`transition-colors opacity-0 group-hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-[2px] min-w-[44px] min-h-[44px] inline-flex items-center justify-center ${
-                  task.recurrenceType ? "text-accent !opacity-100" : "text-text-muted hover:text-text-secondary"
+                className={`transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-[2px] min-w-[44px] min-h-[44px] inline-flex items-center justify-center ${
+                  task.recurrenceType ? "text-accent" : "text-text-muted hover:text-text-secondary"
                 }`}
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -633,7 +633,7 @@ export function TaskItem({
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
               aria-label={`Delete "${task.title}"`}
-              className="flex-shrink-0 text-text-muted hover:text-error transition-colors opacity-0 group-hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-[2px] min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
+              className="flex-shrink-0 text-text-muted hover:text-error transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-[2px] min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14" strokeLinecap="round" strokeLinejoin="round" />
