@@ -244,16 +244,39 @@ function HomeContent() {
   }, [selectedIds, bulkUpdate, deselectAll]);
 
   const copyTasksToClipboard = useCallback(() => {
-    const tasksToCopy = selectionActive
-      ? tasks.filter(t => selectedIds.has(t.id))
-      : filteredTasks;
-    const text = tasksToCopy
-      .map((t, i) => `${i + 1}. ${t.title}`)
-      .join("\n");
+    const selected = selectionActive ? selectedIds : new Set(filteredTasks.map(t => t.id));
+    const lines: string[] = [];
+    let rootNum = 0;
+
+    for (const rootTask of filteredTasks) {
+      if (!selected.has(rootTask.id)) {
+        const chain = followUpMap.get(rootTask.id);
+        const hasSelectedFollowUp = chain?.some(fu => selected.has(fu.id));
+        if (!hasSelectedFollowUp) continue;
+      }
+
+      rootNum++;
+      if (selected.has(rootTask.id)) {
+        lines.push(`${rootNum}. ${rootTask.title}`);
+      }
+
+      const chain = followUpMap.get(rootTask.id);
+      if (chain) {
+        let subNum = 0;
+        for (const fu of chain) {
+          if (selected.has(fu.id)) {
+            subNum++;
+            lines.push(`  ${rootNum}.${subNum} ${fu.title}`);
+          }
+        }
+      }
+    }
+
+    const text = lines.join("\n");
     navigator.clipboard.writeText(text).then(() => {
-      showToast(`${tasksToCopy.length} tasks copied to clipboard`, "info");
+      showToast(`${lines.length} tasks copied to clipboard`, "info");
     });
-  }, [selectionActive, tasks, filteredTasks, selectedIds]);
+  }, [selectionActive, selectedIds, filteredTasks, followUpMap]);
 
   // Counts for the current sidebar-scoped view (before search/status/date filters)
   const rootTasks = useMemo(() => getRootTasks(tasks), [tasks]);

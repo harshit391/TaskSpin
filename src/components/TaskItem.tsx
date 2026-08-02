@@ -237,10 +237,14 @@ export function TaskItem({
           <>
             <button
               onClick={(e) => {
-                e.stopPropagation();
-                if (!selectionActive) setExpanded(!expanded);
+                if (selectionActive) {
+                  onToggleSelect(task.id);
+                } else {
+                  e.stopPropagation();
+                  setExpanded(!expanded);
+                }
               }}
-              onDoubleClick={() => { setEditValue(task.title); setEditing(true); }}
+              onDoubleClick={() => { if (!selectionActive) { setEditValue(task.title); setEditing(true); } }}
               className={`block text-left text-sm sm:text-base lg:text-lg transition-all w-full ${
                 expanded ? "whitespace-normal break-words" : "truncate"
               } ${
