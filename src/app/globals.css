@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+* {
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
 @theme {
   --color-bg-primary: #000000;
   --color-bg-secondary: #0D0D0D;

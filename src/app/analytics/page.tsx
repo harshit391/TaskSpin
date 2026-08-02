@@ -102,7 +102,7 @@ export default function AnalyticsPage() {
   }, [stats]);
 
   return (
-    <div className="min-h-screen bg-bg-primary">
+    <div className="min-h-screen bg-bg-primary overflow-y-auto">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-bg-primary/80 backdrop-blur-md border-b border-border">
         <div className="w-[92%] sm:w-[88%] lg:w-[85%] max-w-4xl mx-auto flex items-center gap-3 py-4">
