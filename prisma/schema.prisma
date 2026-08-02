@@ -33,3 +33,14 @@ model Task {
   sourceTask          Task?     @relation("FollowUpChain", fields: [sourceTaskId], references: [id], onDelete: SetNull)
   followUpTask        Task?     @relation("FollowUpChain")
 }
+
+model DailyStats {
+  id              String   @id @default(cuid())
+  date            DateTime @unique
+  tasksCompleted  Int      @default(0)
+  tasksCreated    Int      @default(0)
+  tasksActive     Int      @default(0)
+  avgCompletionMs Float?
+  byProject       Json?
+  createdAt       DateTime @default(now())
+}

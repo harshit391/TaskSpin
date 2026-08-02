@@ -85,6 +85,22 @@ export function Sidebar({
         <span className="flex-1 text-sm truncate">Projects Dashboard</span>
       </Link>
 
+      {/* Analytics Link */}
+      <Link
+        href="/analytics"
+        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[3px] text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+          pathname === "/analytics"
+            ? "bg-bg-hover text-text-primary"
+            : "text-text-secondary hover:bg-bg-hover/50 hover:text-text-primary"
+        }`}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M3 3v18h18" />
+          <path d="M7 16l4-4 4 4 5-5" />
+        </svg>
+        <span className="flex-1 text-sm truncate">Analytics</span>
+      </Link>
+
       {/* Divider */}
       <div className="h-px bg-border my-3!" />
 
