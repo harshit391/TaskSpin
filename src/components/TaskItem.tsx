@@ -173,7 +173,7 @@ export function TaskItem({
       onPointerLeave={clearLongPress}
       onClick={handleClick}
       className={`relative group flex items-start sm:items-center gap-2.5 sm:gap-4 bg-bg-card border rounded-[2px] transition-all select-none ${
-        isFollowUp ? "px-2.5 py-2 sm:px-4 sm:py-2.5" : "px-3 py-2.5 sm:px-5 sm:py-3.5"
+        isFollowUp ? "px-2 py-1.5 sm:px-4 sm:py-2.5" : "px-3 py-2.5 sm:px-5 sm:py-3.5"
       } ${
         isSelected
           ? "border-accent/40 bg-accent/5"
@@ -216,7 +216,9 @@ export function TaskItem({
             onToggle(task.id, false);
           }
         }}
-        className={`relative flex-shrink-0 w-[18px] h-[18px] sm:w-5 sm:h-5 border-2 rounded-[2px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent min-w-[44px] min-h-[44px] flex items-center justify-center ${
+        className={`relative flex-shrink-0 w-[18px] h-[18px] sm:w-5 sm:h-5 border-2 rounded-[2px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent flex items-center justify-center ${
+          isFollowUp ? "min-w-[36px] min-h-[36px] sm:min-w-[44px] sm:min-h-[44px]" : "min-w-[44px] min-h-[44px]"
+        } ${
           task.completed
             ? "bg-accent border-accent"
             : "border-border hover:border-accent"
@@ -281,16 +283,15 @@ export function TaskItem({
                   }
                 }}
                 onDoubleClick={() => { if (!selectionActive) { setEditValue(task.title); setEditing(true); } }}
-                className="flex-1 min-w-0"
+                className="flex-1 min-w-0 overflow-hidden"
               >
                 <motion.div
                   initial={false}
-                  animate={{ height: "auto" }}
+                  animate={{ height: expanded ? "auto" : "1.5em" }}
+                  transition={{ type: "spring", bounce: 0.1, duration: 0.35 }}
                   className="overflow-hidden"
                 >
-                  <p className={`text-sm sm:text-base lg:text-lg ${
-                    expanded ? "whitespace-normal break-words" : "truncate"
-                  } ${
+                  <p className={`text-sm sm:text-base lg:text-lg whitespace-normal break-words ${
                     task.completed ? "line-through text-text-muted" : "text-text-primary"
                   }`}>
                     {task.title}

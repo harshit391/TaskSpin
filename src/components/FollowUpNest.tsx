@@ -41,7 +41,7 @@ export function FollowUpNest({
       transition={{ type: "spring", bounce: 0.1, duration: 0.35 }}
       className="overflow-hidden"
     >
-      <div className="ml-6 sm:ml-10 pl-3 sm:pl-4 border-l-2 border-accent/20 space-y-1 sm:space-y-1.5 py-1.5">
+      <div className="ml-5 sm:ml-10 pl-2.5 sm:pl-4 border-l-2 border-accent/20 space-y-0.5 sm:space-y-1.5 py-1">
         {chain.map((task, index) => (
           <motion.div
             key={task.id}
