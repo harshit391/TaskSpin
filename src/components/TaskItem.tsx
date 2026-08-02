@@ -55,6 +55,7 @@ export function TaskItem({
   const [customDays, setCustomDays] = useState(task.recurrenceDays ?? 7);
   const [startDate, setStartDate] = useState(task.recurrenceStartDate ? task.recurrenceStartDate.split("T")[0] : "");
   const [expanded, setExpanded] = useState(false);
+  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(task.title);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -171,7 +172,7 @@ export function TaskItem({
       onPointerUp={handlePointerUp}
       onPointerLeave={clearLongPress}
       onClick={handleClick}
-      className={`group flex items-start sm:items-center gap-2.5 sm:gap-4 bg-bg-card border rounded-[2px] transition-all select-none ${
+      className={`relative group flex items-start sm:items-center gap-2.5 sm:gap-4 bg-bg-card border rounded-[2px] transition-all select-none ${
         isFollowUp ? "px-2.5 py-2 sm:px-4 sm:py-2.5" : "px-3 py-2.5 sm:px-5 sm:py-3.5"
       } ${
         isSelected
@@ -207,7 +208,14 @@ export function TaskItem({
         role="checkbox"
         aria-checked={task.completed}
         aria-label={`Mark "${task.title}" as ${task.completed ? "incomplete" : "complete"}`}
-        onClick={(e) => { e.stopPropagation(); onToggle(task.id, !task.completed); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!task.completed) {
+            setShowCompleteConfirm(true);
+          } else {
+            onToggle(task.id, false);
+          }
+        }}
         className={`relative flex-shrink-0 w-[18px] h-[18px] sm:w-5 sm:h-5 border-2 rounded-[2px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent min-w-[44px] min-h-[44px] flex items-center justify-center ${
           task.completed
             ? "bg-accent border-accent"
@@ -220,6 +228,36 @@ export function TaskItem({
           </svg>
         )}
       </button>
+
+      {/* Complete Confirmation */}
+      <AnimatePresence>
+        {showCompleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.15 }}
+            onClick={(e) => e.stopPropagation()}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 bg-bg-card border border-border rounded-[4px] shadow-lg px-4 py-3 flex flex-col items-center gap-2.5 min-w-[200px]"
+          >
+            <p className="text-xs text-text-secondary text-center">Mark as complete?</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowCompleteConfirm(false); onToggle(task.id, true); }}
+                className="bg-accent hover:bg-accent-hover text-white text-xs font-medium px-3.5 py-1.5 rounded-[3px] transition-colors min-h-[36px]"
+              >
+                Yes
+              </button>
+              <button
+                onClick={() => setShowCompleteConfirm(false)}
+                className="bg-bg-primary border border-border text-text-secondary text-xs font-medium px-3.5 py-1.5 rounded-[3px] hover:bg-bg-hover transition-colors min-h-[36px]"
+              >
+                No
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Title + Inline Badges */}
       <div className="flex-1 min-w-0">
@@ -235,26 +273,53 @@ export function TaskItem({
           />
         ) : (
           <>
-            <button
-              onClick={(e) => {
-                if (selectionActive) {
-                  onToggleSelect(task.id);
-                } else {
-                  e.stopPropagation();
-                  setExpanded(!expanded);
-                }
-              }}
-              onDoubleClick={() => { if (!selectionActive) { setEditValue(task.title); setEditing(true); } }}
-              className={`block text-left text-sm sm:text-base lg:text-lg transition-all w-full ${
-                expanded ? "whitespace-normal break-words" : "truncate"
-              } ${
-                task.completed ? "line-through text-text-muted" : "text-text-primary"
-              }`}
-              title={expanded ? undefined : task.title}
-              aria-label={expanded ? "Collapse task title" : "Expand task title"}
-            >
-              {task.title}
-            </button>
+            <div className="flex items-start gap-1 w-full">
+              <div
+                onClick={(e) => {
+                  if (selectionActive) {
+                    onToggleSelect(task.id);
+                  }
+                }}
+                onDoubleClick={() => { if (!selectionActive) { setEditValue(task.title); setEditing(true); } }}
+                className="flex-1 min-w-0"
+              >
+                <motion.div
+                  initial={false}
+                  animate={{ height: "auto" }}
+                  className="overflow-hidden"
+                >
+                  <p className={`text-sm sm:text-base lg:text-lg ${
+                    expanded ? "whitespace-normal break-words" : "truncate"
+                  } ${
+                    task.completed ? "line-through text-text-muted" : "text-text-primary"
+                  }`}>
+                    {task.title}
+                  </p>
+                </motion.div>
+              </div>
+              {!selectionActive && task.title.length > 30 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+                  className="flex-shrink-0 mt-0.5 text-text-muted hover:text-accent transition-colors min-w-[28px] min-h-[28px] inline-flex items-center justify-center"
+                  aria-label={expanded ? "Collapse" : "Expand"}
+                >
+                  <motion.svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    animate={{ rotate: expanded ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <path d="M6 9l6 6 6-6" />
+                  </motion.svg>
+                </button>
+              )}
+            </div>
             {/* Project badge + recurrence (always visible below title) */}
             {(task.project || task.recurrenceType) && (
               <div className="flex items-center gap-2 mt-0.5">
