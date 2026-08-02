@@ -13,8 +13,11 @@ import { BulkActionBar } from "@/components/BulkActionBar";
 import { SpinModal } from "@/components/SpinModal";
 import { ShortcutsModal } from "@/components/ShortcutsModal";
 import { FollowUpModal } from "@/components/FollowUpModal";
+import { FollowUpChainModal } from "@/components/FollowUpChainModal";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTasks } from "@/hooks/useTasks";
 import { useProjects } from "@/hooks/useProjects";
+import { addFollowUp as addFollowUpApi } from "@/lib/api";
 import { useKeyboardShortcuts, Shortcut } from "@/hooks/useKeyboardShortcuts";
 import { showToast } from "@/hooks/useToast";
 import { FilterTab, ProjectFilter } from "@/types/task";
@@ -78,11 +81,15 @@ function HomeContent() {
   // Follow-up modal state
   const [followUpTask, setFollowUpTask] = useState<{ id: string; title: string; projectId?: string | null; recurrenceType?: string | null; recurrenceDays?: number | null } | null>(null);
 
+  // Follow-up chain modal state
+  const [chainTaskId, setChainTaskId] = useState<string | null>(null);
+
   // Refs for keyboard shortcuts
   const taskInputRef = useRef<HTMLTextAreaElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Data hooks
+  const queryClient = useQueryClient();
   const { tasks, isLoading, isError, addTask, addTasksBatch, isAdding, isMutating, toggleTask, editTask, assignToProject, setRecurrence, deleteTask, bulkDelete, bulkUpdate } = useTasks();
   const { projects, addProject, removeProject, isAdding: isAddingProject, isMutating: isProjectMutating } = useProjects();
 
@@ -113,6 +120,11 @@ function HomeContent() {
   const deselectAll = useCallback(() => {
     setSelectedIds(new Set());
   }, []);
+
+  const tasksWithFollowUps = useMemo(() =>
+    new Set(tasks.filter(t => t.sourceTaskId).map(t => t.sourceTaskId!)),
+    [tasks]
+  );
 
   // Apply all filters
   const filteredTasks = useMemo(() => {
@@ -391,12 +403,14 @@ function HomeContent() {
                   projects={projects}
                   selectedIds={selectedIds}
                   selectionActive={selectionActive}
+                  tasksWithFollowUps={tasksWithFollowUps}
                   onToggleSelect={toggleSelection}
                   onToggle={handleToggleTask}
                   onEdit={editTask}
                   onDelete={deleteTask}
                   onAssign={assignToProject}
                   onSetRecurrence={setRecurrence}
+                  onOpenFollowUps={setChainTaskId}
                 />
               )}
             </div>
@@ -420,17 +434,26 @@ function HomeContent() {
         onClose={() => setShortcutsOpen(false)}
       />
 
-      {/* Follow-Up Modal */}
+      {/* Follow-Up Modal (on task completion) */}
       <FollowUpModal
         isOpen={followUpTask !== null}
         completedTaskTitle={followUpTask?.title ?? ""}
         recurrenceInfo={followUpTask?.recurrenceType ? { type: followUpTask.recurrenceType, days: followUpTask.recurrenceDays } : null}
         onAdd={(title) => {
           const pid = followUpTask?.projectId ?? (projectFilter !== "all" && projectFilter !== "inbox" ? projectFilter : undefined);
-          addTask(title, pid);
+          addFollowUpApi(followUpTask!.id, title, undefined, pid).then(() => {
+            queryClient.invalidateQueries({ queryKey: ["tasks"] });
+          });
           setFollowUpTask(null);
         }}
         onSkip={() => setFollowUpTask(null)}
+      />
+
+      {/* Follow-Up Chain Modal */}
+      <FollowUpChainModal
+        isOpen={chainTaskId !== null}
+        onClose={() => setChainTaskId(null)}
+        task={chainTaskId ? tasks.find(t => t.id === chainTaskId) ?? null : null}
       />
 
       {/* Bulk Action Bar */}

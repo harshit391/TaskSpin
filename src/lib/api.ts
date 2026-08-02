@@ -115,6 +115,27 @@ export async function bulkDeleteTasks(ids: string[]): Promise<{ count: number }>
   return res.json();
 }
 
+export async function fetchFollowUpChain(taskId: string): Promise<Task[]> {
+  const res = await fetch(`${TASKS_BASE}/${taskId}/follow-ups`);
+  if (!res.ok) throw new Error("Failed to fetch follow-up chain");
+  return res.json();
+}
+
+export async function addFollowUp(
+  taskId: string,
+  title: string,
+  insertAfterId?: string,
+  projectId?: string | null
+): Promise<Task[]> {
+  const res = await fetch(`${TASKS_BASE}/${taskId}/follow-ups`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title, insertAfterId, projectId }),
+  });
+  if (!res.ok) throw new Error("Failed to add follow-up");
+  return res.json();
+}
+
 export async function bulkUpdateTasks(
   ids: string[],
   data: { completed?: boolean; projectId?: string | null }

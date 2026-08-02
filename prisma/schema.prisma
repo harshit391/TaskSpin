@@ -29,5 +29,7 @@ model Task {
   recurrenceDays      Int?
   recurrenceStartDate DateTime?
   hiddenUntil         DateTime?
-  sourceTaskId        String?
+  sourceTaskId        String?   @unique
+  sourceTask          Task?     @relation("FollowUpChain", fields: [sourceTaskId], references: [id], onDelete: SetNull)
+  followUpTask        Task?     @relation("FollowUpChain")
 }

@@ -9,12 +9,14 @@ interface TaskListProps {
   projects: Project[];
   selectedIds: Set<string>;
   selectionActive: boolean;
+  tasksWithFollowUps: Set<string>;
   onToggleSelect: (id: string) => void;
   onToggle: (id: string, completed: boolean) => void;
   onEdit: (id: string, title: string) => void;
   onDelete: (id: string) => void;
   onAssign: (id: string, projectId: string | null) => void;
   onSetRecurrence: (id: string, recurrenceType: string | null, recurrenceDays?: number, recurrenceStartDate?: string | null) => void;
+  onOpenFollowUps: (id: string) => void;
 }
 
 export function TaskList({
@@ -22,12 +24,14 @@ export function TaskList({
   projects,
   selectedIds,
   selectionActive,
+  tasksWithFollowUps,
   onToggleSelect,
   onToggle,
   onEdit,
   onDelete,
   onAssign,
   onSetRecurrence,
+  onOpenFollowUps,
 }: TaskListProps) {
   if (tasks.length === 0) {
     return (
@@ -61,12 +65,14 @@ export function TaskList({
             projects={projects}
             isSelected={selectedIds.has(task.id)}
             selectionActive={selectionActive}
+            hasFollowUps={tasksWithFollowUps.has(task.id)}
             onToggleSelect={onToggleSelect}
             onToggle={onToggle}
             onEdit={onEdit}
             onDelete={onDelete}
             onAssign={onAssign}
             onSetRecurrence={onSetRecurrence}
+            onOpenFollowUps={onOpenFollowUps}
           />
         ))}
       </AnimatePresence>

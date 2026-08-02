@@ -48,6 +48,22 @@ export async function DELETE(
 ) {
   const { id } = await params;
 
+  const task = await prisma.task.findUnique({
+    where: { id },
+    select: { sourceTaskId: true },
+  });
+
+  const child = await prisma.task.findUnique({
+    where: { sourceTaskId: id },
+  });
+
+  if (child) {
+    await prisma.task.update({
+      where: { id: child.id },
+      data: { sourceTaskId: task?.sourceTaskId ?? null },
+    });
+  }
+
   await prisma.task.delete({
     where: { id },
   });
