@@ -92,6 +92,7 @@ export function TaskList({
               <AnimatePresence>
                 {isExpanded && chain && chain.length > 0 && (
                   <FollowUpNest
+                    rootTaskId={task.id}
                     chain={chain}
                     projects={projects}
                     selectedIds={selectedIds}

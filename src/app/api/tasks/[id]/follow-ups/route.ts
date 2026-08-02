@@ -1,25 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+async function walkChain(startId: string) {
+  const allTasks = await prisma.task.findMany({
+    where: { sourceTaskId: { not: null } },
+    include: { project: true },
+  });
+
+  const childByParent = new Map<string, typeof allTasks[number]>();
+  for (const t of allTasks) {
+    if (t.sourceTaskId) childByParent.set(t.sourceTaskId, t);
+  }
+
+  const chain = [];
+  let current = childByParent.get(startId);
+  const visited = new Set<string>();
+
+  while (current && !visited.has(current.id)) {
+    visited.add(current.id);
+    chain.push(current);
+    current = childByParent.get(current.id);
+  }
+
+  return chain;
+}
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-
-  const chain = [];
-  let currentId = id;
-
-  for (let i = 0; i < 100; i++) {
-    const next = await prisma.task.findUnique({
-      where: { sourceTaskId: currentId },
-      include: { project: true },
-    });
-    if (!next) break;
-    chain.push(next);
-    currentId = next.id;
-  }
-
+  const chain = await walkChain(id);
   return NextResponse.json(chain);
 }
 
@@ -40,30 +51,19 @@ export async function POST(
     return NextResponse.json({ error: "Task not found" }, { status: 404 });
   }
 
-  const insertAfter = insertAfterId || id;
+  let targetId: string;
 
-  // Find the tail to append, or validate insertAfterId is in the chain
-  let targetId = insertAfter;
-
-  if (!insertAfterId) {
-    // Append mode: walk to end of chain
-    let currentId = id;
-    for (let i = 0; i < 100; i++) {
-      const next = await prisma.task.findUnique({
-        where: { sourceTaskId: currentId },
-      });
-      if (!next) break;
-      currentId = next.id;
-    }
-    targetId = currentId;
+  if (insertAfterId) {
+    targetId = insertAfterId;
+  } else {
+    const chain = await walkChain(id);
+    targetId = chain.length > 0 ? chain[chain.length - 1].id : id;
   }
 
-  // Find the existing child of targetId (if any)
   const existingChild = await prisma.task.findUnique({
     where: { sourceTaskId: targetId },
   });
 
-  // Atomic: create new task and re-link existing child
   const resolvedProjectId = projectId !== undefined ? projectId : anchorTask.projectId;
 
   await prisma.$transaction(async (tx) => {
@@ -83,18 +83,6 @@ export async function POST(
     }
   });
 
-  // Return updated chain from the anchor task
-  const chain = [];
-  let currentId = id;
-  for (let i = 0; i < 100; i++) {
-    const next = await prisma.task.findUnique({
-      where: { sourceTaskId: currentId },
-      include: { project: true },
-    });
-    if (!next) break;
-    chain.push(next);
-    currentId = next.id;
-  }
-
-  return NextResponse.json(chain, { status: 201 });
+  const updatedChain = await walkChain(id);
+  return NextResponse.json(updatedChain, { status: 201 });
 }

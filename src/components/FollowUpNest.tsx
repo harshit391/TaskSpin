@@ -5,6 +5,7 @@ import { Task, Project } from "@/types/task";
 import { TaskItem } from "./TaskItem";
 
 interface FollowUpNestProps {
+  rootTaskId: string;
   chain: Task[];
   projects: Project[];
   selectedIds: Set<string>;
@@ -19,6 +20,7 @@ interface FollowUpNestProps {
 }
 
 export function FollowUpNest({
+  rootTaskId,
   chain,
   projects,
   selectedIds,
@@ -64,6 +66,15 @@ export function FollowUpNest({
             />
           </motion.div>
         ))}
+        <button
+          onClick={() => onOpenFollowUps(rootTaskId)}
+          className="flex items-center gap-1.5 text-xs text-accent hover:text-accent/80 transition-colors py-1.5 px-1 min-h-[36px]"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          Manage chain
+        </button>
       </div>
     </motion.div>
   );

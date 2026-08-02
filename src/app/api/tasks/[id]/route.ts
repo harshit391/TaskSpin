@@ -20,23 +20,35 @@ export async function PATCH(
     include: { project: true },
   });
 
-  if (body.completed === true && task.recurrenceType) {
-    const hiddenUntil = calculateNextOccurrence(
-      task.recurrenceType,
-      task.recurrenceDays,
-      task.recurrenceStartDate
-    );
-    await prisma.task.create({
-      data: {
-        title: task.title,
-        projectId: task.projectId,
-        recurrenceType: task.recurrenceType,
-        recurrenceDays: task.recurrenceDays,
-        recurrenceStartDate: task.recurrenceStartDate,
-        hiddenUntil,
-        sourceTaskId: task.id,
-      },
-    });
+  if (body.completed === true) {
+    if (task.recurrenceType) {
+      const hiddenUntil = calculateNextOccurrence(
+        task.recurrenceType,
+        task.recurrenceDays,
+        task.recurrenceStartDate
+      );
+      await prisma.task.create({
+        data: {
+          title: task.title,
+          projectId: task.projectId,
+          recurrenceType: task.recurrenceType,
+          recurrenceDays: task.recurrenceDays,
+          recurrenceStartDate: task.recurrenceStartDate,
+          hiddenUntil,
+          sourceTaskId: task.id,
+        },
+      });
+    } else {
+      const child = await prisma.task.findUnique({
+        where: { sourceTaskId: id },
+      });
+      if (child) {
+        await prisma.task.update({
+          where: { id: child.id },
+          data: { sourceTaskId: null },
+        });
+      }
+    }
   }
 
   return NextResponse.json(task);

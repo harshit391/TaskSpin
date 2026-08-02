@@ -167,6 +167,7 @@ export function useTasks() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: TASKS_KEY });
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === "follow-ups" });
     },
   });
 

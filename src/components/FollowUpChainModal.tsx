@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Task } from "@/types/task";
 import { useFollowUps } from "@/hooks/useFollowUps";
+import { useQueryClient } from "@tanstack/react-query";
+import { deleteTask, updateTaskTitle } from "@/lib/api";
+import { showToast } from "@/hooks/useToast";
 
 interface FollowUpChainModalProps {
   isOpen: boolean;
@@ -12,18 +15,26 @@ interface FollowUpChainModalProps {
 }
 
 export function FollowUpChainModal({ isOpen, onClose, task }: FollowUpChainModalProps) {
+  const queryClient = useQueryClient();
   const { chain, isLoading, addFollowUp, isAdding } = useFollowUps(isOpen ? task?.id ?? null : null);
   const [appendValue, setAppendValue] = useState("");
   const [insertingAfter, setInsertingAfter] = useState<string | null>(null);
   const [insertValue, setInsertValue] = useState("");
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
   const appendRef = useRef<HTMLInputElement>(null);
   const insertRef = useRef<HTMLInputElement>(null);
+  const editInputRef = useRef<HTMLInputElement>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       setAppendValue("");
       setInsertingAfter(null);
       setInsertValue("");
+      setSelectedItemId(null);
+      setEditingItemId(null);
       setTimeout(() => appendRef.current?.focus(), 150);
     }
   }, [isOpen]);
@@ -33,6 +44,56 @@ export function FollowUpChainModal({ isOpen, onClose, task }: FollowUpChainModal
       setTimeout(() => insertRef.current?.focus(), 50);
     }
   }, [insertingAfter]);
+
+  useEffect(() => {
+    if (editingItemId) {
+      setTimeout(() => editInputRef.current?.focus(), 50);
+    }
+  }, [editingItemId]);
+
+  const handleLongPressStart = useCallback((itemId: string) => {
+    longPressTimer.current = setTimeout(() => {
+      setSelectedItemId(itemId);
+    }, 400);
+  }, []);
+
+  const handleLongPressEnd = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }, []);
+
+  const handleDeleteItem = useCallback(async (itemId: string) => {
+    try {
+      await deleteTask(itemId);
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === "follow-ups" });
+      setSelectedItemId(null);
+      showToast("Follow-up deleted", "info");
+    } catch {
+      showToast("Failed to delete", "error");
+    }
+  }, [queryClient]);
+
+  const handleEditItem = useCallback((itemId: string, currentTitle: string) => {
+    setEditingItemId(itemId);
+    setEditValue(currentTitle);
+    setSelectedItemId(null);
+  }, []);
+
+  const handleSaveEdit = useCallback(async () => {
+    if (!editingItemId || !editValue.trim()) return;
+    try {
+      await updateTaskTitle(editingItemId, editValue.trim());
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === "follow-ups" });
+      setEditingItemId(null);
+      setEditValue("");
+    } catch {
+      showToast("Failed to edit", "error");
+    }
+  }, [editingItemId, editValue, queryClient]);
 
   const handleAppend = () => {
     const trimmed = appendValue.trim();
@@ -94,7 +155,7 @@ export function FollowUpChainModal({ isOpen, onClose, task }: FollowUpChainModal
             </div>
 
             {/* Chain Body */}
-            <div className="flex-1 overflow-y-auto px-5 py-4">
+            <div className="flex-1 overflow-y-auto px-5 py-4" onClick={() => { if (selectedItemId) setSelectedItemId(null); }}>
               {isLoading ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((i) => (
@@ -128,7 +189,12 @@ export function FollowUpChainModal({ isOpen, onClose, task }: FollowUpChainModal
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -10 }}
                           transition={{ delay: index * 0.03 }}
-                          className="relative flex items-start gap-3 py-2"
+                          onPointerDown={() => handleLongPressStart(item.id)}
+                          onPointerUp={handleLongPressEnd}
+                          onPointerLeave={handleLongPressEnd}
+                          className={`relative flex items-start gap-3 py-2 rounded-[3px] px-1 -mx-1 transition-colors ${
+                            selectedItemId === item.id ? "bg-accent/10" : ""
+                          }`}
                         >
                           {/* Node dot */}
                           <div className={`relative z-10 w-[11px] h-[11px] rounded-full border-2 flex-shrink-0 mt-0.5 ${
@@ -137,14 +203,67 @@ export function FollowUpChainModal({ isOpen, onClose, task }: FollowUpChainModal
                               : "bg-accent border-accent"
                           }`} />
 
-                          {/* Task title */}
-                          <span className={`text-sm leading-snug ${
-                            item.completed
-                              ? "text-text-muted line-through opacity-60"
-                              : "text-text-primary"
-                          }`}>
-                            {item.title}
-                          </span>
+                          {/* Task title or edit input */}
+                          {editingItemId === item.id ? (
+                            <div className="flex-1 flex items-center gap-2">
+                              <input
+                                ref={editInputRef}
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") handleSaveEdit();
+                                  if (e.key === "Escape") { setEditingItemId(null); setEditValue(""); }
+                                }}
+                                className="flex-1 text-sm bg-bg-primary border border-border rounded-[3px] px-2 py-1 text-text-primary focus:outline-none focus:border-accent transition-colors"
+                              />
+                              <button
+                                onClick={handleSaveEdit}
+                                className="text-[10px] font-medium text-accent min-w-[36px] min-h-[36px] inline-flex items-center justify-center"
+                              >
+                                Save
+                              </button>
+                            </div>
+                          ) : (
+                            <span className={`text-sm leading-snug flex-1 ${
+                              item.completed
+                                ? "text-text-muted line-through opacity-60"
+                                : "text-text-primary"
+                            }`}>
+                              {item.title}
+                            </span>
+                          )}
+
+                          {/* Action buttons on selection */}
+                          <AnimatePresence>
+                            {selectedItemId === item.id && editingItemId !== item.id && (
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                className="flex items-center gap-0.5 flex-shrink-0"
+                              >
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleEditItem(item.id, item.title); }}
+                                  className="text-text-muted hover:text-text-primary transition-colors min-w-[36px] min-h-[36px] inline-flex items-center justify-center"
+                                  aria-label="Edit"
+                                >
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleDeleteItem(item.id); }}
+                                  className="text-text-muted hover:text-error transition-colors min-w-[36px] min-h-[36px] inline-flex items-center justify-center"
+                                  aria-label="Delete"
+                                >
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14" />
+                                    <path d="M10 11v6M14 11v6" />
+                                  </svg>
+                                </button>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </motion.div>
 
                         {/* Insert button between items */}
