@@ -51,9 +51,12 @@ export function FollowUpChainModal({ isOpen, onClose, task }: FollowUpChainModal
     }
   }, [editingItemId]);
 
+  const justSelected = useRef(false);
+
   const handleLongPressStart = useCallback((itemId: string) => {
     longPressTimer.current = setTimeout(() => {
       setSelectedItemId(itemId);
+      justSelected.current = true;
     }, 400);
   }, []);
 
@@ -155,7 +158,10 @@ export function FollowUpChainModal({ isOpen, onClose, task }: FollowUpChainModal
             </div>
 
             {/* Chain Body */}
-            <div className="flex-1 overflow-y-auto px-5 py-4" onClick={() => { if (selectedItemId) setSelectedItemId(null); }}>
+            <div className="flex-1 overflow-y-auto px-5 py-4" onClick={() => {
+              if (justSelected.current) { justSelected.current = false; return; }
+              if (selectedItemId) setSelectedItemId(null);
+            }}>
               {isLoading ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((i) => (
