@@ -3,6 +3,7 @@
 import { AnimatePresence } from "framer-motion";
 import { Task, Project } from "@/types/task";
 import { TaskItem } from "./TaskItem";
+import { FollowUpNest } from "./FollowUpNest";
 
 interface TaskListProps {
   tasks: Task[];
@@ -10,6 +11,9 @@ interface TaskListProps {
   selectedIds: Set<string>;
   selectionActive: boolean;
   tasksWithFollowUps: Set<string>;
+  followUpMap: Map<string, Task[]>;
+  expandedChains: Set<string>;
+  onToggleExpand: (id: string) => void;
   onToggleSelect: (id: string) => void;
   onToggle: (id: string, completed: boolean) => void;
   onEdit: (id: string, title: string) => void;
@@ -25,6 +29,9 @@ export function TaskList({
   selectedIds,
   selectionActive,
   tasksWithFollowUps,
+  followUpMap,
+  expandedChains,
+  onToggleExpand,
   onToggleSelect,
   onToggle,
   onEdit,
@@ -58,23 +65,50 @@ export function TaskList({
   return (
     <div className="space-y-1.5 sm:space-y-2" role="list" aria-label="Task list">
       <AnimatePresence initial={false}>
-        {tasks.map((task) => (
-          <TaskItem
-            key={task.id}
-            task={task}
-            projects={projects}
-            isSelected={selectedIds.has(task.id)}
-            selectionActive={selectionActive}
-            hasFollowUps={tasksWithFollowUps.has(task.id)}
-            onToggleSelect={onToggleSelect}
-            onToggle={onToggle}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onAssign={onAssign}
-            onSetRecurrence={onSetRecurrence}
-            onOpenFollowUps={onOpenFollowUps}
-          />
-        ))}
+        {tasks.map((task) => {
+          const chain = followUpMap.get(task.id);
+          const chainCount = chain?.length ?? 0;
+          const isExpanded = expandedChains.has(task.id);
+
+          return (
+            <div key={task.id}>
+              <TaskItem
+                task={task}
+                projects={projects}
+                isSelected={selectedIds.has(task.id)}
+                selectionActive={selectionActive}
+                hasFollowUps={tasksWithFollowUps.has(task.id)}
+                chainCount={chainCount}
+                isExpanded={isExpanded}
+                onToggleExpand={() => onToggleExpand(task.id)}
+                onToggleSelect={onToggleSelect}
+                onToggle={onToggle}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onAssign={onAssign}
+                onSetRecurrence={onSetRecurrence}
+                onOpenFollowUps={onOpenFollowUps}
+              />
+              <AnimatePresence>
+                {isExpanded && chain && chain.length > 0 && (
+                  <FollowUpNest
+                    chain={chain}
+                    projects={projects}
+                    selectedIds={selectedIds}
+                    selectionActive={selectionActive}
+                    onToggleSelect={onToggleSelect}
+                    onToggle={onToggle}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    onAssign={onAssign}
+                    onSetRecurrence={onSetRecurrence}
+                    onOpenFollowUps={onOpenFollowUps}
+                  />
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
       </AnimatePresence>
     </div>
   );

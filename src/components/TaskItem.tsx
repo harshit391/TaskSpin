@@ -11,6 +11,10 @@ interface TaskItemProps {
   isSelected: boolean;
   selectionActive: boolean;
   hasFollowUps: boolean;
+  chainCount?: number;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
+  isFollowUp?: boolean;
   onToggleSelect: (id: string) => void;
   onToggle: (id: string, completed: boolean) => void;
   onEdit: (id: string, title: string) => void;
@@ -33,6 +37,10 @@ export function TaskItem({
   isSelected,
   selectionActive,
   hasFollowUps,
+  chainCount,
+  isExpanded,
+  onToggleExpand,
+  isFollowUp,
   onToggleSelect,
   onToggle,
   onEdit,
@@ -163,7 +171,9 @@ export function TaskItem({
       onPointerUp={handlePointerUp}
       onPointerLeave={clearLongPress}
       onClick={handleClick}
-      className={`group flex items-start sm:items-center gap-2.5 sm:gap-4 bg-bg-card border rounded-[2px] px-3 py-2.5 sm:px-5 sm:py-3.5 transition-all select-none ${
+      className={`group flex items-start sm:items-center gap-2.5 sm:gap-4 bg-bg-card border rounded-[2px] transition-all select-none ${
+        isFollowUp ? "px-2.5 py-2 sm:px-4 sm:py-2.5" : "px-3 py-2.5 sm:px-5 sm:py-3.5"
+      } ${
         isSelected
           ? "border-accent/40 bg-accent/5"
           : "border-border/60 sm:border-border hover:border-border-subtle hover:bg-bg-hover"
@@ -475,19 +485,32 @@ export function TaskItem({
                     </AnimatePresence>
                   </div>
 
-                  <div className="h-px bg-border" />
+                  {!isFollowUp && <div className="h-px bg-border" />}
 
                   {/* Follow-ups */}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setShowOverflowMenu(false); onOpenFollowUps(task.id); }}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-xs text-left transition-colors hover:bg-bg-hover ${hasFollowUps ? "text-accent" : "text-text-secondary"}`}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
-                      <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
-                    </svg>
-                    Follow-ups
-                  </button>
+                  {!isFollowUp && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowOverflowMenu(false);
+                        if (chainCount && chainCount > 0 && onToggleExpand) {
+                          onToggleExpand();
+                        } else {
+                          onOpenFollowUps(task.id);
+                        }
+                      }}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-xs text-left transition-colors hover:bg-bg-hover ${hasFollowUps || (chainCount && chainCount > 0) ? "text-accent" : "text-text-secondary"}`}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+                        <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+                      </svg>
+                      {chainCount && chainCount > 0
+                        ? (isExpanded ? "Collapse chain" : `Expand chain (${chainCount})`)
+                        : "Follow-ups"
+                      }
+                    </button>
+                  )}
 
                   <div className="h-px bg-border" />
 
@@ -667,18 +690,32 @@ export function TaskItem({
             </div>
 
             {/* Follow-ups Button */}
-            <button
-              onClick={(e) => { e.stopPropagation(); onOpenFollowUps(task.id); }}
-              aria-label="Follow-up chain"
-              className={`flex-shrink-0 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-[2px] min-w-[44px] min-h-[44px] inline-flex items-center justify-center ${
-                hasFollowUps ? "text-accent" : "text-text-muted hover:text-text-secondary"
-              }`}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
-                <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
-              </svg>
-            </button>
+            {!isFollowUp && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (chainCount && chainCount > 0 && onToggleExpand) {
+                    onToggleExpand();
+                  } else {
+                    onOpenFollowUps(task.id);
+                  }
+                }}
+                aria-label={chainCount ? `${isExpanded ? "Collapse" : "Expand"} ${chainCount} follow-ups` : "Follow-up chain"}
+                className={`relative flex-shrink-0 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-[2px] min-w-[44px] min-h-[44px] inline-flex items-center justify-center ${
+                  hasFollowUps || (chainCount && chainCount > 0) ? "text-accent" : "text-text-muted hover:text-text-secondary"
+                }`}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+                  <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+                </svg>
+                {chainCount && chainCount > 0 ? (
+                  <span className="absolute -top-0.5 -right-0.5 bg-accent text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                    {chainCount}
+                  </span>
+                ) : null}
+              </button>
+            )}
 
             {/* Delete Button */}
             <button

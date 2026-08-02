@@ -21,6 +21,7 @@ import { addFollowUp as addFollowUpApi } from "@/lib/api";
 import { useKeyboardShortcuts, Shortcut } from "@/hooks/useKeyboardShortcuts";
 import { showToast } from "@/hooks/useToast";
 import { FilterTab, ProjectFilter } from "@/types/task";
+import { buildFollowUpMap, getRootTasks, findRootForTask } from "@/lib/chainUtils";
 
 function isToday(dateStr: string): boolean {
   const d = new Date(dateStr);
@@ -84,6 +85,9 @@ function HomeContent() {
   // Follow-up chain modal state
   const [chainTaskId, setChainTaskId] = useState<string | null>(null);
 
+  // Chain expand/collapse state
+  const [expandedChains, setExpandedChains] = useState<Set<string>>(new Set());
+
   // Refs for keyboard shortcuts
   const taskInputRef = useRef<HTMLTextAreaElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -126,9 +130,12 @@ function HomeContent() {
     [tasks]
   );
 
-  // Apply all filters
+  // Build follow-up chain map from all tasks
+  const followUpMap = useMemo(() => buildFollowUpMap(tasks), [tasks]);
+
+  // Apply all filters (only root tasks appear at top level)
   const filteredTasks = useMemo(() => {
-    let result = tasks;
+    let result = getRootTasks(tasks);
 
     // Sidebar project filter (single project quick-select)
     if (projectFilter === "inbox") {
@@ -137,10 +144,15 @@ function HomeContent() {
       result = result.filter((t) => t.projectId === projectFilter);
     }
 
-    // Text search
+    // Text search (with bubble-up: include root if any follow-up matches)
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      result = result.filter((t) => t.title.toLowerCase().includes(q));
+      result = result.filter((t) => {
+        if (t.title.toLowerCase().includes(q)) return true;
+        const chain = followUpMap.get(t.id);
+        if (chain) return chain.some(fu => fu.title.toLowerCase().includes(q));
+        return false;
+      });
     }
 
     // Status filter
@@ -161,20 +173,54 @@ function HomeContent() {
     }
 
     return result;
-  }, [tasks, projectFilter, searchQuery, statusFilter, dateFilter, selectedProjects]);
+  }, [tasks, projectFilter, searchQuery, statusFilter, dateFilter, selectedProjects, followUpMap]);
+
+  // Auto-expand chains when search matches a follow-up
+  const effectiveExpandedChains = useMemo(() => {
+    if (!searchQuery.trim()) return expandedChains;
+    const q = searchQuery.toLowerCase();
+    const autoExpand = new Set(expandedChains);
+    for (const task of filteredTasks) {
+      const chain = followUpMap.get(task.id);
+      if (chain && chain.some(fu => fu.title.toLowerCase().includes(q))) {
+        autoExpand.add(task.id);
+      }
+    }
+    return autoExpand;
+  }, [searchQuery, expandedChains, filteredTasks, followUpMap]);
+
+  const toggleChainExpand = useCallback((id: string) => {
+    setExpandedChains(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  // All visible task IDs (root + expanded follow-ups)
+  const visibleTaskIds = useMemo(() => {
+    const ids = new Set(filteredTasks.map(t => t.id));
+    for (const task of filteredTasks) {
+      if (effectiveExpandedChains.has(task.id)) {
+        const chain = followUpMap.get(task.id);
+        if (chain) chain.forEach(fu => ids.add(fu.id));
+      }
+    }
+    return ids;
+  }, [filteredTasks, effectiveExpandedChains, followUpMap]);
 
   // Prune stale selections when filter changes
   useEffect(() => {
-    const visibleIds = new Set(filteredTasks.map(t => t.id));
     setSelectedIds(prev => {
-      const pruned = new Set([...prev].filter(id => visibleIds.has(id)));
+      const pruned = new Set([...prev].filter(id => visibleTaskIds.has(id)));
       return pruned.size === prev.size ? prev : pruned;
     });
-  }, [filteredTasks]);
+  }, [visibleTaskIds]);
 
   const selectAll = useCallback(() => {
-    setSelectedIds(new Set(filteredTasks.map(t => t.id)));
-  }, [filteredTasks]);
+    setSelectedIds(new Set(visibleTaskIds));
+  }, [visibleTaskIds]);
 
   // Bulk action handlers
   const handleBulkDelete = useCallback(() => {
@@ -199,7 +245,7 @@ function HomeContent() {
 
   const copyTasksToClipboard = useCallback(() => {
     const tasksToCopy = selectionActive
-      ? filteredTasks.filter(t => selectedIds.has(t.id))
+      ? tasks.filter(t => selectedIds.has(t.id))
       : filteredTasks;
     const text = tasksToCopy
       .map((t, i) => `${i + 1}. ${t.title}`)
@@ -207,18 +253,19 @@ function HomeContent() {
     navigator.clipboard.writeText(text).then(() => {
       showToast(`${tasksToCopy.length} tasks copied to clipboard`, "info");
     });
-  }, [selectionActive, filteredTasks, selectedIds]);
+  }, [selectionActive, tasks, filteredTasks, selectedIds]);
 
   // Counts for the current sidebar-scoped view (before search/status/date filters)
+  const rootTasks = useMemo(() => getRootTasks(tasks), [tasks]);
   const sidebarScoped = useMemo(() => {
-    if (projectFilter === "inbox") return tasks.filter((t) => t.projectId === null);
-    if (projectFilter !== "all") return tasks.filter((t) => t.projectId === projectFilter);
-    return tasks;
-  }, [tasks, projectFilter]);
+    if (projectFilter === "inbox") return rootTasks.filter((t) => t.projectId === null);
+    if (projectFilter !== "all") return rootTasks.filter((t) => t.projectId === projectFilter);
+    return rootTasks;
+  }, [rootTasks, projectFilter]);
 
   const completedCount = filteredTasks.filter((t) => t.completed).length;
   const activeCount = filteredTasks.filter((t) => !t.completed).length;
-  const activeTasks = tasks.filter((t) => !t.completed);
+  const activeTasks = rootTasks.filter((t) => !t.completed);
   const inboxCount = activeTasks.filter((t) => t.projectId === null).length;
 
   // Counts for status pills (based on sidebar + search + date + project multi-select, but NOT status)
@@ -226,7 +273,12 @@ function HomeContent() {
     let base = sidebarScoped;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      base = base.filter((t) => t.title.toLowerCase().includes(q));
+      base = base.filter((t) => {
+        if (t.title.toLowerCase().includes(q)) return true;
+        const chain = followUpMap.get(t.id);
+        if (chain) return chain.some(fu => fu.title.toLowerCase().includes(q));
+        return false;
+      });
     }
     if (dateFilter !== "all") {
       if (dateFilter === "today") base = base.filter((t) => isToday(t.createdAt));
@@ -244,7 +296,7 @@ function HomeContent() {
       active: base.filter((t) => !t.completed).length,
       completed: base.filter((t) => t.completed).length,
     };
-  }, [sidebarScoped, searchQuery, dateFilter, selectedProjects]);
+  }, [sidebarScoped, searchQuery, dateFilter, selectedProjects, followUpMap]);
 
   const handleProjectFilterChange = (filter: ProjectFilter) => {
     setProjectFilter(filter);
@@ -404,6 +456,9 @@ function HomeContent() {
                   selectedIds={selectedIds}
                   selectionActive={selectionActive}
                   tasksWithFollowUps={tasksWithFollowUps}
+                  followUpMap={followUpMap}
+                  expandedChains={effectiveExpandedChains}
+                  onToggleExpand={toggleChainExpand}
                   onToggleSelect={toggleSelection}
                   onToggle={handleToggleTask}
                   onEdit={editTask}
