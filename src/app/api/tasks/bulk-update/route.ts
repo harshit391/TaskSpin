@@ -38,6 +38,33 @@ export async function POST(request: Request) {
         })),
       });
     }
+
+    const nonRecurringIds = await prisma.task.findMany({
+      where: { id: { in: ids }, recurrenceType: null },
+      select: { id: true },
+    });
+
+    if (nonRecurringIds.length > 0) {
+      const completedIdSet = new Set(ids);
+      const children = await prisma.task.findMany({
+        where: { sourceTaskId: { in: nonRecurringIds.map((t) => t.id) } },
+      });
+
+      const childrenToPromote = children.filter(
+        (c) => !completedIdSet.has(c.id)
+      );
+
+      if (childrenToPromote.length > 0) {
+        await prisma.$transaction(
+          childrenToPromote.map((c) =>
+            prisma.task.update({
+              where: { id: c.id },
+              data: { sourceTaskId: null },
+            })
+          )
+        );
+      }
+    }
   }
 
   const result = await prisma.task.updateMany({
