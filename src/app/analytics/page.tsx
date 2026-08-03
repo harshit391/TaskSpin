@@ -99,12 +99,13 @@ export default function AnalyticsPage() {
   const stats = useMemo(() => rawStats.filter((s) => filterFn(s.date)), [rawStats, filterFn]);
 
   const summary = useMemo(() => {
-    if (stats.length === 0) return { totalCompleted: 0, dailyAvg: 0 };
+    if (stats.length === 0) return { totalCreated: 0, totalCompleted: 0, dailyAvg: 0 };
 
+    const totalCreated = stats.reduce((sum, s) => sum + s.tasksCreated, 0);
     const totalCompleted = stats.reduce((sum, s) => sum + s.tasksCompleted, 0);
     const dailyAvg = stats.length > 0 ? totalCompleted / stats.length : 0;
 
-    return { totalCompleted, dailyAvg };
+    return { totalCreated, totalCompleted, dailyAvg };
   }, [stats]);
 
   const chartData = useMemo(() => {
@@ -188,15 +189,15 @@ export default function AnalyticsPage() {
         ) : (
           <>
             {/* Summary Cards */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-bg-card border border-border rounded-[4px] p-4"
               >
-                <p className="text-[11px] text-text-muted uppercase tracking-wider">Completed</p>
-                <p className="text-2xl font-bold text-accent mt-1">{summary.totalCompleted}</p>
-                <p className="text-[10px] text-text-muted mt-0.5">last 30 days</p>
+                <p className="text-[11px] text-text-muted uppercase tracking-wider">Created</p>
+                <p className="text-2xl font-bold text-[#4A9EFF] mt-1">{summary.totalCreated}</p>
+                <p className="text-[10px] text-text-muted mt-0.5">total</p>
               </motion.div>
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -204,9 +205,19 @@ export default function AnalyticsPage() {
                 transition={{ delay: 0.05 }}
                 className="bg-bg-card border border-border rounded-[4px] p-4"
               >
+                <p className="text-[11px] text-text-muted uppercase tracking-wider">Completed</p>
+                <p className="text-2xl font-bold text-accent mt-1">{summary.totalCompleted}</p>
+                <p className="text-[10px] text-text-muted mt-0.5">total</p>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="bg-bg-card border border-border rounded-[4px] p-4"
+              >
                 <p className="text-[11px] text-text-muted uppercase tracking-wider">Daily Avg</p>
                 <p className="text-2xl font-bold text-text-primary mt-1">{summary.dailyAvg.toFixed(1)}</p>
-                <p className="text-[10px] text-text-muted mt-0.5">tasks/day</p>
+                <p className="text-[10px] text-text-muted mt-0.5">completed/day</p>
               </motion.div>
             </div>
 
