@@ -3,6 +3,16 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  Legend,
+} from "recharts";
 
 type RangePreset = "7d" | "30d" | "this_month" | "last_month" | "90d" | "custom";
 
@@ -229,6 +239,21 @@ export function CompareTab() {
     dailyAvg: statsB.length > 0 ? statsB.reduce((s, d) => s + d.tasksCompleted, 0) / statsB.length : 0,
   }), [statsB]);
 
+  const compareChartData = useMemo(() => {
+    const maxLen = Math.max(statsA.length, statsB.length);
+    const data = [];
+    for (let i = 0; i < maxLen; i++) {
+      data.push({
+        day: `Day ${i + 1}`,
+        completedA: statsA[i]?.tasksCompleted ?? null,
+        createdA: statsA[i]?.tasksCreated ?? null,
+        completedB: statsB[i]?.tasksCompleted ?? null,
+        createdB: statsB[i]?.tasksCreated ?? null,
+      });
+    }
+    return data;
+  }, [statsA, statsB]);
+
   const canSave = rangeA.preset !== "custom" || (rangeA.start && rangeA.end);
 
   function handleSave() {
@@ -331,6 +356,72 @@ export function CompareTab() {
             <MetricCard label="Completed" valueA={metricsA.totalCompleted} valueB={metricsB.totalCompleted} />
             <MetricCard label="Daily Avg (completed)" valueA={Math.round(metricsA.dailyAvg * 10) / 10} valueB={Math.round(metricsB.dailyAvg * 10) / 10} />
           </div>
+
+          {/* Completed Comparison Chart */}
+          {compareChartData.length > 0 && (
+            <div className="bg-bg-card border border-border rounded-[4px] p-4 sm:p-5">
+              <p className="text-xs text-text-muted uppercase tracking-wider mb-4">Completed — Range A vs B</p>
+              <div className="h-[200px] sm:h-[240px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={compareChartData} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
+                    <defs>
+                      <linearGradient id="gradA" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#4A9EFF" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#4A9EFF" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="gradB" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#FF2D6F" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#FF2D6F" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="day" tick={{ fill: "#888", fontSize: 10 }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fill: "#888", fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{ background: "#1a1a1a", border: "1px solid #333", borderRadius: 4, fontSize: 12 }}
+                      labelStyle={{ color: "#aaa" }}
+                    />
+                    <Area type="monotone" dataKey="completedA" name={`A: ${getLabel(rangeA)}`} stroke="#4A9EFF" fill="url(#gradA)" strokeWidth={2} connectNulls />
+                    <Area type="monotone" dataKey="completedB" name={`B: ${getLabel(rangeB)}`} stroke="#FF2D6F" fill="url(#gradB)" strokeWidth={2} connectNulls />
+                    <Legend wrapperStyle={{ fontSize: 11, color: "#888" }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {/* Created Comparison Chart */}
+          {compareChartData.length > 0 && (
+            <div className="bg-bg-card border border-border rounded-[4px] p-4 sm:p-5">
+              <p className="text-xs text-text-muted uppercase tracking-wider mb-4">Created — Range A vs B</p>
+              <div className="h-[200px] sm:h-[240px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={compareChartData} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
+                    <defs>
+                      <linearGradient id="gradCreatedA" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#4A9EFF" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#4A9EFF" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="gradCreatedB" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#FF2D6F" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#FF2D6F" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="day" tick={{ fill: "#888", fontSize: 10 }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fill: "#888", fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{ background: "#1a1a1a", border: "1px solid #333", borderRadius: 4, fontSize: 12 }}
+                      labelStyle={{ color: "#aaa" }}
+                    />
+                    <Area type="monotone" dataKey="createdA" name={`A: ${getLabel(rangeA)}`} stroke="#4A9EFF" fill="url(#gradCreatedA)" strokeWidth={2} connectNulls />
+                    <Area type="monotone" dataKey="createdB" name={`B: ${getLabel(rangeB)}`} stroke="#FF2D6F" fill="url(#gradCreatedB)" strokeWidth={2} connectNulls />
+                    <Legend wrapperStyle={{ fontSize: 11, color: "#888" }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
 
           {/* Completion Rate */}
           <div className="bg-bg-card border border-border rounded-[4px] p-4">

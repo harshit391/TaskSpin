@@ -6,10 +6,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { CompareTab } from "./CompareTab";
 
-type TimeRange = "today" | "yesterday" | "7d" | "30d" | "this_month" | "last_month" | "90d";
+type TimeRange = "yesterday" | "7d" | "30d" | "this_month" | "last_month" | "90d";
 
 const TIME_RANGES: { value: TimeRange; label: string }[] = [
-  { value: "today", label: "Today" },
   { value: "yesterday", label: "Yesterday" },
   { value: "7d", label: "7 Days" },
   { value: "30d", label: "30 Days" },
@@ -23,8 +22,6 @@ function getDateRange(range: TimeRange): { days: number; filterFn: (dateStr: str
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   switch (range) {
-    case "today":
-      return { days: 1, filterFn: (d) => new Date(d) >= todayStart };
     case "yesterday": {
       const ydayStart = new Date(todayStart); ydayStart.setDate(ydayStart.getDate() - 1);
       return { days: 2, filterFn: (d) => { const dt = new Date(d); return dt >= ydayStart && dt < todayStart; } };
