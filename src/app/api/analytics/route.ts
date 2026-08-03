@@ -14,5 +14,13 @@ export async function GET(request: NextRequest) {
     orderBy: { date: "asc" },
   });
 
-  return NextResponse.json(stats);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const allHistorical = since < today && days <= 31;
+
+  return NextResponse.json(stats, {
+    headers: allHistorical
+      ? { "Cache-Control": "public, max-age=86400, s-maxage=86400" }
+      : { "Cache-Control": "private, max-age=300" },
+  });
 }

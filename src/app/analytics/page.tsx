@@ -2,8 +2,9 @@
 
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { CompareTab } from "./CompareTab";
 
 type TimeRange = "today" | "yesterday" | "7d" | "30d" | "this_month" | "last_month" | "90d";
 
@@ -87,13 +88,21 @@ function formatDate(dateStr: string) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+type ChartSeries = "created" | "completed" | "both";
+type AnalyticsTab = "overview" | "compare";
+
 export default function AnalyticsPage() {
+  const [activeTab, setActiveTab] = useState<AnalyticsTab>("overview");
   const [range, setRange] = useState<TimeRange>("30d");
+  const [chartSeries, setChartSeries] = useState<ChartSeries>("both");
   const { days, filterFn } = getDateRange(range);
 
+  const staleTime = (range === "last_month" || range === "yesterday") ? Infinity : 1000 * 60 * 5;
+
   const { data: rawStats = [], isLoading } = useQuery({
-    queryKey: ["analytics", days],
+    queryKey: ["analytics", days, range],
     queryFn: () => fetchAnalytics(days),
+    staleTime,
   });
 
   const stats = useMemo(() => rawStats.filter((s) => filterFn(s.date)), [rawStats, filterFn]);
@@ -152,6 +161,49 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="w-[92%] sm:w-[88%] lg:w-[85%] max-w-4xl mx-auto py-6 space-y-6">
+        {/* Tab Switcher */}
+        <div className="flex bg-bg-secondary border border-border rounded-[4px] p-1 gap-1 w-fit">
+          {(["overview", "compare"] as AnalyticsTab[]).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`relative px-4 py-1.5 text-xs font-medium rounded-[3px] transition-all min-h-[36px] capitalize ${
+                activeTab === tab ? "" : "text-text-muted hover:text-text-secondary"
+              }`}
+            >
+              {activeTab === tab && (
+                <motion.div
+                  layoutId="analytics-tab-indicator"
+                  className="absolute inset-0 bg-accent rounded-[3px]"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                />
+              )}
+              <span className="relative z-10">{tab === "overview" ? "Overview" : "Compare"}</span>
+            </button>
+          ))}
+        </div>
+
+        <AnimatePresence mode="wait">
+          {activeTab === "compare" ? (
+            <motion.div
+              key="compare"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+            >
+              <CompareTab />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="overview"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6"
+            >
+
         {/* Time Range Filter */}
         <div className="flex flex-wrap gap-1.5">
           {TIME_RANGES.map((r) => (
@@ -221,14 +273,35 @@ export default function AnalyticsPage() {
               </motion.div>
             </div>
 
-            {/* Completion Trend */}
+            {/* Chart Series Toggle */}
+            <div className="flex items-center justify-center">
+              <div className="flex bg-bg-secondary border border-border rounded-[4px] p-1 gap-1">
+                {(["created", "completed", "both"] as ChartSeries[]).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setChartSeries(s)}
+                    className={`relative px-3 py-1.5 text-xs font-medium rounded-[3px] transition-all min-h-[36px] capitalize ${
+                      chartSeries === s
+                        ? "bg-accent text-white"
+                        : "text-text-muted hover:text-text-secondary"
+                    }`}
+                  >
+                    {s === "both" ? "Both" : s === "created" ? "Created" : "Completed"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Trend Chart */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
               className="bg-bg-card border border-border rounded-[4px] p-4 sm:p-5"
             >
-              <p className="text-xs text-text-muted uppercase tracking-wider mb-4">Tasks Completed (30 days)</p>
+              <p className="text-xs text-text-muted uppercase tracking-wider mb-4">
+                {chartSeries === "both" ? "Created vs Completed (Trend)" : chartSeries === "created" ? "Tasks Created" : "Tasks Completed"}
+              </p>
               <div className="h-[200px] sm:h-[240px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
@@ -236,6 +309,10 @@ export default function AnalyticsPage() {
                       <linearGradient id="completedGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#FF2D6F" stopOpacity={0.3} />
                         <stop offset="95%" stopColor="#FF2D6F" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="createdGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#4A9EFF" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#4A9EFF" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -246,20 +323,27 @@ export default function AnalyticsPage() {
                       contentStyle={{ background: "#1a1a1a", border: "1px solid #333", borderRadius: 4, fontSize: 12 }}
                       labelStyle={{ color: "#aaa" }}
                     />
-                    <Area type="monotone" dataKey="completed" stroke="#FF2D6F" fill="url(#completedGradient)" strokeWidth={2} />
+                    {(chartSeries === "created" || chartSeries === "both") && (
+                      <Area type="monotone" dataKey="created" stroke="#4A9EFF" fill="url(#createdGradient)" strokeWidth={2} />
+                    )}
+                    {(chartSeries === "completed" || chartSeries === "both") && (
+                      <Area type="monotone" dataKey="completed" stroke="#FF2D6F" fill="url(#completedGradient)" strokeWidth={2} />
+                    )}
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
             </motion.div>
 
-            {/* Created vs Completed */}
+            {/* Bar Chart */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25 }}
               className="bg-bg-card border border-border rounded-[4px] p-4 sm:p-5"
             >
-              <p className="text-xs text-text-muted uppercase tracking-wider mb-4">Created vs Completed</p>
+              <p className="text-xs text-text-muted uppercase tracking-wider mb-4">
+                {chartSeries === "both" ? "Created vs Completed" : chartSeries === "created" ? "Tasks Created" : "Tasks Completed"}
+              </p>
               <div className="h-[200px] sm:h-[240px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
@@ -271,18 +355,26 @@ export default function AnalyticsPage() {
                       contentStyle={{ background: "#1a1a1a", border: "1px solid #333", borderRadius: 4, fontSize: 12 }}
                       labelStyle={{ color: "#aaa" }}
                     />
-                    <Bar dataKey="created" fill="#4A9EFF" radius={[2, 2, 0, 0]} />
-                    <Bar dataKey="completed" fill="#FF2D6F" radius={[2, 2, 0, 0]} />
+                    {(chartSeries === "created" || chartSeries === "both") && (
+                      <Bar dataKey="created" fill="#4A9EFF" radius={[2, 2, 0, 0]} />
+                    )}
+                    {(chartSeries === "completed" || chartSeries === "both") && (
+                      <Bar dataKey="completed" fill="#FF2D6F" radius={[2, 2, 0, 0]} />
+                    )}
                   </BarChart>
                 </ResponsiveContainer>
               </div>
               <div className="flex items-center gap-4 mt-3 justify-center">
-                <span className="flex items-center gap-1.5 text-[11px] text-text-muted">
-                  <span className="w-2.5 h-2.5 rounded-sm bg-[#4A9EFF]" /> Created
-                </span>
-                <span className="flex items-center gap-1.5 text-[11px] text-text-muted">
-                  <span className="w-2.5 h-2.5 rounded-sm bg-[#FF2D6F]" /> Completed
-                </span>
+                {(chartSeries === "created" || chartSeries === "both") && (
+                  <span className="flex items-center gap-1.5 text-[11px] text-text-muted">
+                    <span className="w-2.5 h-2.5 rounded-sm bg-[#4A9EFF]" /> Created
+                  </span>
+                )}
+                {(chartSeries === "completed" || chartSeries === "both") && (
+                  <span className="flex items-center gap-1.5 text-[11px] text-text-muted">
+                    <span className="w-2.5 h-2.5 rounded-sm bg-[#FF2D6F]" /> Completed
+                  </span>
+                )}
               </div>
             </motion.div>
 
@@ -321,6 +413,10 @@ export default function AnalyticsPage() {
             )}
           </>
         )}
+
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
