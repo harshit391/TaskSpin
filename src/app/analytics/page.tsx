@@ -1,9 +1,50 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import Link from "next/link";
+
+type TimeRange = "today" | "yesterday" | "7d" | "30d" | "this_month" | "last_month" | "90d";
+
+const TIME_RANGES: { value: TimeRange; label: string }[] = [
+  { value: "today", label: "Today" },
+  { value: "yesterday", label: "Yesterday" },
+  { value: "7d", label: "7 Days" },
+  { value: "30d", label: "30 Days" },
+  { value: "this_month", label: "This Month" },
+  { value: "last_month", label: "Last Month" },
+  { value: "90d", label: "90 Days" },
+];
+
+function getDateRange(range: TimeRange): { days: number; filterFn: (dateStr: string) => boolean } {
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  switch (range) {
+    case "today":
+      return { days: 1, filterFn: (d) => new Date(d) >= todayStart };
+    case "yesterday": {
+      const ydayStart = new Date(todayStart); ydayStart.setDate(ydayStart.getDate() - 1);
+      return { days: 2, filterFn: (d) => { const dt = new Date(d); return dt >= ydayStart && dt < todayStart; } };
+    }
+    case "7d":
+      return { days: 7, filterFn: () => true };
+    case "30d":
+      return { days: 30, filterFn: () => true };
+    case "this_month": {
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      return { days: now.getDate(), filterFn: (d) => new Date(d) >= monthStart };
+    }
+    case "last_month": {
+      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 1);
+      return { days: 60, filterFn: (d) => { const dt = new Date(d); return dt >= lastMonthStart && dt < lastMonthEnd; } };
+    }
+    case "90d":
+      return { days: 90, filterFn: () => true };
+  }
+}
 import {
   AreaChart,
   Area,
@@ -46,36 +87,24 @@ function formatDate(dateStr: string) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function formatDuration(ms: number | null) {
-  if (!ms) return "—";
-  const hours = ms / (1000 * 60 * 60);
-  if (hours < 1) return `${Math.round(ms / (1000 * 60))}m`;
-  if (hours < 24) return `${Math.round(hours)}h`;
-  return `${Math.round(hours / 24)}d`;
-}
-
 export default function AnalyticsPage() {
-  const { data: stats = [], isLoading } = useQuery({
-    queryKey: ["analytics", 30],
-    queryFn: () => fetchAnalytics(30),
+  const [range, setRange] = useState<TimeRange>("30d");
+  const { days, filterFn } = getDateRange(range);
+
+  const { data: rawStats = [], isLoading } = useQuery({
+    queryKey: ["analytics", days],
+    queryFn: () => fetchAnalytics(days),
   });
 
+  const stats = useMemo(() => rawStats.filter((s) => filterFn(s.date)), [rawStats, filterFn]);
+
   const summary = useMemo(() => {
-    if (stats.length === 0) return { totalCompleted: 0, dailyAvg: 0, streak: 0, avgTime: null as number | null };
+    if (stats.length === 0) return { totalCompleted: 0, dailyAvg: 0 };
 
     const totalCompleted = stats.reduce((sum, s) => sum + s.tasksCompleted, 0);
     const dailyAvg = stats.length > 0 ? totalCompleted / stats.length : 0;
 
-    let streak = 0;
-    for (let i = stats.length - 1; i >= 0; i--) {
-      if (stats[i].tasksCompleted > 0) streak++;
-      else break;
-    }
-
-    const avgTimes = stats.filter((s) => s.avgCompletionMs !== null).map((s) => s.avgCompletionMs!);
-    const avgTime = avgTimes.length > 0 ? avgTimes.reduce((a, b) => a + b, 0) / avgTimes.length : null;
-
-    return { totalCompleted, dailyAvg, streak, avgTime };
+    return { totalCompleted, dailyAvg };
   }, [stats]);
 
   const chartData = useMemo(() => {
@@ -122,6 +151,23 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="w-[92%] sm:w-[88%] lg:w-[85%] max-w-4xl mx-auto py-6 space-y-6">
+        {/* Time Range Filter */}
+        <div className="flex flex-wrap gap-1.5">
+          {TIME_RANGES.map((r) => (
+            <button
+              key={r.value}
+              onClick={() => setRange(r.value)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-[3px] transition-all min-h-[32px] ${
+                range === r.value
+                  ? "bg-accent text-white"
+                  : "bg-bg-card border border-border text-text-muted hover:text-text-secondary hover:border-border-subtle"
+              }`}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <svg className="animate-spin h-8 w-8 text-accent" viewBox="0 0 24 24" fill="none">
@@ -142,7 +188,7 @@ export default function AnalyticsPage() {
         ) : (
           <>
             {/* Summary Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -161,26 +207,6 @@ export default function AnalyticsPage() {
                 <p className="text-[11px] text-text-muted uppercase tracking-wider">Daily Avg</p>
                 <p className="text-2xl font-bold text-text-primary mt-1">{summary.dailyAvg.toFixed(1)}</p>
                 <p className="text-[10px] text-text-muted mt-0.5">tasks/day</p>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="bg-bg-card border border-border rounded-[4px] p-4"
-              >
-                <p className="text-[11px] text-text-muted uppercase tracking-wider">Streak</p>
-                <p className="text-2xl font-bold text-text-primary mt-1">{summary.streak}</p>
-                <p className="text-[10px] text-text-muted mt-0.5">consecutive days</p>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-                className="bg-bg-card border border-border rounded-[4px] p-4"
-              >
-                <p className="text-[11px] text-text-muted uppercase tracking-wider">Avg Time</p>
-                <p className="text-2xl font-bold text-text-primary mt-1">{formatDuration(summary.avgTime)}</p>
-                <p className="text-[10px] text-text-muted mt-0.5">to complete</p>
               </motion.div>
             </div>
 
@@ -205,6 +231,7 @@ export default function AnalyticsPage() {
                     <XAxis dataKey="date" tick={{ fill: "#888", fontSize: 10 }} tickLine={false} axisLine={false} />
                     <YAxis tick={{ fill: "#888", fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} />
                     <Tooltip
+                      cursor={{ stroke: "rgba(255,255,255,0.1)" }}
                       contentStyle={{ background: "#1a1a1a", border: "1px solid #333", borderRadius: 4, fontSize: 12 }}
                       labelStyle={{ color: "#aaa" }}
                     />
@@ -229,6 +256,7 @@ export default function AnalyticsPage() {
                     <XAxis dataKey="date" tick={{ fill: "#888", fontSize: 10 }} tickLine={false} axisLine={false} />
                     <YAxis tick={{ fill: "#888", fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} />
                     <Tooltip
+                      cursor={{ fill: "rgba(255,255,255,0.05)" }}
                       contentStyle={{ background: "#1a1a1a", border: "1px solid #333", borderRadius: 4, fontSize: 12 }}
                       labelStyle={{ color: "#aaa" }}
                     />
