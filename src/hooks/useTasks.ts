@@ -16,7 +16,7 @@ export function useTasks() {
   });
 
   const addMutation = useMutation({
-    mutationFn: ({ title, projectId, recurrence }: { title: string; projectId?: string | null; recurrence?: { type: string; days?: number } }) =>
+    mutationFn: ({ title, projectId, recurrence }: { title: string; projectId?: string | null; recurrence?: { type: string; days?: number; startDate?: string } }) =>
       createTask(title, projectId, recurrence),
     onMutate: async ({ title, projectId, recurrence }) => {
       await queryClient.cancelQueries({ queryKey: TASKS_KEY });
@@ -54,7 +54,7 @@ export function useTasks() {
   });
 
   const batchMutation = useMutation({
-    mutationFn: ({ titles, projectName, projectId, recurrence }: { titles: string[]; projectName?: string; projectId?: string | null; recurrence?: { type: string; days?: number } }) =>
+    mutationFn: ({ titles, projectName, projectId, recurrence }: { titles: string[]; projectName?: string; projectId?: string | null; recurrence?: { type: string; days?: number; startDate?: string } }) =>
       createTasksBatch(titles, projectName, projectId, recurrence),
     onMutate: async ({ titles, projectId, recurrence }) => {
       await queryClient.cancelQueries({ queryKey: TASKS_KEY });
@@ -277,9 +277,9 @@ export function useTasks() {
     tasks: query.data ?? [],
     isLoading: query.isLoading,
     isError: query.isError,
-    addTask: (title: string, projectId?: string | null, recurrence?: { type: string; days?: number }) =>
+    addTask: (title: string, projectId?: string | null, recurrence?: { type: string; days?: number; startDate?: string }) =>
       addMutation.mutate({ title, projectId, recurrence }),
-    addTasksBatch: (titles: string[], projectName?: string, projectId?: string | null, recurrence?: { type: string; days?: number }) =>
+    addTasksBatch: (titles: string[], projectName?: string, projectId?: string | null, recurrence?: { type: string; days?: number; startDate?: string }) =>
       batchMutation.mutate({ titles, projectName, projectId, recurrence }),
     isAdding: addMutation.isPending || batchMutation.isPending,
     isMutating:

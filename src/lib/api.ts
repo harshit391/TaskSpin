@@ -14,7 +14,7 @@ export async function fetchTasks(): Promise<Task[]> {
 export async function createTask(
   title: string,
   projectId?: string | null,
-  recurrence?: { type: string; days?: number }
+  recurrence?: { type: string; days?: number; startDate?: string }
 ): Promise<Task> {
   const res = await fetch(TASKS_BASE, {
     method: "POST",
@@ -24,6 +24,7 @@ export async function createTask(
       ...(projectId ? { projectId } : {}),
       ...(recurrence?.type ? { recurrenceType: recurrence.type } : {}),
       ...(recurrence?.type === "custom" && recurrence.days ? { recurrenceDays: recurrence.days } : {}),
+      ...(recurrence?.startDate ? { recurrenceStartDate: recurrence.startDate } : {}),
     }),
   });
   if (!res.ok) throw new Error("Failed to create task");
@@ -34,7 +35,7 @@ export async function createTasksBatch(
   titles: string[],
   projectName?: string,
   projectId?: string | null,
-  recurrence?: { type: string; days?: number }
+  recurrence?: { type: string; days?: number; startDate?: string }
 ): Promise<Task[]> {
   const res = await fetch(`${TASKS_BASE}/batch`, {
     method: "POST",
@@ -45,6 +46,7 @@ export async function createTasksBatch(
       ...(projectId ? { projectId } : {}),
       ...(recurrence?.type ? { recurrenceType: recurrence.type } : {}),
       ...(recurrence?.type === "custom" && recurrence.days ? { recurrenceDays: recurrence.days } : {}),
+      ...(recurrence?.startDate ? { recurrenceStartDate: recurrence.startDate } : {}),
     }),
   });
   if (!res.ok) throw new Error("Failed to create tasks");

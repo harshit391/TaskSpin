@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { calculateNextOccurrence } from "@/lib/recurrence";
 
 const PROJECT_COLORS = [
   "#FF2D6F", "#6366F1", "#F59E0B", "#10B981", "#EC4899",
@@ -42,6 +43,20 @@ export async function POST(request: Request) {
 
   const recurrenceType = body.recurrenceType || null;
   const recurrenceDays = body.recurrenceDays || null;
+  const recurrenceStartDate = body.recurrenceStartDate ? new Date(body.recurrenceStartDate) : null;
+
+  // If recurring with start date, calculate hiddenUntil
+  let hiddenUntil: Date | null = null;
+  if (recurrenceType && recurrenceStartDate) {
+    const nextOccurrence = calculateNextOccurrence(
+      recurrenceType,
+      recurrenceDays,
+      recurrenceStartDate
+    );
+    if (nextOccurrence > new Date()) {
+      hiddenUntil = nextOccurrence;
+    }
+  }
 
   const tasks = await prisma.task.createManyAndReturn({
     data: titles.map((title) => ({
@@ -49,6 +64,8 @@ export async function POST(request: Request) {
       projectId,
       ...(recurrenceType ? { recurrenceType } : {}),
       ...(recurrenceDays ? { recurrenceDays } : {}),
+      ...(recurrenceStartDate ? { recurrenceStartDate } : {}),
+      ...(hiddenUntil ? { hiddenUntil } : {}),
     })),
   });
 

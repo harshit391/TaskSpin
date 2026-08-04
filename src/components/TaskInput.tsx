@@ -5,8 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { recurrenceLabel } from "@/lib/recurrence";
 
 interface TaskInputProps {
-  onAdd: (title: string, recurrence?: { type: string; days?: number }) => void;
-  onAddBatch: (titles: string[], projectName?: string, recurrence?: { type: string; days?: number }) => void;
+  onAdd: (title: string, recurrence?: { type: string; days?: number; startDate?: string }) => void;
+  onAddBatch: (titles: string[], projectName?: string, recurrence?: { type: string; days?: number; startDate?: string }) => void;
   isLoading: boolean;
   inputRef?: React.RefObject<HTMLTextAreaElement | null>;
 }
@@ -22,6 +22,7 @@ export function TaskInput({ onAdd, onAddBatch, isLoading, inputRef }: TaskInputP
   const [value, setValue] = useState("");
   const [recurrenceType, setRecurrenceType] = useState<string | null>(null);
   const [recurrenceDays, setRecurrenceDays] = useState(7);
+  const [recurrenceStartDate, setRecurrenceStartDate] = useState("");
   const [showRecurrencePicker, setShowRecurrencePicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -46,7 +47,7 @@ export function TaskInput({ onAdd, onAddBatch, isLoading, inputRef }: TaskInputP
   const isMultiple = taskCount > 1 || (hasProjectPrefix && taskCount >= 1);
 
   const recurrence = recurrenceType
-    ? { type: recurrenceType, ...(recurrenceType === "custom" ? { days: recurrenceDays } : {}) }
+    ? { type: recurrenceType, ...(recurrenceType === "custom" ? { days: recurrenceDays } : {}), ...(recurrenceStartDate ? { startDate: recurrenceStartDate } : {}) }
     : undefined;
 
   const autoResize = useCallback(() => {
@@ -72,6 +73,7 @@ export function TaskInput({ onAdd, onAddBatch, isLoading, inputRef }: TaskInputP
     }
     setValue("");
     setRecurrenceType(null);
+    setRecurrenceStartDate("");
     setShowRecurrencePicker(false);
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -208,6 +210,18 @@ export function TaskInput({ onAdd, onAddBatch, isLoading, inputRef }: TaskInputP
                   </motion.div>
                 )}
               </AnimatePresence>
+              {recurrenceType && (
+                <div className="flex items-center gap-1">
+                  <span className="text-[11px] text-text-muted">From</span>
+                  <input
+                    type="date"
+                    value={recurrenceStartDate}
+                    onChange={(e) => setRecurrenceStartDate(e.target.value)}
+                    className="text-[11px] bg-bg-primary border border-border rounded-[3px] px-1.5 py-1 text-text-primary focus:outline-none focus:border-accent [color-scheme:dark]"
+                    aria-label="Recurrence start date"
+                  />
+                </div>
+              )}
             </div>
           </motion.div>
         )}
