@@ -14,6 +14,23 @@ export async function PATCH(
     data.recurrenceStartDate = new Date(data.recurrenceStartDate);
   }
 
+  // When recurrence is being set/updated with a start date, calculate hiddenUntil
+  if (data.recurrenceType && data.recurrenceStartDate) {
+    const nextOccurrence = calculateNextOccurrence(
+      data.recurrenceType,
+      data.recurrenceDays ?? null,
+      data.recurrenceStartDate
+    );
+    if (nextOccurrence > new Date()) {
+      data.hiddenUntil = nextOccurrence;
+    } else {
+      data.hiddenUntil = null;
+    }
+  } else if (data.recurrenceType === null) {
+    // Removing recurrence clears hiddenUntil
+    data.hiddenUntil = null;
+  }
+
   const task = await prisma.task.update({
     where: { id },
     data,

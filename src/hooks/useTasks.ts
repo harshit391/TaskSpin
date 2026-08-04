@@ -123,13 +123,21 @@ export function useTasks() {
     onMutate: async ({ id, recurrenceType, recurrenceDays, recurrenceStartDate }) => {
       await queryClient.cancelQueries({ queryKey: TASKS_KEY });
       const previous = queryClient.getQueryData<Task[]>(TASKS_KEY);
-      queryClient.setQueryData<Task[]>(TASKS_KEY, (old) =>
-        old?.map((t) =>
+      queryClient.setQueryData<Task[]>(TASKS_KEY, (old) => {
+        if (!old) return old;
+        // If setting recurrence with a future start date, remove from visible list (it'll be hidden)
+        if (recurrenceType && recurrenceStartDate) {
+          const startMs = new Date(recurrenceStartDate).getTime();
+          if (startMs > Date.now()) {
+            return old.filter((t) => t.id !== id);
+          }
+        }
+        return old.map((t) =>
           t.id === id
             ? { ...t, recurrenceType, recurrenceDays: recurrenceDays ?? null, recurrenceStartDate: recurrenceStartDate ?? null }
             : t
-        )
-      );
+        );
+      });
       return { previous };
     },
     onError: (_err, _vars, context) => {
