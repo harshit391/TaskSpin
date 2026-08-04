@@ -1,23 +1,58 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+// Single DB round trip using recursive CTE to walk the entire chain
 async function walkChain(startId: string) {
-  const chain = [];
-  let currentParentId = startId;
-  const visited = new Set<string>();
+  const chain = await prisma.$queryRaw<Array<{
+    id: string;
+    title: string;
+    completed: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+    projectId: string | null;
+    sourceTaskId: string | null;
+    recurrenceType: string | null;
+    recurrenceDays: number | null;
+    recurrenceStartDate: Date | null;
+    hiddenUntil: Date | null;
+    depth: number;
+  }>>`
+    WITH RECURSIVE chain AS (
+      SELECT t.*, 1 as depth
+      FROM "Task" t
+      WHERE t."sourceTaskId" = ${startId}
+      UNION ALL
+      SELECT t.*, c.depth + 1
+      FROM "Task" t
+      INNER JOIN chain c ON t."sourceTaskId" = c.id
+      WHERE c.depth < 50
+    )
+    SELECT * FROM chain ORDER BY depth
+  `;
 
-  while (true) {
-    const child = await prisma.task.findUnique({
-      where: { sourceTaskId: currentParentId },
-      include: { project: true },
-    });
-    if (!child || visited.has(child.id)) break;
-    visited.add(child.id);
-    chain.push(child);
-    currentParentId = child.id;
-  }
+  if (chain.length === 0) return [];
 
-  return chain;
+  // Batch fetch projects in one query
+  const projectIds = [...new Set(chain.filter(t => t.projectId).map(t => t.projectId!))];
+  const projects = projectIds.length > 0
+    ? await prisma.project.findMany({ where: { id: { in: projectIds } } })
+    : [];
+  const projectMap = new Map(projects.map(p => [p.id, p]));
+
+  return chain.map(t => ({
+    id: t.id,
+    title: t.title,
+    completed: t.completed,
+    createdAt: t.createdAt,
+    updatedAt: t.updatedAt,
+    projectId: t.projectId,
+    sourceTaskId: t.sourceTaskId,
+    recurrenceType: t.recurrenceType,
+    recurrenceDays: t.recurrenceDays,
+    recurrenceStartDate: t.recurrenceStartDate,
+    hiddenUntil: t.hiddenUntil,
+    project: t.projectId ? projectMap.get(t.projectId) ?? null : null,
+  }));
 }
 
 export async function GET(
@@ -46,8 +81,8 @@ export async function POST(
     return NextResponse.json({ error: "Task not found" }, { status: 404 });
   }
 
+  // Find insertion target: use provided ID or find tail via CTE
   let targetId: string;
-
   if (insertAfterId) {
     targetId = insertAfterId;
   } else {

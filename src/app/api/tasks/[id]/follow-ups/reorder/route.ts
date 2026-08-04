@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export async function PATCH(
   request: NextRequest,
@@ -13,47 +14,32 @@ export async function PATCH(
     return NextResponse.json({ error: "orderedIds array is required" }, { status: 400 });
   }
 
-  const anchor = await prisma.task.findUnique({ where: { id: anchorId } });
-  if (!anchor) {
-    return NextResponse.json({ error: "Anchor task not found" }, { status: 404 });
-  }
+  // Build CASE expression: each task gets its new sourceTaskId in one UPDATE
+  // orderedIds[0] → anchorId, orderedIds[1] → orderedIds[0], etc.
+  const parentIds = [anchorId, ...orderedIds.slice(0, -1)];
+  const allIds = orderedIds;
 
-  await prisma.$transaction(async (tx) => {
-    // Pass 1: Null all sourceTaskIds to avoid unique constraint violations
-    await tx.task.updateMany({
-      where: { id: { in: orderedIds } },
-      data: { sourceTaskId: null },
-    });
+  // Single transaction with 2 SQL statements instead of N+1 Prisma calls
+  // Pass 1: null all to avoid unique constraint violations
+  // Pass 2: set new order via CASE
+  const whenClauses = allIds
+    .map((id, i) => Prisma.sql`WHEN id = ${id} THEN ${parentIds[i]}`)
+    .reduce((acc, clause) => Prisma.sql`${acc} ${clause}`);
 
-    // Pass 2: Reassign in new order
-    await tx.task.update({
-      where: { id: orderedIds[0] },
-      data: { sourceTaskId: anchorId },
-    });
+  await prisma.$transaction([
+    prisma.$executeRaw`UPDATE "Task" SET "sourceTaskId" = NULL WHERE id IN (${Prisma.join(allIds)})`,
+    prisma.$executeRaw`UPDATE "Task" SET "sourceTaskId" = CASE ${whenClauses} END, "updatedAt" = NOW() WHERE id IN (${Prisma.join(allIds)})`,
+  ]);
 
-    for (let i = 1; i < orderedIds.length; i++) {
-      await tx.task.update({
-        where: { id: orderedIds[i] },
-        data: { sourceTaskId: orderedIds[i - 1] },
-      });
-    }
+  // Fetch the reordered chain in one query (ordered by the client's order)
+  const chain = await prisma.task.findMany({
+    where: { id: { in: allIds } },
+    include: { project: true },
   });
 
-  // Return updated chain
-  const chain = [];
-  let currentParentId = anchorId;
-  const visited = new Set<string>();
-
-  while (true) {
-    const child = await prisma.task.findUnique({
-      where: { sourceTaskId: currentParentId },
-      include: { project: true },
-    });
-    if (!child || visited.has(child.id)) break;
-    visited.add(child.id);
-    chain.push(child);
-    currentParentId = child.id;
-  }
+  // Sort by the requested order
+  const idIndex = new Map(allIds.map((id, i) => [id, i]));
+  chain.sort((a, b) => (idIndex.get(a.id) ?? 0) - (idIndex.get(b.id) ?? 0));
 
   return NextResponse.json(chain);
 }
