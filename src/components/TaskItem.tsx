@@ -56,6 +56,7 @@ export function TaskItem({
   const [startDate, setStartDate] = useState(task.recurrenceStartDate ? task.recurrenceStartDate.split("T")[0] : "");
   const [expanded, setExpanded] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(task.title);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -255,6 +256,32 @@ export function TaskItem({
                 className="bg-bg-primary border border-border text-text-secondary text-xs font-medium px-3.5 py-1.5 rounded-[3px] hover:bg-bg-hover transition-colors min-h-[36px]"
               >
                 No
+              </button>
+            </div>
+          </motion.div>
+        )}
+        {showDeleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.15 }}
+            onClick={(e) => e.stopPropagation()}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 bg-bg-card border border-border rounded-[4px] shadow-lg px-4 py-3 flex flex-col items-center gap-2.5 min-w-[200px]"
+          >
+            <p className="text-xs text-text-secondary text-center">Delete this task?</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowDeleteConfirm(false); onDelete(task.id); }}
+                className="bg-error hover:bg-error/80 text-white text-xs font-medium px-3.5 py-1.5 rounded-[3px] transition-colors min-h-[36px]"
+              >
+                Delete
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="bg-bg-primary border border-border text-text-secondary text-xs font-medium px-3.5 py-1.5 rounded-[3px] hover:bg-bg-hover transition-colors min-h-[36px]"
+              >
+                Cancel
               </button>
             </div>
           </motion.div>
@@ -587,7 +614,7 @@ export function TaskItem({
 
                   {/* Delete */}
                   <button
-                    onClick={(e) => { e.stopPropagation(); setShowOverflowMenu(false); onDelete(task.id); }}
+                    onClick={(e) => { e.stopPropagation(); setShowOverflowMenu(false); setShowDeleteConfirm(true); }}
                     className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs text-left text-error hover:bg-error/10 transition-colors"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -790,7 +817,7 @@ export function TaskItem({
 
             {/* Delete Button */}
             <button
-              onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
+              onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true); }}
               aria-label={`Delete "${task.title}"`}
               className="flex-shrink-0 text-text-muted hover:text-error transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-[2px] min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
             >
