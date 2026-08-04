@@ -14,10 +14,11 @@ import { SpinModal } from "@/components/SpinModal";
 import { ShortcutsModal } from "@/components/ShortcutsModal";
 import { FollowUpModal } from "@/components/FollowUpModal";
 import { FollowUpChainModal } from "@/components/FollowUpChainModal";
+import { TaskPickerModal } from "@/components/TaskPickerModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTasks } from "@/hooks/useTasks";
 import { useProjects } from "@/hooks/useProjects";
-import { addFollowUp as addFollowUpApi } from "@/lib/api";
+import { addFollowUp as addFollowUpApi, moveToChain as moveToChainApi } from "@/lib/api";
 import { useKeyboardShortcuts, Shortcut } from "@/hooks/useKeyboardShortcuts";
 import { showToast } from "@/hooks/useToast";
 import { FilterTab, ProjectFilter } from "@/types/task";
@@ -84,6 +85,7 @@ function HomeContent() {
 
   // Follow-up chain modal state
   const [chainTaskId, setChainTaskId] = useState<string | null>(null);
+  const [taskPickerOpen, setTaskPickerOpen] = useState(false);
 
   // Chain expand/collapse state
   const [expandedChains, setExpandedChains] = useState<Set<string>>(new Set());
@@ -532,6 +534,26 @@ function HomeContent() {
         isOpen={chainTaskId !== null}
         onClose={() => setChainTaskId(null)}
         task={chainTaskId ? tasks.find(t => t.id === chainTaskId) ?? null : null}
+        onOpenTaskPicker={() => setTaskPickerOpen(true)}
+      />
+
+      {/* Task Picker for attaching existing tasks to chain */}
+      <TaskPickerModal
+        isOpen={taskPickerOpen}
+        onClose={() => setTaskPickerOpen(false)}
+        excludeTaskIds={chainTaskId ? [chainTaskId] : []}
+        onSelect={async (taskId) => {
+          if (!chainTaskId) return;
+          setTaskPickerOpen(false);
+          try {
+            await moveToChainApi(chainTaskId, taskId);
+            queryClient.invalidateQueries({ queryKey: ["tasks"] });
+            queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] === "follow-ups" });
+            showToast("Task moved to chain", "success");
+          } catch {
+            showToast("Failed to move task", "error");
+          }
+        }}
       />
 
       {/* Bulk Action Bar */}

@@ -2,24 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 async function walkChain(startId: string) {
-  const allTasks = await prisma.task.findMany({
-    where: { sourceTaskId: { not: null } },
-    include: { project: true },
-  });
-
-  const childByParent = new Map<string, typeof allTasks[number]>();
-  for (const t of allTasks) {
-    if (t.sourceTaskId) childByParent.set(t.sourceTaskId, t);
-  }
-
   const chain = [];
-  let current = childByParent.get(startId);
+  let currentParentId = startId;
   const visited = new Set<string>();
 
-  while (current && !visited.has(current.id)) {
-    visited.add(current.id);
-    chain.push(current);
-    current = childByParent.get(current.id);
+  while (true) {
+    const child = await prisma.task.findUnique({
+      where: { sourceTaskId: currentParentId },
+      include: { project: true },
+    });
+    if (!child || visited.has(child.id)) break;
+    visited.add(child.id);
+    chain.push(child);
+    currentParentId = child.id;
   }
 
   return chain;

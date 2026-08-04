@@ -136,6 +136,33 @@ export async function addFollowUp(
   return res.json();
 }
 
+export async function reorderFollowUpChain(
+  taskId: string,
+  orderedIds: string[]
+): Promise<Task[]> {
+  const res = await fetch(`${TASKS_BASE}/${taskId}/follow-ups/reorder`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ orderedIds }),
+  });
+  if (!res.ok) throw new Error("Failed to reorder chain");
+  return res.json();
+}
+
+export async function moveToChain(
+  anchorId: string,
+  taskId: string,
+  insertAfterId?: string
+): Promise<Task[]> {
+  const res = await fetch(`${TASKS_BASE}/${anchorId}/follow-ups/move`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ taskId, insertAfterId }),
+  });
+  if (!res.ok) throw new Error("Failed to move task to chain");
+  return res.json();
+}
+
 export async function bulkUpdateTasks(
   ids: string[],
   data: { completed?: boolean; projectId?: string | null }
