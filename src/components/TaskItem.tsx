@@ -283,6 +283,7 @@ export function TaskItem({
                   }
                 }}
                 onDoubleClick={() => { if (!selectionActive) { setEditValue(task.title); setEditing(true); } }}
+                title={!expanded ? task.title : undefined}
                 className="flex-1 min-w-0 overflow-hidden"
               >
                 <motion.div
