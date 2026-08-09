@@ -85,8 +85,8 @@ export function Sidebar({
         <span className="flex-1 text-sm truncate">Projects Dashboard</span>
       </Link>
 
-      {/* Analytics Link */}
-      <Link
+      {/* Analytics Link — hard navigation to avoid RSC issues with dynamic imports */}
+      <a
         href="/analytics"
         className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[3px] text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
           pathname === "/analytics"
@@ -99,7 +99,7 @@ export function Sidebar({
           <path d="M7 16l4-4 4 4 5-5" />
         </svg>
         <span className="flex-1 text-sm truncate">Analytics</span>
-      </Link>
+      </a>
 
       {/* Divider */}
       <div className="h-px bg-border my-3!" />

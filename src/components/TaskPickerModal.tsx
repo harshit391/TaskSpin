@@ -14,8 +14,10 @@ interface TaskPickerModalProps {
   isMoving?: boolean;
 }
 
-async function fetchAllTasks(): Promise<Task[]> {
-  const res = await fetch("/api/tasks?all=true");
+async function fetchAllTasks(priorityProjectId?: string | null): Promise<Task[]> {
+  const params = new URLSearchParams({ all: "true" });
+  if (priorityProjectId) params.set("priorityProjectId", priorityProjectId);
+  const res = await fetch(`/api/tasks?${params}`);
   if (!res.ok) throw new Error("Failed to fetch tasks");
   return res.json();
 }
@@ -25,8 +27,8 @@ export function TaskPickerModal({ isOpen, onClose, onSelect, excludeTaskIds, con
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: allTasks = [], isLoading } = useQuery({
-    queryKey: ["tasks", "all"],
-    queryFn: fetchAllTasks,
+    queryKey: ["tasks", "all", contextProjectId],
+    queryFn: () => fetchAllTasks(contextProjectId),
     enabled: isOpen,
     staleTime: 1000 * 30,
   });
@@ -42,26 +44,12 @@ export function TaskPickerModal({ isOpen, onClose, onSelect, excludeTaskIds, con
     const excludeSet = new Set(excludeTaskIds);
     const query = search.toLowerCase().trim();
 
-    const filtered = allTasks.filter((t) => {
+    return allTasks.filter((t) => {
       if (excludeSet.has(t.id)) return false;
       if (query && !t.title.toLowerCase().includes(query)) return false;
       return true;
     });
-
-    filtered.sort((a, b) => {
-      // Active tasks first, completed last
-      if (a.completed !== b.completed) return a.completed ? 1 : -1;
-      // Same project as context first
-      if (contextProjectId) {
-        const aMatch = a.projectId === contextProjectId ? 0 : 1;
-        const bMatch = b.projectId === contextProjectId ? 0 : 1;
-        if (aMatch !== bMatch) return aMatch - bMatch;
-      }
-      return 0;
-    });
-
-    return filtered;
-  }, [allTasks, excludeTaskIds, search, contextProjectId]);
+  }, [allTasks, excludeTaskIds, search]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") onClose();
@@ -145,11 +133,11 @@ export function TaskPickerModal({ isOpen, onClose, onSelect, excludeTaskIds, con
                 <button
                   key={task.id}
                   onClick={() => onSelect(task.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-[3px] text-left hover:bg-accent/10 transition-colors min-h-[44px] group ${task.completed ? "opacity-50" : ""}`}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-[3px] text-left hover:bg-accent/10 transition-colors min-h-[44px] group"
                 >
-                  <div className={`w-2 h-2 rounded-full flex-shrink-0 transition-colors ${task.completed ? "bg-text-muted group-hover:bg-text-secondary" : "bg-accent/60 group-hover:bg-accent"}`} />
+                  <div className="w-2 h-2 rounded-full bg-accent/60 flex-shrink-0 group-hover:bg-accent transition-colors" />
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm truncate ${task.completed ? "text-text-muted line-through" : "text-text-primary"}`}>{task.title}</p>
+                    <p className="text-sm text-text-primary truncate">{task.title}</p>
                     {task.project && (
                       <p className="text-[11px] text-text-muted mt-0.5 flex items-center gap-1">
                         <span

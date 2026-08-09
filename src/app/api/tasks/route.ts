@@ -5,14 +5,24 @@ import { calculateNextOccurrence } from "@/lib/recurrence";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const all = searchParams.get("all") === "true";
+  const priorityProjectId = searchParams.get("priorityProjectId");
 
   const tasks = await prisma.task.findMany({
     where: all
-      ? undefined
+      ? { completed: false }
       : { OR: [{ hiddenUntil: null }, { hiddenUntil: { lte: new Date() } }] },
     orderBy: { createdAt: "desc" },
     include: { project: true },
   });
+
+  if (priorityProjectId) {
+    tasks.sort((a, b) => {
+      const aMatch = a.projectId === priorityProjectId ? 0 : 1;
+      const bMatch = b.projectId === priorityProjectId ? 0 : 1;
+      return aMatch - bMatch;
+    });
+  }
+
   return NextResponse.json(tasks);
 }
 
