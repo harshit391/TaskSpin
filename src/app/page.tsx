@@ -557,6 +557,7 @@ function HomeContent() {
         isOpen={taskPickerOpen}
         onClose={() => setTaskPickerOpen(false)}
         excludeTaskIds={chainTaskId ? [chainTaskId] : []}
+        contextProjectId={chainTaskId ? tasks.find(t => t.id === chainTaskId)?.projectId : null}
         onSelect={async (taskId) => {
           if (!chainTaskId) return;
           setTaskPickerOpen(false);

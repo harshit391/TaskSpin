@@ -2,11 +2,14 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { calculateNextOccurrence } from "@/lib/recurrence";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const all = searchParams.get("all") === "true";
+
   const tasks = await prisma.task.findMany({
-    where: {
-      OR: [{ hiddenUntil: null }, { hiddenUntil: { lte: new Date() } }],
-    },
+    where: all
+      ? undefined
+      : { OR: [{ hiddenUntil: null }, { hiddenUntil: { lte: new Date() } }] },
     orderBy: { createdAt: "desc" },
     include: { project: true },
   });

@@ -3,20 +3,33 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Task } from "@/types/task";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 interface TaskPickerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (taskId: string) => void;
   excludeTaskIds: string[];
+  contextProjectId?: string | null;
   isMoving?: boolean;
 }
 
-export function TaskPickerModal({ isOpen, onClose, onSelect, excludeTaskIds, isMoving }: TaskPickerModalProps) {
-  const queryClient = useQueryClient();
+async function fetchAllTasks(): Promise<Task[]> {
+  const res = await fetch("/api/tasks?all=true");
+  if (!res.ok) throw new Error("Failed to fetch tasks");
+  return res.json();
+}
+
+export function TaskPickerModal({ isOpen, onClose, onSelect, excludeTaskIds, contextProjectId, isMoving }: TaskPickerModalProps) {
   const [search, setSearch] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const { data: allTasks = [], isLoading } = useQuery({
+    queryKey: ["tasks", "all"],
+    queryFn: fetchAllTasks,
+    enabled: isOpen,
+    staleTime: 1000 * 30,
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -25,19 +38,27 @@ export function TaskPickerModal({ isOpen, onClose, onSelect, excludeTaskIds, isM
     }
   }, [isOpen]);
 
-  const allTasks = queryClient.getQueryData<Task[]>(["tasks"]) ?? [];
-
   const filteredTasks = useMemo(() => {
     const excludeSet = new Set(excludeTaskIds);
     const query = search.toLowerCase().trim();
 
-    return allTasks.filter((t) => {
+    const filtered = allTasks.filter((t) => {
       if (excludeSet.has(t.id)) return false;
       if (t.completed) return false;
       if (query && !t.title.toLowerCase().includes(query)) return false;
       return true;
     });
-  }, [allTasks, excludeTaskIds, search]);
+
+    if (contextProjectId) {
+      filtered.sort((a, b) => {
+        const aMatch = a.projectId === contextProjectId ? 0 : 1;
+        const bMatch = b.projectId === contextProjectId ? 0 : 1;
+        return aMatch - bMatch;
+      });
+    }
+
+    return filtered;
+  }, [allTasks, excludeTaskIds, search, contextProjectId]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") onClose();
@@ -102,7 +123,7 @@ export function TaskPickerModal({ isOpen, onClose, onSelect, excludeTaskIds, isM
 
             {/* Task List */}
             <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-2">
-              {isMoving && (
+              {(isMoving || isLoading) && (
                 <div className="flex items-center justify-center py-8">
                   <svg className="animate-spin h-6 w-6 text-accent" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" />
@@ -110,14 +131,14 @@ export function TaskPickerModal({ isOpen, onClose, onSelect, excludeTaskIds, isM
                   </svg>
                 </div>
               )}
-              {!isMoving && filteredTasks.length === 0 && (
+              {!isMoving && !isLoading && filteredTasks.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-8 gap-2">
                   <p className="text-text-muted text-sm text-center">
                     {search ? "No matching tasks found" : "No available tasks"}
                   </p>
                 </div>
               )}
-              {!isMoving && filteredTasks.map((task) => (
+              {!isMoving && !isLoading && filteredTasks.map((task) => (
                 <button
                   key={task.id}
                   onClick={() => onSelect(task.id)}
