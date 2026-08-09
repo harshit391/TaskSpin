@@ -2,33 +2,29 @@
 
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 
 const OverviewCharts = dynamic(() => import("./OverviewCharts").then((m) => ({ default: m.OverviewCharts })), {
-  loading: () => (
-    <div className="flex items-center justify-center py-16">
-      <svg className="animate-spin h-6 w-6 text-accent" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" />
-        <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" />
-      </svg>
-    </div>
-  ),
+  loading: () => <ChartLoadingSpinner />,
   ssr: false,
 });
 
 const CompareTab = dynamic(() => import("./CompareTab").then((m) => ({ default: m.CompareTab })), {
-  loading: () => (
+  loading: () => <ChartLoadingSpinner />,
+  ssr: false,
+});
+
+function ChartLoadingSpinner() {
+  return (
     <div className="flex items-center justify-center py-16">
       <svg className="animate-spin h-6 w-6 text-accent" viewBox="0 0 24 24" fill="none">
         <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" />
         <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" />
       </svg>
     </div>
-  ),
-  ssr: false,
-});
+  );
+}
 
 type TimeRange = "yesterday" | "7d" | "30d" | "this_month" | "last_month" | "90d";
 
@@ -177,143 +173,105 @@ export default function AnalyticsPage() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`relative px-4 py-1.5 text-xs font-medium rounded-[3px] transition-all min-h-[36px] capitalize ${
-                activeTab === tab ? "" : "text-text-muted hover:text-text-secondary"
-              }`}
-            >
-              {activeTab === tab && (
-                <motion.div
-                  layoutId="analytics-tab-indicator"
-                  className="absolute inset-0 bg-accent rounded-[3px]"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
-                />
-              )}
-              <span className="relative z-10">{tab === "overview" ? "Overview" : "Compare"}</span>
-            </button>
-          ))}
-        </div>
-
-        <AnimatePresence mode="wait">
-          {activeTab === "compare" ? (
-            <motion.div
-              key="compare"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-            >
-              <CompareTab />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="overview"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
-
-        {/* Time Range Filter */}
-        <div className="flex flex-wrap gap-1.5">
-          {TIME_RANGES.map((r) => (
-            <button
-              key={r.value}
-              onClick={() => setRange(r.value)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-[3px] transition-all min-h-[32px] ${
-                range === r.value
+              className={`relative px-4 py-1.5 text-xs font-medium rounded-[3px] transition-all duration-200 min-h-[36px] capitalize ${
+                activeTab === tab
                   ? "bg-accent text-white"
-                  : "bg-bg-card border border-border text-text-muted hover:text-text-secondary hover:border-border-subtle"
+                  : "text-text-muted hover:text-text-secondary"
               }`}
             >
-              {r.label}
+              {tab === "overview" ? "Overview" : "Compare"}
             </button>
           ))}
         </div>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <svg className="animate-spin h-8 w-8 text-accent" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" />
-              <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" />
-            </svg>
-          </div>
-        ) : stats.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-text-muted">
-              <path d="M3 3v18h18" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M7 16l4-4 4 4 5-5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <p className="text-text-muted text-sm text-center">
-              No analytics data yet.<br />Stats are collected daily — check back tomorrow.
-            </p>
-          </div>
+        {activeTab === "compare" ? (
+          <CompareTab />
         ) : (
-          <>
-            {/* Summary Cards */}
-            <div className="grid grid-cols-3 gap-3">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-bg-card border border-border rounded-[4px] p-4"
-              >
-                <p className="text-[11px] text-text-muted uppercase tracking-wider">Created</p>
-                <p className="text-2xl font-bold text-[#4A9EFF] mt-1">{summary.totalCreated}</p>
-                <p className="text-[10px] text-text-muted mt-0.5">total</p>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 }}
-                className="bg-bg-card border border-border rounded-[4px] p-4"
-              >
-                <p className="text-[11px] text-text-muted uppercase tracking-wider">Completed</p>
-                <p className="text-2xl font-bold text-accent mt-1">{summary.totalCompleted}</p>
-                <p className="text-[10px] text-text-muted mt-0.5">total</p>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="bg-bg-card border border-border rounded-[4px] p-4"
-              >
-                <p className="text-[11px] text-text-muted uppercase tracking-wider">Daily Avg</p>
-                <p className="text-2xl font-bold text-text-primary mt-1">{summary.dailyAvg.toFixed(1)}</p>
-                <p className="text-[10px] text-text-muted mt-0.5">completed/day</p>
-              </motion.div>
+          <div className="space-y-6">
+            {/* Time Range Filter */}
+            <div className="flex flex-wrap gap-1.5">
+              {TIME_RANGES.map((r) => (
+                <button
+                  key={r.value}
+                  onClick={() => setRange(r.value)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-[3px] transition-all min-h-[32px] ${
+                    range === r.value
+                      ? "bg-accent text-white"
+                      : "bg-bg-card border border-border text-text-muted hover:text-text-secondary hover:border-border-subtle"
+                  }`}
+                >
+                  {r.label}
+                </button>
+              ))}
             </div>
 
-            {/* Chart Series Toggle */}
-            <div className="flex items-center justify-center">
-              <div className="flex bg-bg-secondary border border-border rounded-[4px] p-1 gap-1">
-                {(["created", "completed", "both"] as ChartSeries[]).map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => setChartSeries(s)}
-                    className={`relative px-3 py-1.5 text-xs font-medium rounded-[3px] transition-all min-h-[36px] capitalize ${
-                      chartSeries === s
-                        ? "bg-accent text-white"
-                        : "text-text-muted hover:text-text-secondary"
-                    }`}
-                  >
-                    {s === "both" ? "Both" : s === "created" ? "Created" : "Completed"}
-                  </button>
-                ))}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <svg className="animate-spin h-8 w-8 text-accent" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" />
+                  <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" />
+                </svg>
               </div>
-            </div>
+            ) : stats.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-text-muted">
+                  <path d="M3 3v18h18" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M7 16l4-4 4 4 5-5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <p className="text-text-muted text-sm text-center">
+                  No analytics data yet.<br />Stats are collected daily — check back tomorrow.
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Summary Cards */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-bg-card border border-border rounded-[4px] p-4">
+                    <p className="text-[11px] text-text-muted uppercase tracking-wider">Created</p>
+                    <p className="text-2xl font-bold text-[#4A9EFF] mt-1">{summary.totalCreated}</p>
+                    <p className="text-[10px] text-text-muted mt-0.5">total</p>
+                  </div>
+                  <div className="bg-bg-card border border-border rounded-[4px] p-4">
+                    <p className="text-[11px] text-text-muted uppercase tracking-wider">Completed</p>
+                    <p className="text-2xl font-bold text-accent mt-1">{summary.totalCompleted}</p>
+                    <p className="text-[10px] text-text-muted mt-0.5">total</p>
+                  </div>
+                  <div className="bg-bg-card border border-border rounded-[4px] p-4">
+                    <p className="text-[11px] text-text-muted uppercase tracking-wider">Daily Avg</p>
+                    <p className="text-2xl font-bold text-text-primary mt-1">{summary.dailyAvg.toFixed(1)}</p>
+                    <p className="text-[10px] text-text-muted mt-0.5">completed/day</p>
+                  </div>
+                </div>
 
-            {/* Charts (lazy loaded) */}
-            <OverviewCharts
-              chartData={chartData}
-              chartSeries={chartSeries}
-              projectBreakdown={projectBreakdown}
-            />
-          </>
+                {/* Chart Series Toggle */}
+                <div className="flex items-center justify-center">
+                  <div className="flex bg-bg-secondary border border-border rounded-[4px] p-1 gap-1">
+                    {(["created", "completed", "both"] as ChartSeries[]).map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setChartSeries(s)}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-[3px] transition-all min-h-[36px] capitalize ${
+                          chartSeries === s
+                            ? "bg-accent text-white"
+                            : "text-text-muted hover:text-text-secondary"
+                        }`}
+                      >
+                        {s === "both" ? "Both" : s === "created" ? "Created" : "Completed"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Charts (lazy loaded) */}
+                <OverviewCharts
+                  chartData={chartData}
+                  chartSeries={chartSeries}
+                  projectBreakdown={projectBreakdown}
+                />
+              </>
+            )}
+          </div>
         )}
-
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </div>
   );
