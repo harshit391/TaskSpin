@@ -1,7 +1,6 @@
-const CACHE_NAME = 'taskspin-v1';
+const CACHE_NAME = 'taskspin-v2';
 
 const PRECACHE_ASSETS = [
-  '/',
   '/manifest.json',
   '/favicon.ico',
   '/favicon-16x16.png',
@@ -39,25 +38,31 @@ self.addEventListener('fetch', (event) => {
 
   if (request.method !== 'GET') return;
 
+  // Never cache Next.js internal requests (RSC, routing, data)
+  if (
+    request.url.includes('/_next/') ||
+    request.url.includes('_rsc') ||
+    request.headers.get('RSC') === '1' ||
+    request.headers.get('Next-Router-State-Tree')
+  ) {
+    return;
+  }
+
+  // Page navigations: network-first, offline fallback only
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          return response;
-        })
-        .catch(() => caches.match(request).then((cached) => cached || caches.match('/')))
+      fetch(request).catch(() => caches.match('/offline') || new Response('Offline', { status: 503 }))
     );
     return;
   }
 
+  // Static assets: cache-first
   if (
-    request.url.includes('/_next/static/') ||
     request.url.includes('/favicon') ||
     request.url.includes('/android-chrome') ||
     request.url.includes('/apple-touch-icon') ||
     request.url.includes('/logo.png') ||
+    request.url.includes('/manifest.json') ||
     request.url.match(/\.(png|jpg|jpeg|svg|ico|woff2?)$/)
   ) {
     event.respondWith(
@@ -73,13 +78,5 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  event.respondWith(
-    fetch(request)
-      .then((response) => {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-        return response;
-      })
-      .catch(() => caches.match(request))
-  );
+  // Everything else: network-only (don't cache API responses or dynamic content)
 });

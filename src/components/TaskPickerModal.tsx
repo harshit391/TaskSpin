@@ -44,18 +44,21 @@ export function TaskPickerModal({ isOpen, onClose, onSelect, excludeTaskIds, con
 
     const filtered = allTasks.filter((t) => {
       if (excludeSet.has(t.id)) return false;
-      if (t.completed) return false;
       if (query && !t.title.toLowerCase().includes(query)) return false;
       return true;
     });
 
-    if (contextProjectId) {
-      filtered.sort((a, b) => {
+    filtered.sort((a, b) => {
+      // Active tasks first, completed last
+      if (a.completed !== b.completed) return a.completed ? 1 : -1;
+      // Same project as context first
+      if (contextProjectId) {
         const aMatch = a.projectId === contextProjectId ? 0 : 1;
         const bMatch = b.projectId === contextProjectId ? 0 : 1;
-        return aMatch - bMatch;
-      });
-    }
+        if (aMatch !== bMatch) return aMatch - bMatch;
+      }
+      return 0;
+    });
 
     return filtered;
   }, [allTasks, excludeTaskIds, search, contextProjectId]);
@@ -81,7 +84,7 @@ export function TaskPickerModal({ isOpen, onClose, onSelect, excludeTaskIds, con
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             onKeyDown={handleKeyDown}
-            className="fixed inset-x-4 top-[12%] bottom-[12%] sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 z-[60] bg-bg-card border border-border rounded-[4px] sm:w-full sm:max-w-sm flex flex-col overflow-hidden"
+            className="fixed inset-x-3 top-[6%] bottom-[6%] sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 z-[60] bg-bg-card border border-border rounded-[4px] sm:w-full sm:max-w-md sm:h-[70vh] flex flex-col overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border">
@@ -142,11 +145,11 @@ export function TaskPickerModal({ isOpen, onClose, onSelect, excludeTaskIds, con
                 <button
                   key={task.id}
                   onClick={() => onSelect(task.id)}
-                  className="w-full flex items-center gap-3 px-3 py-3 rounded-[3px] text-left hover:bg-accent/10 transition-colors min-h-[44px] group"
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-[3px] text-left hover:bg-accent/10 transition-colors min-h-[44px] group ${task.completed ? "opacity-50" : ""}`}
                 >
-                  <div className="w-2 h-2 rounded-full bg-accent/60 flex-shrink-0 group-hover:bg-accent transition-colors" />
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 transition-colors ${task.completed ? "bg-text-muted group-hover:bg-text-secondary" : "bg-accent/60 group-hover:bg-accent"}`} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-text-primary truncate">{task.title}</p>
+                    <p className={`text-sm truncate ${task.completed ? "text-text-muted line-through" : "text-text-primary"}`}>{task.title}</p>
                     {task.project && (
                       <p className="text-[11px] text-text-muted mt-0.5 flex items-center gap-1">
                         <span
