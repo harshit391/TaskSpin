@@ -206,7 +206,18 @@ export async function updateProject(id: string, data: { name?: string; color?: s
   return res.json();
 }
 
-export async function deleteProject(id: string): Promise<void> {
-  const res = await fetch(`${PROJECTS_BASE}/${id}`, { method: "DELETE" });
+export async function deleteProject(options: {
+  id: string;
+  taskAction: "delete" | "move_inbox" | "move_project";
+  moveToProjectId?: string;
+}): Promise<void> {
+  const res = await fetch(`${PROJECTS_BASE}/${options.id}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      taskAction: options.taskAction,
+      moveToProjectId: options.moveToProjectId,
+    }),
+  });
   if (!res.ok) throw new Error("Failed to delete project");
 }

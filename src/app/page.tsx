@@ -15,10 +15,12 @@ import { ShortcutsModal } from "@/components/ShortcutsModal";
 import { FollowUpModal } from "@/components/FollowUpModal";
 import { FollowUpChainModal } from "@/components/FollowUpChainModal";
 import { TaskPickerModal } from "@/components/TaskPickerModal";
+import { DeleteProjectModal } from "@/components/DeleteProjectModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTasks } from "@/hooks/useTasks";
 import { useProjects } from "@/hooks/useProjects";
 import { addFollowUp as addFollowUpApi, moveToChain as moveToChainApi } from "@/lib/api";
+import { generateAIExportPrompt, downloadExport } from "@/lib/exportForAI";
 import { useKeyboardShortcuts, Shortcut } from "@/hooks/useKeyboardShortcuts";
 import { showToast } from "@/hooks/useToast";
 import { FilterTab, ProjectFilter } from "@/types/task";
@@ -89,6 +91,9 @@ function HomeContent() {
 
   // Chain expand/collapse state
   const [expandedChains, setExpandedChains] = useState<Set<string>>(new Set());
+
+  // Delete project modal state
+  const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
 
   // Refs for keyboard shortcuts
   const taskInputRef = useRef<HTMLTextAreaElement>(null);
@@ -280,6 +285,15 @@ function HomeContent() {
     });
   }, [selectionActive, selectedIds, filteredTasks, followUpMap]);
 
+  const handleExportForAI = useCallback(() => {
+    const content = generateAIExportPrompt({ tasks, projects });
+    downloadExport(content);
+    navigator.clipboard.writeText(content).then(
+      () => showToast("Copied to clipboard & downloading file", "success"),
+      () => showToast("Downloading file", "success")
+    );
+  }, [tasks, projects]);
+
   // Counts for the current sidebar-scoped view (before search/status/date filters)
   const rootTasks = useMemo(() => getRootTasks(tasks), [tasks]);
   const sidebarScoped = useMemo(() => {
@@ -352,6 +366,7 @@ function HomeContent() {
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         onSpin={() => setSpinOpen(true)}
         onShortcuts={() => setShortcutsOpen(true)}
+        onExport={handleExportForAI}
       />
 
       <div className="flex-1 flex pt-[72px] min-h-0">
@@ -362,7 +377,7 @@ function HomeContent() {
             selectedFilter={projectFilter}
             onFilterChange={setProjectFilter}
             onAddProject={addProject}
-            onDeleteProject={removeProject}
+            onDeleteProject={(id) => setDeleteProjectId(id)}
             isAddingProject={isAddingProject}
             inboxCount={inboxCount}
             allCount={activeTasks.length}
@@ -394,7 +409,7 @@ function HomeContent() {
                   selectedFilter={projectFilter}
                   onFilterChange={handleProjectFilterChange}
                   onAddProject={addProject}
-                  onDeleteProject={removeProject}
+                  onDeleteProject={(id) => setDeleteProjectId(id)}
                   isAddingProject={isAddingProject}
                   inboxCount={inboxCount}
                   allCount={activeTasks.length}
@@ -573,6 +588,21 @@ function HomeContent() {
           />
         )}
       </AnimatePresence>
+
+      {/* Delete Project Modal */}
+      <DeleteProjectModal
+        isOpen={!!deleteProjectId}
+        project={projects.find((p) => p.id === deleteProjectId) ?? null}
+        taskCount={tasks.filter((t) => t.projectId === deleteProjectId).length}
+        otherProjects={projects.filter((p) => p.id !== deleteProjectId)}
+        onConfirm={(action, moveToProjectId) => {
+          if (deleteProjectId) {
+            removeProject({ id: deleteProjectId, taskAction: action, moveToProjectId });
+          }
+          setDeleteProjectId(null);
+        }}
+        onClose={() => setDeleteProjectId(null)}
+      />
 
       {/* Syncing Overlay */}
       <AnimatePresence>

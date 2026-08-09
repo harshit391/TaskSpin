@@ -1,15 +1,17 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useProjects } from "@/hooks/useProjects";
 import { useTasks } from "@/hooks/useTasks";
 import { ProjectCard } from "@/components/ProjectCard";
+import { DeleteProjectModal } from "@/components/DeleteProjectModal";
 
 export default function ProjectsDashboard() {
   const { projects, isLoading: projectsLoading, editProject, removeProject, isMutating: isProjectMutating } = useProjects();
   const { tasks, isLoading: tasksLoading } = useTasks();
+  const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
 
   const isLoading = projectsLoading || tasksLoading;
 
@@ -91,12 +93,27 @@ export default function ProjectsDashboard() {
                 completedTasks={completedTasks}
                 index={i}
                 onEdit={editProject}
-                onDelete={removeProject}
+                onDelete={(id) => setDeleteProjectId(id)}
               />
             ))}
           </div>
         )}
       </main>
+
+      {/* Delete Project Modal */}
+      <DeleteProjectModal
+        isOpen={!!deleteProjectId}
+        project={projects.find((p) => p.id === deleteProjectId) ?? null}
+        taskCount={tasks.filter((t) => t.projectId === deleteProjectId).length}
+        otherProjects={projects.filter((p) => p.id !== deleteProjectId)}
+        onConfirm={(action, moveToProjectId) => {
+          if (deleteProjectId) {
+            removeProject({ id: deleteProjectId, taskAction: action, moveToProjectId });
+          }
+          setDeleteProjectId(null);
+        }}
+        onClose={() => setDeleteProjectId(null)}
+      />
 
       {/* Syncing Overlay */}
       <AnimatePresence>

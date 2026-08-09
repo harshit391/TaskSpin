@@ -39,7 +39,8 @@ export function useProjects() {
   });
 
   const removeMutation = useMutation({
-    mutationFn: deleteProject,
+    mutationFn: (options: { id: string; taskAction: "delete" | "move_inbox" | "move_project"; moveToProjectId?: string }) =>
+      deleteProject(options),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PROJECTS_KEY });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
@@ -56,7 +57,8 @@ export function useProjects() {
     addProject: (name: string, color: string) => addMutation.mutate({ name, color }),
     editProject: (id: string, data: { name?: string; color?: string }) =>
       editMutation.mutate({ id, data }),
-    removeProject: removeMutation.mutate,
+    removeProject: (options: { id: string; taskAction: "delete" | "move_inbox" | "move_project"; moveToProjectId?: string }) =>
+      removeMutation.mutate(options),
     isAdding: addMutation.isPending,
     isMutating:
       addMutation.isPending ||

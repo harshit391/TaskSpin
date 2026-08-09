@@ -101,7 +101,7 @@ export function TaskPickerModal({ isOpen, onClose, onSelect, excludeTaskIds, isM
             </div>
 
             {/* Task List */}
-            <div className="flex-1 overflow-y-auto px-3 py-2">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-2">
               {isMoving && (
                 <div className="flex items-center justify-center py-8">
                   <svg className="animate-spin h-6 w-6 text-accent" viewBox="0 0 24 24" fill="none" aria-hidden="true">
