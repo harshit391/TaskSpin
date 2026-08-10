@@ -467,7 +467,7 @@ function HomeContent() {
             />
 
             {/* Task List */}
-            <div role="region" aria-label="Task results">
+            <div role="region" aria-label="Task results" className={selectionActive ? "pb-20" : ""}>
               {isLoading ? (
                 <div className="flex items-center justify-center py-16">
                   <svg

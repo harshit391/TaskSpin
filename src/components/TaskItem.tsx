@@ -146,8 +146,11 @@ export function TaskItem({
   }, [clearLongPress]);
 
   const handleClick = useCallback(() => {
-    if (selectionActive && !longPressFired.current) {
+    if (longPressFired.current) return;
+    if (selectionActive) {
       onToggleSelect(task.id);
+    } else {
+      setExpanded((prev) => !prev);
     }
   }, [selectionActive, task.id, onToggleSelect]);
 
@@ -304,12 +307,7 @@ export function TaskItem({
           <>
             <div className="flex items-start gap-1 w-full">
               <div
-                onClick={(e) => {
-                  if (selectionActive) {
-                    onToggleSelect(task.id);
-                  }
-                }}
-                onDoubleClick={() => { if (!selectionActive) { setEditValue(task.title); setEditing(true); } }}
+                onDoubleClick={(e) => { e.stopPropagation(); if (!selectionActive) { setEditValue(task.title); setEditing(true); } }}
                 title={!expanded ? task.title : undefined}
                 className="flex-1 min-w-0 overflow-hidden"
               >
@@ -326,28 +324,6 @@ export function TaskItem({
                   </p>
                 </motion.div>
               </div>
-              {!selectionActive && task.title.length > 30 && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
-                  className="flex-shrink-0 mt-0.5 text-text-muted hover:text-accent transition-colors min-w-[28px] min-h-[28px] inline-flex items-center justify-center"
-                  aria-label={expanded ? "Collapse" : "Expand"}
-                >
-                  <motion.svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    animate={{ rotate: expanded ? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <path d="M6 9l6 6 6-6" />
-                  </motion.svg>
-                </button>
-              )}
             </div>
             {/* Project badge + recurrence (always visible below title) */}
             {(task.project || task.recurrenceType) && (
