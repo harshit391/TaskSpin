@@ -163,8 +163,9 @@ function HomeContent() {
     }
 
     // Status filter
-    if (statusFilter === "active") result = result.filter((t) => !t.completed);
+    if (statusFilter === "active") result = result.filter((t) => !t.completed && !(t.hiddenUntil && new Date(t.hiddenUntil) > new Date()));
     if (statusFilter === "completed") result = result.filter((t) => t.completed);
+    if (statusFilter === "recurring") result = result.filter((t) => !t.completed && !!t.hiddenUntil && new Date(t.hiddenUntil) > new Date());
 
     // Date filter
     if (dateFilter === "today") result = result.filter((t) => isToday(t.createdAt));
@@ -303,8 +304,8 @@ function HomeContent() {
   }, [rootTasks, projectFilter]);
 
   const completedCount = filteredTasks.filter((t) => t.completed).length;
-  const activeCount = filteredTasks.filter((t) => !t.completed).length;
-  const activeTasks = rootTasks.filter((t) => !t.completed);
+  const activeCount = filteredTasks.filter((t) => !t.completed && !(t.hiddenUntil && new Date(t.hiddenUntil) > new Date())).length;
+  const activeTasks = rootTasks.filter((t) => !t.completed && !(t.hiddenUntil && new Date(t.hiddenUntil) > new Date()));
   const inboxCount = activeTasks.filter((t) => t.projectId === null).length;
 
   // Counts for status pills (based on sidebar + search + date + project multi-select, but NOT status)
@@ -332,8 +333,9 @@ function HomeContent() {
     }
     return {
       all: base.length,
-      active: base.filter((t) => !t.completed).length,
+      active: base.filter((t) => !t.completed && !(t.hiddenUntil && new Date(t.hiddenUntil) > new Date())).length,
       completed: base.filter((t) => t.completed).length,
+      recurring: base.filter((t) => !t.completed && !!t.hiddenUntil && new Date(t.hiddenUntil) > new Date()).length,
     };
   }, [sidebarScoped, searchQuery, dateFilter, selectedProjects, followUpMap]);
 

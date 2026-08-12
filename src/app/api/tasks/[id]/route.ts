@@ -39,22 +39,37 @@ export async function PATCH(
 
   if (body.completed === true) {
     if (task.recurrenceType) {
+      const anchor = task.recurrenceStartDate || new Date();
       const hiddenUntil = calculateNextOccurrence(
         task.recurrenceType,
         task.recurrenceDays,
-        task.recurrenceStartDate
+        anchor
       );
-      await prisma.task.create({
-        data: {
-          title: task.title,
-          projectId: task.projectId,
-          recurrenceType: task.recurrenceType,
-          recurrenceDays: task.recurrenceDays,
-          recurrenceStartDate: task.recurrenceStartDate,
-          hiddenUntil,
-          sourceTaskId: task.id,
-        },
+
+      const existingClone = await prisma.task.findUnique({
+        where: { sourceTaskId: task.id },
       });
+
+      if (existingClone) {
+        await prisma.task.update({
+          where: { id: existingClone.id },
+          data: { completed: false, hiddenUntil, recurrenceStartDate: hiddenUntil },
+        });
+      } else {
+        await prisma.task.create({
+          data: {
+            title: task.title,
+            projectId: task.projectId,
+            recurrenceType: task.recurrenceType,
+            recurrenceDays: task.recurrenceDays,
+            recurrenceStartDate: hiddenUntil,
+            hiddenUntil,
+            sourceTaskId: task.id,
+          },
+        });
+      }
+
+      return NextResponse.json({ ...task, _cloneHiddenUntil: hiddenUntil.toISOString() });
     } else {
       const child = await prisma.task.findUnique({
         where: { sourceTaskId: id },

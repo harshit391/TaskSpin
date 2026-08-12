@@ -43,9 +43,11 @@ export async function POST(request: Request) {
 
   const recurrenceType = body.recurrenceType || null;
   const recurrenceDays = body.recurrenceDays || null;
-  const recurrenceStartDate = body.recurrenceStartDate ? new Date(body.recurrenceStartDate) : null;
+  const recurrenceStartDate = recurrenceType
+    ? (body.recurrenceStartDate ? new Date(body.recurrenceStartDate) : new Date())
+    : null;
 
-  // If recurring with start date, calculate hiddenUntil
+  // If recurring, calculate hiddenUntil
   let hiddenUntil: Date | null = null;
   if (recurrenceType && recurrenceStartDate) {
     const nextOccurrence = calculateNextOccurrence(

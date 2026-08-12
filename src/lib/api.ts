@@ -53,7 +53,7 @@ export async function createTasksBatch(
   return res.json();
 }
 
-export async function toggleTask(id: string, completed: boolean): Promise<Task> {
+export async function toggleTask(id: string, completed: boolean): Promise<Task & { _cloneHiddenUntil?: string }> {
   const res = await fetch(`${TASKS_BASE}/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -95,7 +95,9 @@ export async function setTaskRecurrence(
     body: JSON.stringify({
       recurrenceType,
       recurrenceDays: recurrenceType === "custom" ? (recurrenceDays ?? 7) : null,
-      recurrenceStartDate: recurrenceType ? (recurrenceStartDate || null) : null,
+      recurrenceStartDate: recurrenceType
+        ? (recurrenceStartDate || new Date().toISOString().split("T")[0])
+        : null,
     }),
   });
   if (!res.ok) throw new Error("Failed to set recurrence");

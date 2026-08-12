@@ -112,6 +112,12 @@ export function useTasks() {
       }
       showToast("Failed to update task", "error");
     },
+    onSuccess: (data) => {
+      if (data._cloneHiddenUntil) {
+        const formatted = new Date(data._cloneHiddenUntil).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+        showToast(`Recurring — will return on ${formatted}`, "success");
+      }
+    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: TASKS_KEY });
     },

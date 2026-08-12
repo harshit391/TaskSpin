@@ -8,9 +8,7 @@ export async function GET(request: Request) {
   const priorityProjectId = searchParams.get("priorityProjectId");
 
   const tasks = await prisma.task.findMany({
-    where: all
-      ? { completed: false }
-      : { OR: [{ hiddenUntil: null }, { hiddenUntil: { lte: new Date() } }] },
+    where: all ? { completed: false } : undefined,
     orderBy: { createdAt: "desc" },
     include: { project: true },
   });
@@ -37,13 +35,18 @@ export async function POST(request: Request) {
     );
   }
 
-  // If recurring with a start date, hide until the next occurrence
+  // Default recurrenceStartDate to today if recurrence type is set
+  const startDate = body.recurrenceType
+    ? (body.recurrenceStartDate || new Date().toISOString().split("T")[0])
+    : null;
+
+  // If recurring, calculate when it should next appear
   let hiddenUntil: Date | null = null;
-  if (body.recurrenceType && body.recurrenceStartDate) {
+  if (body.recurrenceType && startDate) {
     const nextOccurrence = calculateNextOccurrence(
       body.recurrenceType,
       body.recurrenceDays ?? null,
-      body.recurrenceStartDate
+      startDate
     );
     const now = new Date();
     if (nextOccurrence > now) {
@@ -57,7 +60,7 @@ export async function POST(request: Request) {
       ...(body.projectId ? { projectId: body.projectId } : {}),
       ...(body.recurrenceType ? { recurrenceType: body.recurrenceType } : {}),
       ...(body.recurrenceDays ? { recurrenceDays: body.recurrenceDays } : {}),
-      ...(body.recurrenceStartDate ? { recurrenceStartDate: new Date(body.recurrenceStartDate) } : {}),
+      ...(startDate ? { recurrenceStartDate: new Date(startDate) } : {}),
       ...(hiddenUntil ? { hiddenUntil } : {}),
     },
     include: { project: true },

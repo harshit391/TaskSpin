@@ -49,6 +49,7 @@ export function TaskItem({
   onSetRecurrence,
   onOpenFollowUps,
 }: TaskItemProps) {
+  const isFutureScheduled = !task.completed && !!task.hiddenUntil && new Date(task.hiddenUntil) > new Date();
   const [showMenu, setShowMenu] = useState(false);
   const [showRecurrenceMenu, setShowRecurrenceMenu] = useState(false);
   const [showOverflowMenu, setShowOverflowMenu] = useState(false);
@@ -182,7 +183,7 @@ export function TaskItem({
         isSelected
           ? "border-accent/40 bg-accent/5"
           : "border-border/60 sm:border-border hover:border-border-subtle hover:bg-bg-hover"
-      } ${task.completed ? "opacity-50" : ""}`}
+      } ${task.completed ? "opacity-50" : isFutureScheduled ? "opacity-60" : ""}`}
     >
       {/* Selection Checkbox (circular, distinct from completion) */}
       <AnimatePresence>
@@ -211,9 +212,11 @@ export function TaskItem({
       <button
         role="checkbox"
         aria-checked={task.completed}
+        disabled={isFutureScheduled}
         aria-label={`Mark "${task.title}" as ${task.completed ? "incomplete" : "complete"}`}
         onClick={(e) => {
           e.stopPropagation();
+          if (isFutureScheduled) return;
           if (!task.completed) {
             setShowCompleteConfirm(true);
           } else {
@@ -223,9 +226,11 @@ export function TaskItem({
         className={`relative flex-shrink-0 w-[18px] h-[18px] sm:w-5 sm:h-5 border-2 rounded-[2px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent flex items-center justify-center ${
           isFollowUp ? "min-w-[36px] min-h-[36px] sm:min-w-[44px] sm:min-h-[44px]" : "min-w-[44px] min-h-[44px]"
         } ${
-          task.completed
-            ? "bg-accent border-accent"
-            : "border-border hover:border-accent"
+          isFutureScheduled
+            ? "border-border/40 cursor-not-allowed"
+            : task.completed
+              ? "bg-accent border-accent"
+              : "border-border hover:border-accent"
         }`}
       >
         {task.completed && (
@@ -325,8 +330,8 @@ export function TaskItem({
                 </motion.div>
               </div>
             </div>
-            {/* Project badge + recurrence (always visible below title) */}
-            {(task.project || task.recurrenceType) && (
+            {/* Project badge + recurrence + next date (always visible below title) */}
+            {(task.project || task.recurrenceType || isFutureScheduled) && (
               <div className="flex items-center gap-2 mt-0.5">
                 {task.project && (
                   <span className="inline-flex items-center gap-1">
@@ -349,6 +354,17 @@ export function TaskItem({
                     </svg>
                     <span className="text-[10px] text-text-muted">
                       {recurrenceLabel(task.recurrenceType, task.recurrenceDays)}
+                    </span>
+                  </span>
+                )}
+                {isFutureScheduled && task.hiddenUntil && (
+                  <span className="inline-flex items-center gap-1">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-accent/70">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <path d="M16 2v4M8 2v4M3 10h18" />
+                    </svg>
+                    <span className="text-[10px] text-accent/70 font-medium">
+                      next: {new Date(task.hiddenUntil).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                     </span>
                   </span>
                 )}
