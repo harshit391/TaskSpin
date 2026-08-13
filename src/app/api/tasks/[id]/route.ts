@@ -19,7 +19,8 @@ export async function PATCH(
     const nextOccurrence = calculateNextOccurrence(
       data.recurrenceType,
       data.recurrenceDays ?? null,
-      data.recurrenceStartDate
+      data.recurrenceStartDate,
+      data.recurrenceWeekdays ?? null
     );
     if (nextOccurrence > new Date()) {
       data.hiddenUntil = nextOccurrence;
@@ -43,7 +44,8 @@ export async function PATCH(
       const hiddenUntil = calculateNextOccurrence(
         task.recurrenceType,
         task.recurrenceDays,
-        anchor
+        anchor,
+        task.recurrenceWeekdays
       );
 
       const existingClone = await prisma.task.findUnique({
@@ -62,6 +64,7 @@ export async function PATCH(
             projectId: task.projectId,
             recurrenceType: task.recurrenceType,
             recurrenceDays: task.recurrenceDays,
+            recurrenceWeekdays: task.recurrenceWeekdays,
             recurrenceStartDate: hiddenUntil,
             hiddenUntil,
             sourceTaskId: task.id,

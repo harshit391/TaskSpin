@@ -1,5 +1,8 @@
 export type RecurrenceType = "weekly" | "monthly" | "quarterly" | "custom";
 
+const DAY_ABBR = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAY_SHORT = ["S", "M", "T", "W", "T", "F", "S"];
+
 function addPeriod(date: Date, type: string, days: number | null): Date {
   const result = new Date(date);
   switch (type) {
@@ -19,11 +22,41 @@ function addPeriod(date: Date, type: string, days: number | null): Date {
   return result;
 }
 
+function calculateNextWeekday(weekdays: number[]): Date {
+  const now = new Date();
+  const today = now.getDay();
+  const sorted = [...weekdays].sort((a, b) => a - b);
+
+  for (const day of sorted) {
+    if (day > today) {
+      const diff = day - today;
+      const next = new Date(now);
+      next.setDate(next.getDate() + diff);
+      next.setHours(0, 0, 0, 0);
+      return next;
+    }
+  }
+
+  const diff = 7 - today + sorted[0];
+  const next = new Date(now);
+  next.setDate(next.getDate() + diff);
+  next.setHours(0, 0, 0, 0);
+  return next;
+}
+
 export function calculateNextOccurrence(
   type: string,
   days: number | null,
-  anchorDate?: Date | string | null
+  anchorDate?: Date | string | null,
+  weekdays?: string | null
 ): Date {
+  if (type === "custom" && weekdays) {
+    const dayIndices = weekdays.split(",").map(Number).filter((n) => n >= 0 && n <= 6);
+    if (dayIndices.length > 0) {
+      return calculateNextWeekday(dayIndices);
+    }
+  }
+
   const now = new Date();
 
   if (!anchorDate) {
@@ -39,7 +72,11 @@ export function calculateNextOccurrence(
   return anchor;
 }
 
-export function recurrenceLabel(type: string, days?: number | null): string {
+export function recurrenceLabel(type: string, days?: number | null, weekdays?: string | null): string {
+  if (type === "custom" && weekdays) {
+    const indices = weekdays.split(",").map(Number);
+    return indices.map((i) => DAY_SHORT[i]).join(",");
+  }
   switch (type) {
     case "weekly":
       return "Weekly";
@@ -54,7 +91,11 @@ export function recurrenceLabel(type: string, days?: number | null): string {
   }
 }
 
-export function recurrenceDescription(type: string, days?: number | null): string {
+export function recurrenceDescription(type: string, days?: number | null, weekdays?: string | null): string {
+  if (type === "custom" && weekdays) {
+    const indices = weekdays.split(",").map(Number);
+    return "on " + indices.map((i) => DAY_ABBR[i]).join(", ");
+  }
   switch (type) {
     case "weekly":
       return "in 7 days";
@@ -68,3 +109,5 @@ export function recurrenceDescription(type: string, days?: number | null): strin
       return "";
   }
 }
+
+export { DAY_ABBR, DAY_SHORT };

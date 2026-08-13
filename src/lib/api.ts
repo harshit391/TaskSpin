@@ -87,14 +87,16 @@ export async function setTaskRecurrence(
   id: string,
   recurrenceType: string | null,
   recurrenceDays?: number,
-  recurrenceStartDate?: string | null
+  recurrenceStartDate?: string | null,
+  recurrenceWeekdays?: string | null
 ): Promise<Task> {
   const res = await fetch(`${TASKS_BASE}/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       recurrenceType,
-      recurrenceDays: recurrenceType === "custom" ? (recurrenceDays ?? 7) : null,
+      recurrenceDays: (recurrenceType === "custom" && !recurrenceWeekdays) ? (recurrenceDays ?? 7) : null,
+      recurrenceWeekdays: (recurrenceType === "custom" && recurrenceWeekdays) ? recurrenceWeekdays : null,
       recurrenceStartDate: recurrenceType
         ? (recurrenceStartDate || new Date().toISOString().split("T")[0])
         : null,

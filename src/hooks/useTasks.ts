@@ -30,6 +30,7 @@ export function useTasks() {
         updatedAt: new Date().toISOString(),
         recurrenceType: recurrence?.type ?? null,
         recurrenceDays: recurrence?.days ?? null,
+        recurrenceWeekdays: null,
         recurrenceStartDate: null,
         hiddenUntil: null,
         sourceTaskId: null,
@@ -68,6 +69,7 @@ export function useTasks() {
         updatedAt: new Date().toISOString(),
         recurrenceType: recurrence?.type ?? null,
         recurrenceDays: recurrence?.days ?? null,
+        recurrenceWeekdays: null,
         recurrenceStartDate: null,
         hiddenUntil: null,
         sourceTaskId: null,
@@ -124,8 +126,8 @@ export function useTasks() {
   });
 
   const recurrenceMutation = useMutation({
-    mutationFn: ({ id, recurrenceType, recurrenceDays, recurrenceStartDate }: { id: string; recurrenceType: string | null; recurrenceDays?: number; recurrenceStartDate?: string | null }) =>
-      setTaskRecurrence(id, recurrenceType, recurrenceDays, recurrenceStartDate),
+    mutationFn: ({ id, recurrenceType, recurrenceDays, recurrenceStartDate, recurrenceWeekdays }: { id: string; recurrenceType: string | null; recurrenceDays?: number; recurrenceStartDate?: string | null; recurrenceWeekdays?: string | null }) =>
+      setTaskRecurrence(id, recurrenceType, recurrenceDays, recurrenceStartDate, recurrenceWeekdays),
     onMutate: async ({ id, recurrenceType, recurrenceDays, recurrenceStartDate }) => {
       await queryClient.cancelQueries({ queryKey: TASKS_KEY });
       const previous = queryClient.getQueryData<Task[]>(TASKS_KEY);
@@ -312,8 +314,8 @@ export function useTasks() {
       editMutation.mutate({ id, title }),
     assignToProject: (id: string, projectId: string | null) =>
       assignMutation.mutate({ id, projectId }),
-    setRecurrence: (id: string, recurrenceType: string | null, recurrenceDays?: number, recurrenceStartDate?: string | null) =>
-      recurrenceMutation.mutate({ id, recurrenceType, recurrenceDays, recurrenceStartDate }),
+    setRecurrence: (id: string, recurrenceType: string | null, recurrenceDays?: number, recurrenceStartDate?: string | null, recurrenceWeekdays?: string | null) =>
+      recurrenceMutation.mutate({ id, recurrenceType, recurrenceDays, recurrenceStartDate, recurrenceWeekdays }),
     deleteTask: deleteMutation.mutate,
     bulkDelete: (ids: string[]) => bulkDeleteMutation.mutate(ids),
     bulkUpdate: (ids: string[], data: { completed?: boolean; projectId?: string | null }) =>

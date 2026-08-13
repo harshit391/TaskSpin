@@ -46,7 +46,8 @@ export async function POST(request: Request) {
     const nextOccurrence = calculateNextOccurrence(
       body.recurrenceType,
       body.recurrenceDays ?? null,
-      startDate
+      startDate,
+      body.recurrenceWeekdays ?? null
     );
     const now = new Date();
     if (nextOccurrence > now) {
@@ -60,6 +61,7 @@ export async function POST(request: Request) {
       ...(body.projectId ? { projectId: body.projectId } : {}),
       ...(body.recurrenceType ? { recurrenceType: body.recurrenceType } : {}),
       ...(body.recurrenceDays ? { recurrenceDays: body.recurrenceDays } : {}),
+      ...(body.recurrenceWeekdays ? { recurrenceWeekdays: body.recurrenceWeekdays } : {}),
       ...(startDate ? { recurrenceStartDate: new Date(startDate) } : {}),
       ...(hiddenUntil ? { hiddenUntil } : {}),
     },

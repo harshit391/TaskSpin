@@ -27,6 +27,7 @@ model Task {
   project        Project?  @relation(fields: [projectId], references: [id])
   recurrenceType      String?
   recurrenceDays      Int?
+  recurrenceWeekdays  String?
   recurrenceStartDate DateTime?
   hiddenUntil         DateTime?
   sourceTaskId        String?   @unique
