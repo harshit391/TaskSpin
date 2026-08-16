@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getAuthUserId } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { searchParams } = new URL(request.url);
   const days = Math.min(Number(searchParams.get("days")) || 30, 90);
 
@@ -10,7 +14,7 @@ export async function GET(request: NextRequest) {
   since.setHours(0, 0, 0, 0);
 
   const stats = await prisma.dailyStats.findMany({
-    where: { date: { gte: since } },
+    where: { userId, date: { gte: since } },
     orderBy: { date: "asc" },
   });
 

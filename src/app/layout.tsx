@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Oswald } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/components/QueryProvider";
+import { AuthProvider } from "@/components/AuthProvider";
 import { ToastProvider } from "@/components/ToastProvider";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 
@@ -51,9 +52,11 @@ export default function RootLayout({
         className={`${inter.variable} ${oswald.variable} font-[family-name:var(--font-inter)] h-dvh flex flex-col overflow-hidden bg-bg-primary text-text-primary antialiased`}
       >
         <QueryProvider>
-          {children}
-          <ToastProvider />
-          <ServiceWorkerRegister />
+          <AuthProvider>
+            {children}
+            <ToastProvider />
+            <ServiceWorkerRegister />
+          </AuthProvider>
         </QueryProvider>
       </body>
     </html>

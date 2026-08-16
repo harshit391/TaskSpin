@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getAuthUserId } from "@/lib/auth";
 import { calculateNextOccurrence } from "@/lib/recurrence";
 
 export async function POST(request: Request) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const body = await request.json();
   const ids: string[] = body.ids;
   const data: { completed?: boolean; projectId?: string | null } = body.data;
@@ -23,12 +27,13 @@ export async function POST(request: Request) {
 
   if (data.completed === true) {
     const recurringTasks = await prisma.task.findMany({
-      where: { id: { in: ids }, recurrenceType: { not: null } },
+      where: { id: { in: ids }, userId, recurrenceType: { not: null } },
     });
 
     if (recurringTasks.length > 0) {
       await prisma.task.createMany({
         data: recurringTasks.map((t) => ({
+          userId,
           title: t.title,
           projectId: t.projectId,
           recurrenceType: t.recurrenceType,
@@ -40,7 +45,7 @@ export async function POST(request: Request) {
     }
 
     const nonRecurringIds = await prisma.task.findMany({
-      where: { id: { in: ids }, recurrenceType: null },
+      where: { id: { in: ids }, userId, recurrenceType: null },
       select: { id: true },
     });
 
@@ -68,7 +73,7 @@ export async function POST(request: Request) {
   }
 
   const result = await prisma.task.updateMany({
-    where: { id: { in: ids } },
+    where: { id: { in: ids }, userId },
     data,
   });
 

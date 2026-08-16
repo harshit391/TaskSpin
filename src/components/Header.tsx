@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { UserMenu } from "@/components/UserMenu";
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -79,13 +80,8 @@ export function Header({ onToggleSidebar, onSpin, onShortcuts, onExport }: Heade
             <span className="hidden sm:inline">Spin</span>
           </button>
 
-          {/* Status indicator */}
-          <div className="hidden sm:flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
-            <span className="text-xs text-text-muted uppercase tracking-widest">
-              Online
-            </span>
-          </div>
+          {/* User Menu (replaces online indicator) */}
+          <UserMenu />
         </div>
       </div>
     </header>

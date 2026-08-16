@@ -10,15 +10,19 @@ datasource db {
 
 model Project {
   id        String   @id @default(cuid())
+  userId    String?
   name      String
   color     String   @default("#FF2D6F")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   tasks     Task[]
+
+  @@index([userId])
 }
 
 model Task {
   id             String    @id @default(cuid())
+  userId         String?
   title          String
   completed      Boolean   @default(false)
   createdAt      DateTime  @default(now())
@@ -33,15 +37,20 @@ model Task {
   sourceTaskId        String?   @unique
   sourceTask          Task?     @relation("FollowUpChain", fields: [sourceTaskId], references: [id], onDelete: SetNull)
   followUpTask        Task?     @relation("FollowUpChain")
+
+  @@index([userId])
 }
 
 model DailyStats {
   id              String   @id @default(cuid())
-  date            DateTime @unique
+  userId          String?
+  date            DateTime
   tasksCompleted  Int      @default(0)
   tasksCreated    Int      @default(0)
   tasksActive     Int      @default(0)
   avgCompletionMs Float?
   byProject       Json?
   createdAt       DateTime @default(now())
+
+  @@unique([userId, date])
 }

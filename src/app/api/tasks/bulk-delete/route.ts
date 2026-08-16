@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getAuthUserId } from "@/lib/auth";
 
 export async function POST(request: Request) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const body = await request.json();
   const ids: string[] = body.ids;
 
@@ -13,7 +17,7 @@ export async function POST(request: Request) {
   }
 
   const result = await prisma.task.deleteMany({
-    where: { id: { in: ids } },
+    where: { id: { in: ids }, userId },
   });
 
   return NextResponse.json({ success: true, count: result.count });

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getAuthUserId } from "@/lib/auth";
 import { calculateNextOccurrence } from "@/lib/recurrence";
 
 const PROJECT_COLORS = [
@@ -9,6 +10,9 @@ const PROJECT_COLORS = [
 ];
 
 export async function POST(request: Request) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const body = await request.json();
   const titles: string[] = body.titles
     ?.map((t: string) => t.trim())
@@ -23,18 +27,17 @@ export async function POST(request: Request) {
 
   let projectId: string | null = body.projectId || null;
 
-  // If a projectName is provided, find or create the project
   if (body.projectName) {
     const name = body.projectName.trim();
     let project = await prisma.project.findFirst({
-      where: { name: { equals: name, mode: "insensitive" } },
+      where: { name: { equals: name, mode: "insensitive" }, userId },
     });
 
     if (!project) {
-      const count = await prisma.project.count();
+      const count = await prisma.project.count({ where: { userId } });
       const color = body.projectColor || PROJECT_COLORS[count % PROJECT_COLORS.length];
       project = await prisma.project.create({
-        data: { name, color },
+        data: { userId, name, color },
       });
     }
 
@@ -48,7 +51,6 @@ export async function POST(request: Request) {
     ? (body.recurrenceStartDate ? new Date(body.recurrenceStartDate) : new Date())
     : null;
 
-  // If recurring, calculate hiddenUntil
   let hiddenUntil: Date | null = null;
   if (recurrenceType && recurrenceStartDate) {
     const nextOccurrence = calculateNextOccurrence(
@@ -64,6 +66,7 @@ export async function POST(request: Request) {
 
   const tasks = await prisma.task.createManyAndReturn({
     data: titles.map((title) => ({
+      userId,
       title,
       projectId,
       ...(recurrenceType ? { recurrenceType } : {}),

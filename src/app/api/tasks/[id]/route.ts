@@ -1,20 +1,26 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getAuthUserId } from "@/lib/auth";
 import { calculateNextOccurrence } from "@/lib/recurrence";
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id } = await params;
   const body = await request.json();
+
+  const existing = await prisma.task.findFirst({ where: { id, userId } });
+  if (!existing) return NextResponse.json({ error: "Task not found" }, { status: 404 });
 
   const data = { ...body };
   if (data.recurrenceStartDate) {
     data.recurrenceStartDate = new Date(data.recurrenceStartDate);
   }
 
-  // When recurrence is being set/updated with a start date, calculate hiddenUntil
   if (data.recurrenceType && data.recurrenceStartDate) {
     const nextOccurrence = calculateNextOccurrence(
       data.recurrenceType,
@@ -28,7 +34,6 @@ export async function PATCH(
       data.hiddenUntil = null;
     }
   } else if (data.recurrenceType === null) {
-    // Removing recurrence clears hiddenUntil
     data.hiddenUntil = null;
   }
 
@@ -60,6 +65,7 @@ export async function PATCH(
       } else {
         await prisma.task.create({
           data: {
+            userId,
             title: task.title,
             projectId: task.projectId,
             recurrenceType: task.recurrenceType,
@@ -93,12 +99,13 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id } = await params;
 
-  const task = await prisma.task.findUnique({
-    where: { id },
-    select: { sourceTaskId: true },
-  });
+  const existing = await prisma.task.findFirst({ where: { id, userId } });
+  if (!existing) return NextResponse.json({ error: "Task not found" }, { status: 404 });
 
   const child = await prisma.task.findUnique({
     where: { sourceTaskId: id },
@@ -107,13 +114,11 @@ export async function DELETE(
   if (child) {
     await prisma.task.update({
       where: { id: child.id },
-      data: { sourceTaskId: task?.sourceTaskId ?? null },
+      data: { sourceTaskId: existing.sourceTaskId ?? null },
     });
   }
 
-  await prisma.task.delete({
-    where: { id },
-  });
+  await prisma.task.delete({ where: { id } });
 
   return NextResponse.json({ success: true });
 }

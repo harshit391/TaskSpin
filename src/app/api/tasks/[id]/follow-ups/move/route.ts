@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getAuthUserId } from "@/lib/auth";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id: anchorId } = await params;
   const body = await request.json();
   const { taskId, insertAfterId } = body;
@@ -17,18 +21,17 @@ export async function POST(
     return NextResponse.json({ error: "Cannot move a task into its own chain" }, { status: 400 });
   }
 
-  const anchor = await prisma.task.findUnique({ where: { id: anchorId } });
+  const anchor = await prisma.task.findFirst({ where: { id: anchorId, userId } });
   if (!anchor) {
     return NextResponse.json({ error: "Anchor task not found" }, { status: 404 });
   }
 
-  const movingTask = await prisma.task.findUnique({ where: { id: taskId } });
+  const movingTask = await prisma.task.findFirst({ where: { id: taskId, userId } });
   if (!movingTask) {
     return NextResponse.json({ error: "Task to move not found" }, { status: 404 });
   }
 
   await prisma.$transaction(async (tx) => {
-    // Step 1: Detach moving task from its current chain
     const oldChild = await tx.task.findUnique({
       where: { sourceTaskId: taskId },
     });
@@ -40,18 +43,15 @@ export async function POST(
       });
     }
 
-    // Step 2: Null moving task's sourceTaskId to avoid constraint conflict
     await tx.task.update({
       where: { id: taskId },
       data: { sourceTaskId: null },
     });
 
-    // Step 3: Find insertion target
     let targetId: string;
     if (insertAfterId) {
       targetId = insertAfterId;
     } else {
-      // Append to end — walk chain to find tail
       let currentParentId = anchorId;
       while (true) {
         const child = await tx.task.findUnique({
@@ -63,7 +63,6 @@ export async function POST(
       targetId = currentParentId;
     }
 
-    // Step 4: Insert into target chain
     const existingChild = await tx.task.findUnique({
       where: { sourceTaskId: targetId },
     });
@@ -81,7 +80,6 @@ export async function POST(
     }
   });
 
-  // Return updated chain via recursive CTE (single round trip)
   const chain = await prisma.$queryRaw<Array<{
     id: string;
     title: string;
@@ -109,7 +107,6 @@ export async function POST(
     SELECT * FROM chain ORDER BY depth
   `;
 
-  // Batch fetch projects
   const projectIds = [...new Set(chain.filter(t => t.projectId).map(t => t.projectId!))];
   const projects = projectIds.length > 0
     ? await prisma.project.findMany({ where: { id: { in: projectIds } } })

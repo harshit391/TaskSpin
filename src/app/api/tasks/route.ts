@@ -1,14 +1,21 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getAuthUserId } from "@/lib/auth";
 import { calculateNextOccurrence } from "@/lib/recurrence";
 
 export async function GET(request: Request) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { searchParams } = new URL(request.url);
   const all = searchParams.get("all") === "true";
   const priorityProjectId = searchParams.get("priorityProjectId");
 
   const tasks = await prisma.task.findMany({
-    where: all ? { completed: false } : undefined,
+    where: {
+      userId,
+      ...(all ? { completed: false } : {}),
+    },
     orderBy: { createdAt: "desc" },
     include: { project: true },
   });
@@ -25,6 +32,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const body = await request.json();
   const title = body.title?.trim();
 
@@ -35,12 +45,10 @@ export async function POST(request: Request) {
     );
   }
 
-  // Default recurrenceStartDate to today if recurrence type is set
   const startDate = body.recurrenceType
     ? (body.recurrenceStartDate || new Date().toISOString().split("T")[0])
     : null;
 
-  // If recurring, calculate when it should next appear
   let hiddenUntil: Date | null = null;
   if (body.recurrenceType && startDate) {
     const nextOccurrence = calculateNextOccurrence(
@@ -57,6 +65,7 @@ export async function POST(request: Request) {
 
   const task = await prisma.task.create({
     data: {
+      userId,
       title,
       ...(body.projectId ? { projectId: body.projectId } : {}),
       ...(body.recurrenceType ? { recurrenceType: body.recurrenceType } : {}),

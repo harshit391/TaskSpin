@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getAuthUserId } from "@/lib/auth";
 
-// Single DB round trip using recursive CTE to walk the entire chain
 async function walkChain(startId: string) {
   const chain = await prisma.$queryRaw<Array<{
     id: string;
@@ -32,7 +32,6 @@ async function walkChain(startId: string) {
 
   if (chain.length === 0) return [];
 
-  // Batch fetch projects in one query
   const projectIds = [...new Set(chain.filter(t => t.projectId).map(t => t.projectId!))];
   const projects = projectIds.length > 0
     ? await prisma.project.findMany({ where: { id: { in: projectIds } } })
@@ -59,7 +58,14 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id } = await params;
+
+  const task = await prisma.task.findFirst({ where: { id, userId } });
+  if (!task) return NextResponse.json({ error: "Task not found" }, { status: 404 });
+
   const chain = await walkChain(id);
   return NextResponse.json(chain);
 }
@@ -68,6 +74,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id } = await params;
   const body = await request.json();
   const { title, insertAfterId, projectId } = body;
@@ -76,12 +85,11 @@ export async function POST(
     return NextResponse.json({ error: "Title is required" }, { status: 400 });
   }
 
-  const anchorTask = await prisma.task.findUnique({ where: { id } });
+  const anchorTask = await prisma.task.findFirst({ where: { id, userId } });
   if (!anchorTask) {
     return NextResponse.json({ error: "Task not found" }, { status: 404 });
   }
 
-  // Find insertion target: use provided ID or find tail via CTE
   let targetId: string;
   if (insertAfterId) {
     targetId = insertAfterId;
@@ -99,6 +107,7 @@ export async function POST(
   await prisma.$transaction(async (tx) => {
     const newTask = await tx.task.create({
       data: {
+        userId,
         title: title.trim(),
         sourceTaskId: targetId,
         projectId: resolvedProjectId,
