@@ -1,4 +1,4 @@
-export type RecurrenceType = "weekly" | "monthly" | "quarterly" | "custom";
+export type RecurrenceType = "daily" | "weekly" | "monthly" | "quarterly" | "custom";
 
 const DAY_ABBR = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const DAY_SHORT = ["S", "M", "T", "W", "T", "F", "S"];
@@ -6,6 +6,9 @@ const DAY_SHORT = ["S", "M", "T", "W", "T", "F", "S"];
 function addPeriod(date: Date, type: string, days: number | null): Date {
   const result = new Date(date);
   switch (type) {
+    case "daily":
+      result.setDate(result.getDate() + 1);
+      break;
     case "weekly":
       result.setDate(result.getDate() + 7);
       break;
@@ -78,6 +81,8 @@ export function recurrenceLabel(type: string, days?: number | null, weekdays?: s
     return indices.map((i) => DAY_SHORT[i]).join(",");
   }
   switch (type) {
+    case "daily":
+      return "Daily";
     case "weekly":
       return "Weekly";
     case "monthly":
@@ -97,6 +102,8 @@ export function recurrenceDescription(type: string, days?: number | null, weekda
     return "on " + indices.map((i) => DAY_ABBR[i]).join(", ");
   }
   switch (type) {
+    case "daily":
+      return "tomorrow";
     case "weekly":
       return "in 7 days";
     case "monthly":

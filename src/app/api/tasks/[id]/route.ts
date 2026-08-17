@@ -21,19 +21,9 @@ export async function PATCH(
     data.recurrenceStartDate = new Date(data.recurrenceStartDate);
   }
 
-  if (data.recurrenceType && data.recurrenceStartDate) {
-    const nextOccurrence = calculateNextOccurrence(
-      data.recurrenceType,
-      data.recurrenceDays ?? null,
-      data.recurrenceStartDate,
-      data.recurrenceWeekdays ?? null
-    );
-    if (nextOccurrence > new Date()) {
-      data.hiddenUntil = nextOccurrence;
-    } else {
-      data.hiddenUntil = null;
-    }
-  } else if (data.recurrenceType === null) {
+  if (data.recurrenceType === null) {
+    data.hiddenUntil = null;
+  } else if (data.recurrenceType && !existing.completed) {
     data.hiddenUntil = null;
   }
 

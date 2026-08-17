@@ -25,6 +25,7 @@ interface TaskItemProps {
 }
 
 const RECURRENCE_OPTIONS = [
+  { value: "daily", label: "Daily" },
   { value: "weekly", label: "Weekly" },
   { value: "monthly", label: "Monthly" },
   { value: "quarterly", label: "Quarterly" },
