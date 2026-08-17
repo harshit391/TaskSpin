@@ -104,7 +104,13 @@ export function useTasks() {
       await queryClient.cancelQueries({ queryKey: TASKS_KEY });
       const previous = queryClient.getQueryData<Task[]>(TASKS_KEY);
       queryClient.setQueryData<Task[]>(TASKS_KEY, (old) =>
-        old?.map((t) => (t.id === id ? { ...t, completed } : t))
+        old?.map((t) => {
+          if (t.id !== id) return t;
+          if (completed && t.recurrenceType) {
+            return { ...t, completed: false, hiddenUntil: new Date(Date.now() + 86400000).toISOString() };
+          }
+          return { ...t, completed };
+        })
       );
       return { previous };
     },

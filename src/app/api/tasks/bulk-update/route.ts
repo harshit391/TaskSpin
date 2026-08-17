@@ -31,28 +31,30 @@ export async function POST(request: Request) {
     });
 
     if (recurringTasks.length > 0) {
-      await prisma.task.createMany({
-        data: recurringTasks.map((t) => ({
-          userId,
-          title: t.title,
-          projectId: t.projectId,
-          recurrenceType: t.recurrenceType,
-          recurrenceDays: t.recurrenceDays,
-          hiddenUntil: calculateNextOccurrence(t.recurrenceType!, t.recurrenceDays),
-          sourceTaskId: t.id,
-        })),
-      });
+      await prisma.$transaction(
+        recurringTasks.map((t) => {
+          const hiddenUntil = calculateNextOccurrence(
+            t.recurrenceType!,
+            t.recurrenceDays,
+            t.recurrenceStartDate || new Date(),
+            t.recurrenceWeekdays
+          );
+          return prisma.task.update({
+            where: { id: t.id },
+            data: { completed: false, hiddenUntil, recurrenceStartDate: hiddenUntil },
+          });
+        })
+      );
     }
 
-    const nonRecurringIds = await prisma.task.findMany({
-      where: { id: { in: ids }, userId, recurrenceType: null },
-      select: { id: true },
-    });
+    const nonRecurringIds = ids.filter(
+      (id) => !recurringTasks.some((t) => t.id === id)
+    );
 
     if (nonRecurringIds.length > 0) {
       const completedIdSet = new Set(ids);
       const children = await prisma.task.findMany({
-        where: { sourceTaskId: { in: nonRecurringIds.map((t) => t.id) } },
+        where: { sourceTaskId: { in: nonRecurringIds } },
       });
 
       const childrenToPromote = children.filter(
@@ -69,13 +71,18 @@ export async function POST(request: Request) {
           )
         );
       }
+
+      await prisma.task.updateMany({
+        where: { id: { in: nonRecurringIds }, userId },
+        data,
+      });
     }
+  } else {
+    await prisma.task.updateMany({
+      where: { id: { in: ids }, userId },
+      data,
+    });
   }
 
-  const result = await prisma.task.updateMany({
-    where: { id: { in: ids }, userId },
-    data,
-  });
-
-  return NextResponse.json({ success: true, count: result.count });
+  return NextResponse.json({ success: true, count: ids.length });
 }
