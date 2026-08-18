@@ -90,18 +90,27 @@ export async function DELETE(
   const existing = await prisma.task.findFirst({ where: { id, userId } });
   if (!existing) return NextResponse.json({ error: "Task not found" }, { status: 404 });
 
-  const child = await prisma.task.findUnique({
-    where: { sourceTaskId: id },
-  });
-
-  if (child) {
-    await prisma.task.update({
-      where: { id: child.id },
-      data: { sourceTaskId: existing.sourceTaskId ?? null },
+  await prisma.$transaction(async (tx) => {
+    const child = await tx.task.findUnique({
+      where: { sourceTaskId: id },
     });
-  }
 
-  await prisma.task.delete({ where: { id } });
+    if (existing.sourceTaskId) {
+      await tx.task.update({
+        where: { id },
+        data: { sourceTaskId: null },
+      });
+    }
+
+    if (child) {
+      await tx.task.update({
+        where: { id: child.id },
+        data: { sourceTaskId: existing.sourceTaskId ?? null },
+      });
+    }
+
+    await tx.task.delete({ where: { id } });
+  });
 
   return NextResponse.json({ success: true });
 }
