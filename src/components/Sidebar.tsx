@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Project, ProjectFilter, Task } from "@/types/task";
 import { ProjectForm } from "./ProjectForm";
@@ -67,8 +66,8 @@ export function Sidebar({
         }
       />
 
-      {/* Projects Dashboard Link */}
-      <Link
+      {/* Projects Dashboard Link — hard navigation to avoid RSC issues with dynamic imports */}
+      <a
         href="/projects"
         className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[3px] text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
           pathname === "/projects"
@@ -83,7 +82,7 @@ export function Sidebar({
           <rect x="14" y="14" width="7" height="7" rx="1" strokeLinecap="round" />
         </svg>
         <span className="flex-1 text-sm truncate">Projects Dashboard</span>
-      </Link>
+      </a>
 
       {/* Analytics Link — hard navigation to avoid RSC issues with dynamic imports */}
       <a
