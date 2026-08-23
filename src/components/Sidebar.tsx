@@ -100,6 +100,21 @@ export function Sidebar({
         <span className="flex-1 text-sm truncate">Analytics</span>
       </a>
 
+      {/* Habits Link */}
+      <a
+        href="/habits"
+        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[3px] text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+          pathname === "/habits"
+            ? "bg-bg-hover text-text-primary"
+            : "text-text-secondary hover:bg-bg-hover/50 hover:text-text-primary"
+        }`}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 2c1 3 3.5 5 6 5-1 4-3 8-6 11-3-3-5-7-6-11 2.5 0 5-2 6-5z" />
+        </svg>
+        <span className="flex-1 text-sm truncate">Habits</span>
+      </a>
+
       {/* Divider */}
       <div className="h-px bg-border my-3!" />
 

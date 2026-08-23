@@ -42,6 +42,36 @@ model Task {
   @@index([userId])
 }
 
+model Habit {
+  id              String         @id @default(cuid())
+  userId          String?
+  name            String
+  goalMode        String         // "single" | "progressive" | "infinite"
+  goalTarget      Int?           // only for "single" mode
+  currentStreak   Int            @default(0)
+  longestStreak   Int            @default(0)
+  lastCheckedDate String?        // "YYYY-MM-DD"
+  totalCheckins   Int            @default(0)
+  completedAt     DateTime?
+  archived        Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  checkins        HabitCheckin[]
+
+  @@index([userId])
+}
+
+model HabitCheckin {
+  id        String   @id @default(cuid())
+  habitId   String
+  habit     Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  date      String   // "YYYY-MM-DD"
+  createdAt DateTime @default(now())
+
+  @@unique([habitId, date])
+  @@index([habitId])
+}
+
 model DailyStats {
   id              String   @id @default(cuid())
   userId          String?

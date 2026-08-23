@@ -1,4 +1,5 @@
 import { Task, Project } from "@/types/task";
+import { Habit, GoalMode, MilestoneInfo } from "@/types/habit";
 
 const TASKS_BASE = "/api/tasks";
 const PROJECTS_BASE = "/api/projects";
@@ -234,4 +235,64 @@ export async function deleteProject(options: {
     }),
   });
   if (!res.ok) throw new Error("Failed to delete project");
+}
+
+// ─── Habits ─────────────────────────────────────────────
+
+const HABITS_BASE = "/api/habits";
+
+export function getLocalDate(): string {
+  return new Intl.DateTimeFormat("en-CA").format(new Date());
+}
+
+export async function fetchHabits(): Promise<Habit[]> {
+  const today = getLocalDate();
+  const res = await fetch(`${HABITS_BASE}?today=${today}`);
+  if (!res.ok) throw new Error("Failed to fetch habits");
+  return res.json();
+}
+
+export async function createHabit(data: { name: string; goalMode: GoalMode; goalTarget?: number }): Promise<Habit> {
+  const res = await fetch(HABITS_BASE, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to create habit");
+  return res.json();
+}
+
+export async function updateHabit(id: string, data: { name?: string; archived?: boolean }): Promise<Habit> {
+  const res = await fetch(`${HABITS_BASE}/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update habit");
+  return res.json();
+}
+
+export async function deleteHabit(id: string): Promise<void> {
+  const res = await fetch(`${HABITS_BASE}/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete habit");
+}
+
+export async function checkinHabit(id: string, date: string): Promise<Habit & { milestone?: MilestoneInfo }> {
+  const res = await fetch(`${HABITS_BASE}/${id}/checkin`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ date }),
+  });
+  if (!res.ok) throw new Error("Failed to check in");
+  return res.json();
+}
+
+export async function undoCheckin(id: string, date: string): Promise<Habit> {
+  const res = await fetch(`${HABITS_BASE}/${id}/checkin`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ date }),
+  });
+  if (!res.ok) throw new Error("Failed to undo check-in");
+  return res.json();
 }
