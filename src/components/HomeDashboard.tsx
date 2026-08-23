@@ -58,12 +58,24 @@ export function HomeDashboard() {
       {/* Header */}
       <header className="sticky top-0 z-30 bg-bg-primary/80 backdrop-blur-md border-b border-border">
         <div className="w-[92%] sm:w-[88%] lg:w-[85%] max-w-5xl mx-auto flex items-center justify-between h-14">
-          <span className="text-lg font-display font-bold text-text-primary">TaskSpin</span>
+          <h1 className="font-[family-name:var(--font-oswald)] text-xl sm:text-2xl font-semibold uppercase tracking-[0.02em] leading-none">
+            Task<span className="text-accent">Spin</span>
+          </h1>
           <UserMenu />
         </div>
       </header>
 
       <main className="w-[92%] sm:w-[88%] lg:w-[85%] max-w-5xl mx-auto py-6 space-y-6">
+        {/* Welcome Section */}
+        <section className="py-4 sm:py-6">
+          <h2 className="font-[family-name:var(--font-oswald)] text-3xl sm:text-4xl font-bold uppercase tracking-[0.02em] leading-none mb-2">
+            Task<span className="text-accent">Spin</span>
+          </h2>
+          <p className="text-sm sm:text-base text-text-secondary max-w-md">
+            Your tasks, habits, and projects — all in one place. Stay on track, build streaks, and get things done.
+          </p>
+        </section>
+
         {/* Quick Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <StatCard label="Active Tasks" value={stats.active} href="/dashboard" />
@@ -109,11 +121,9 @@ export function HomeDashboard() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-text-primary truncate">{habit.name}</p>
                       </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-orange-400">
-                          <path d="M12 2c1 3 3.5 5 6 5-1 4-3 8-6 11-3-3-5-7-6-11 2.5 0 5-2 6-5z" fill="currentColor" />
-                        </svg>
-                        <span className="text-xs font-semibold text-text-primary">{habit.currentStreak}</span>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <span className="text-base">🔥</span>
+                        <span className="text-sm font-bold text-text-primary">{habit.currentStreak}</span>
                       </div>
                     </motion.div>
                   );
