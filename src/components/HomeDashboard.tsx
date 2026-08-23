@@ -227,7 +227,7 @@ function StatCard({ label, value, href, linkLabel, icon }: { label: string; valu
         </div>
       </div>
       {/* Desktop hover slide-up */}
-      <div className="hidden sm:flex absolute bottom-0 left-0 right-0 translate-y-full group-hover:translate-y-0 transition-transform duration-200 bg-accent/10 border-t border-accent/20 px-4 py-2 items-center justify-between">
+      <div className="hidden sm:flex absolute bottom-0 left-0 right-0 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 bg-accent/10 border-t border-accent/20 px-4 py-2 items-center justify-between rounded-b-xl">
         <span className="text-[11px] font-medium text-accent">{linkLabel}</span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent">
           <path d="M5 12h14M12 5l7 7-7 7" />
