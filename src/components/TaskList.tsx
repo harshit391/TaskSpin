@@ -17,6 +17,7 @@ interface TaskListProps {
   onToggleSelect: (id: string) => void;
   onToggle: (id: string, completed: boolean) => void;
   onEdit: (id: string, title: string) => void;
+  onEditNotes: (id: string, notes: string) => void;
   onDelete: (id: string) => void;
   onAssign: (id: string, projectId: string | null) => void;
   onSetRecurrence: (id: string, recurrenceType: string | null, recurrenceDays?: number, recurrenceStartDate?: string | null) => void;
@@ -35,6 +36,7 @@ export function TaskList({
   onToggleSelect,
   onToggle,
   onEdit,
+  onEditNotes,
   onDelete,
   onAssign,
   onSetRecurrence,
@@ -84,6 +86,7 @@ export function TaskList({
                 onToggleSelect={onToggleSelect}
                 onToggle={onToggle}
                 onEdit={onEdit}
+                onEditNotes={onEditNotes}
                 onDelete={onDelete}
                 onAssign={onAssign}
                 onSetRecurrence={onSetRecurrence}
@@ -100,6 +103,7 @@ export function TaskList({
                     onToggleSelect={onToggleSelect}
                     onToggle={onToggle}
                     onEdit={onEdit}
+                    onEditNotes={onEditNotes}
                     onDelete={onDelete}
                     onAssign={onAssign}
                     onSetRecurrence={onSetRecurrence}

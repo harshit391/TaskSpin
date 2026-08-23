@@ -97,7 +97,7 @@ function HomeContent() {
 
   // Data hooks
   const queryClient = useQueryClient();
-  const { tasks, isLoading, isError, addTask, addTasksBatch, isAdding, isMutating, toggleTask, editTask, assignToProject, setRecurrence, deleteTask, bulkDelete, bulkUpdate } = useTasks();
+  const { tasks, isLoading, isError, addTask, addTasksBatch, isAdding, isMutating, toggleTask, editTask, editNotes, assignToProject, setRecurrence, deleteTask, bulkDelete, bulkUpdate } = useTasks();
   const { projects, addProject, removeProject, isAdding: isAddingProject, isMutating: isProjectMutating } = useProjects();
 
 
@@ -142,8 +142,9 @@ function HomeContent() {
       const q = searchQuery.toLowerCase();
       result = result.filter((t) => {
         if (t.title.toLowerCase().includes(q)) return true;
+        if (t.notes?.toLowerCase().includes(q)) return true;
         const chain = followUpMap.get(t.id);
-        if (chain) return chain.some(fu => fu.title.toLowerCase().includes(q));
+        if (chain) return chain.some(fu => fu.title.toLowerCase().includes(q) || fu.notes?.toLowerCase().includes(q));
         return false;
       });
     }
@@ -176,7 +177,7 @@ function HomeContent() {
     const autoExpand = new Set(expandedChains);
     for (const task of filteredTasks) {
       const chain = followUpMap.get(task.id);
-      if (chain && chain.some(fu => fu.title.toLowerCase().includes(q))) {
+      if (chain && chain.some(fu => fu.title.toLowerCase().includes(q) || fu.notes?.toLowerCase().includes(q))) {
         autoExpand.add(task.id);
       }
     }
@@ -490,6 +491,7 @@ function HomeContent() {
                   onToggleSelect={toggleSelection}
                   onToggle={toggleTask}
                   onEdit={editTask}
+                  onEditNotes={editNotes}
                   onDelete={deleteTask}
                   onAssign={assignToProject}
                   onSetRecurrence={setRecurrence}

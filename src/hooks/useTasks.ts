@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchTasks, createTask, createTasksBatch, toggleTask, updateTaskTitle, assignTaskToProject, deleteTask, bulkDeleteTasks, bulkUpdateTasks, setTaskRecurrence } from "@/lib/api";
+import { fetchTasks, createTask, createTasksBatch, toggleTask, updateTaskTitle, updateTaskNotes, assignTaskToProject, deleteTask, bulkDeleteTasks, bulkUpdateTasks, setTaskRecurrence } from "@/lib/api";
 import { Task } from "@/types/task";
 import { showToast } from "@/hooks/useToast";
 
@@ -24,6 +24,7 @@ export function useTasks() {
       const optimistic: Task = {
         id: `temp-${Date.now()}`,
         title,
+        notes: null,
         completed: false,
         projectId: projectId ?? null,
         createdAt: new Date().toISOString(),
@@ -63,6 +64,7 @@ export function useTasks() {
       const optimistic: Task[] = titles.map((title, i) => ({
         id: `temp-${Date.now()}-${i}`,
         title,
+        notes: null,
         completed: false,
         projectId: projectId ?? null,
         createdAt: new Date().toISOString(),
@@ -264,6 +266,28 @@ export function useTasks() {
     },
   });
 
+  const notesMutation = useMutation({
+    mutationFn: ({ id, notes }: { id: string; notes: string }) =>
+      updateTaskNotes(id, notes),
+    onMutate: async ({ id, notes }) => {
+      await queryClient.cancelQueries({ queryKey: TASKS_KEY });
+      const previous = queryClient.getQueryData<Task[]>(TASKS_KEY);
+      queryClient.setQueryData<Task[]>(TASKS_KEY, (old) =>
+        old?.map((t) => (t.id === id ? { ...t, notes: notes || null } : t))
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(TASKS_KEY, context.previous);
+      }
+      showToast("Failed to update notes", "error");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: TASKS_KEY });
+    },
+  });
+
   const bulkUpdateMutation = useMutation({
     mutationFn: ({ ids, data }: { ids: string[]; data: { completed?: boolean; projectId?: string | null } }) =>
       bulkUpdateTasks(ids, data),
@@ -309,6 +333,7 @@ export function useTasks() {
       batchMutation.isPending ||
       toggleMutation.isPending ||
       editMutation.isPending ||
+      notesMutation.isPending ||
       assignMutation.isPending ||
       deleteMutation.isPending ||
       bulkDeleteMutation.isPending ||
@@ -318,6 +343,8 @@ export function useTasks() {
       toggleMutation.mutate({ id, completed }),
     editTask: (id: string, title: string) =>
       editMutation.mutate({ id, title }),
+    editNotes: (id: string, notes: string) =>
+      notesMutation.mutate({ id, notes }),
     assignToProject: (id: string, projectId: string | null) =>
       assignMutation.mutate({ id, projectId }),
     setRecurrence: (id: string, recurrenceType: string | null, recurrenceDays?: number, recurrenceStartDate?: string | null, recurrenceWeekdays?: string | null) =>

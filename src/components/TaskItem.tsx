@@ -18,6 +18,7 @@ interface TaskItemProps {
   onToggleSelect: (id: string) => void;
   onToggle: (id: string, completed: boolean) => void;
   onEdit: (id: string, title: string) => void;
+  onEditNotes: (id: string, notes: string) => void;
   onDelete: (id: string) => void;
   onAssign: (id: string, projectId: string | null) => void;
   onSetRecurrence: (id: string, recurrenceType: string | null, recurrenceDays?: number, recurrenceStartDate?: string | null, recurrenceWeekdays?: string | null) => void;
@@ -45,6 +46,7 @@ export function TaskItem({
   onToggleSelect,
   onToggle,
   onEdit,
+  onEditNotes,
   onDelete,
   onAssign,
   onSetRecurrence,
@@ -64,6 +66,9 @@ export function TaskItem({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(task.title);
+  const [notesValue, setNotesValue] = useState(task.notes ?? "");
+  const [editingNotes, setEditingNotes] = useState(false);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const recurrenceMenuRef = useRef<HTMLDivElement>(null);
   const overflowMenuRef = useRef<HTMLDivElement>(null);
@@ -130,6 +135,32 @@ export function TaskItem({
       setEditing(false);
     }
   };
+
+  useEffect(() => {
+    if (!editingNotes) {
+      setNotesValue(task.notes ?? "");
+    }
+  }, [task.notes, editingNotes]);
+
+  const NOTES_WORD_LIMIT = 250;
+  const notesWordCount = notesValue.trim() ? notesValue.trim().split(/\s+/).length : 0;
+  const notesOverLimit = notesWordCount > NOTES_WORD_LIMIT;
+
+  const handleNotesChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    const words = val.trim() ? val.trim().split(/\s+/).length : 0;
+    if (words <= NOTES_WORD_LIMIT) {
+      setNotesValue(val);
+    }
+  }, []);
+
+  const handleNotesSave = useCallback(() => {
+    setEditingNotes(false);
+    const trimmed = notesValue.trim();
+    if (trimmed !== (task.notes ?? "").trim()) {
+      onEditNotes(task.id, trimmed);
+    }
+  }, [notesValue, task.notes, task.id, onEditNotes]);
 
   const clearLongPress = useCallback(() => {
     if (longPressTimer.current) {
@@ -344,8 +375,8 @@ export function TaskItem({
                 </motion.div>
               </div>
             </div>
-            {/* Project badge + recurrence + next date (always visible below title) */}
-            {(task.project || task.recurrenceType || isFutureScheduled) && (
+            {/* Project badge + recurrence + next date + notes indicator (always visible below title) */}
+            {(task.project || task.recurrenceType || isFutureScheduled || task.notes) && (
               <div className="flex items-center gap-2 mt-0.5">
                 {task.project && (
                   <span className="inline-flex items-center gap-1">
@@ -382,8 +413,48 @@ export function TaskItem({
                     </span>
                   </span>
                 )}
+                {task.notes && !expanded && (
+                  <span className="inline-flex items-center gap-0.5">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
+                      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                  </span>
+                )}
               </div>
             )}
+            {/* Notes textarea (visible when expanded) */}
+            <AnimatePresence>
+              {expanded && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ type: "spring", bounce: 0.1, duration: 0.3 }}
+                  className="overflow-hidden"
+                >
+                  <textarea
+                    ref={notesRef}
+                    value={notesValue}
+                    onChange={handleNotesChange}
+                    onFocus={() => setEditingNotes(true)}
+                    onBlur={handleNotesSave}
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    placeholder="Add notes..."
+                    rows={2}
+                    className="w-full mt-1.5 resize-none bg-transparent border-none text-xs sm:text-sm text-text-secondary placeholder:text-text-muted/50 focus:outline-none leading-relaxed p-0"
+                  />
+                  {notesWordCount >= NOTES_WORD_LIMIT - 20 && (
+                    <p className={`text-[10px] mt-0.5 ${notesOverLimit ? "text-error" : "text-text-muted"}`}>
+                      {notesWordCount}/{NOTES_WORD_LIMIT} words
+                    </p>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </>
         )}
       </div>

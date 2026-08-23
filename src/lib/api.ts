@@ -83,6 +83,16 @@ export async function updateTaskTitle(id: string, title: string): Promise<Task> 
   return res.json();
 }
 
+export async function updateTaskNotes(id: string, notes: string): Promise<Task> {
+  const res = await fetch(`${TASKS_BASE}/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ notes: notes || null }),
+  });
+  if (!res.ok) throw new Error("Failed to update notes");
+  return res.json();
+}
+
 export async function setTaskRecurrence(
   id: string,
   recurrenceType: string | null,

@@ -10,6 +10,7 @@ export interface Project {
 export interface Task {
   id: string;
   title: string;
+  notes: string | null;
   completed: boolean;
   createdAt: string;
   updatedAt: string;

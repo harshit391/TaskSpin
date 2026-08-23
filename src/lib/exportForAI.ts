@@ -74,6 +74,7 @@ export function generateAIExportPrompt({ tasks, projects }: ExportData): string 
       if (t.recurrenceType) meta += ` [recurring: ${t.recurrenceType}${t.recurrenceDays ? ` every ${t.recurrenceDays} days` : ""}]`;
       if (t.sourceTaskId) meta += " [in chain]";
       lines.push(`- ${t.title}${meta}`);
+      if (t.notes) lines.push(`  > ${t.notes.replace(/\n/g, "\n  > ")}`);
     }
     lines.push("");
   }
@@ -87,6 +88,7 @@ export function generateAIExportPrompt({ tasks, projects }: ExportData): string 
       if (t.recurrenceType) meta += ` [recurring: ${t.recurrenceType}${t.recurrenceDays ? ` every ${t.recurrenceDays} days` : ""}]`;
       if (t.sourceTaskId) meta += " [in chain]";
       lines.push(`- ${t.title}${meta}`);
+      if (t.notes) lines.push(`  > ${t.notes.replace(/\n/g, "\n  > ")}`);
     }
     lines.push("");
   }
