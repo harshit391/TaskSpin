@@ -3,12 +3,25 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
+import { getDefaultPage, setDefaultPage } from "@/app/page";
+
+const PAGE_OPTIONS = [
+  { value: "/dashboard", label: "Tasks" },
+  { value: "/habits", label: "Habits" },
+  { value: "/projects", label: "Projects" },
+  { value: "/analytics", label: "Analytics" },
+];
 
 export function UserMenu() {
   const { user, signOut } = useAuth();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [defaultPage, setDefaultPageState] = useState("/dashboard");
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setDefaultPageState(getDefaultPage());
+  }, []);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -66,6 +79,24 @@ export function UserMenu() {
               {displayName}
             </p>
             <p className="text-xs text-text-muted truncate">{user.email}</p>
+          </div>
+          <div className="px-4 py-3 border-b border-border">
+            <p className="text-[11px] text-text-muted font-medium mb-1.5">Default Page</p>
+            <div className="flex flex-wrap gap-1">
+              {PAGE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => { setDefaultPage(opt.value); setDefaultPageState(opt.value); }}
+                  className={`px-2 py-1 text-[11px] rounded-md transition-colors ${
+                    defaultPage === opt.value
+                      ? "bg-accent text-white"
+                      : "bg-bg-primary text-text-muted hover:text-text-primary"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
           <button
             onClick={handleSignOut}

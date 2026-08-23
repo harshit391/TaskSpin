@@ -152,7 +152,7 @@ export default function AnalyticsPage() {
       <div className="sticky top-0 z-10 bg-bg-primary/80 backdrop-blur-md border-b border-border">
         <div className="w-[92%] sm:w-[88%] lg:w-[85%] max-w-4xl mx-auto flex items-center gap-3 py-4">
           <Link
-            href="/"
+            href="/dashboard"
             className="text-text-muted hover:text-text-primary transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
             aria-label="Back to tasks"
           >

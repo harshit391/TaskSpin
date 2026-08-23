@@ -21,7 +21,7 @@ export default function HabitsPage() {
         <div className="w-[92%] sm:w-[88%] lg:w-[85%] max-w-4xl mx-auto flex items-center justify-between h-14">
           <div className="flex items-center gap-3">
             <a
-              href="/"
+              href="/dashboard"
               className="text-text-muted hover:text-text-primary transition-colors min-w-[36px] min-h-[36px] inline-flex items-center justify-center"
               aria-label="Back to tasks"
             >

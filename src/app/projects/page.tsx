@@ -33,7 +33,7 @@ export default function ProjectsDashboard() {
         <div className="w-[92%] sm:w-[88%] md:w-[85%] lg:w-[82%] max-w-5xl mx-auto flex items-center justify-between py-4">
           <div className="flex items-center gap-3">
             <Link
-              href="/"
+              href="/dashboard"
               className="text-text-muted hover:text-text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-[2px] min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
               aria-label="Back to tasks"
             >
@@ -77,7 +77,7 @@ export default function ProjectsDashboard() {
             <p className="text-text-muted text-sm">No projects yet</p>
             <p className="text-text-muted text-xs">Create a project from the sidebar or use <kbd className="px-1.5 py-0.5 bg-bg-secondary rounded text-text-secondary">#ProjectName</kbd> syntax</p>
             <Link
-              href="/"
+              href="/dashboard"
               className="mt-2 text-accent hover:text-accent-hover text-sm font-medium transition-colors"
             >
               Go to Tasks

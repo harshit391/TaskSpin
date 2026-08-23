@@ -30,9 +30,9 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const publicPaths = ["/auth", "/api/", "/_next", "/favicon", "/manifest"];
-  const isPublic = publicPaths.some((p) =>
-    request.nextUrl.pathname.startsWith(p)
-  );
+  const isPublic =
+    request.nextUrl.pathname === "/" ||
+    publicPaths.some((p) => request.nextUrl.pathname.startsWith(p));
 
   const isStaticAsset = /\.(svg|png|jpg|jpeg|gif|webp|ico|json|js|css)$/.test(
     request.nextUrl.pathname
@@ -49,7 +49,7 @@ export async function updateSession(request: NextRequest) {
   if (user && request.nextUrl.pathname.startsWith("/auth")) {
     const next = request.nextUrl.searchParams.get("next");
     const url = request.nextUrl.clone();
-    url.pathname = next && next !== "/auth" ? next : "/";
+    url.pathname = next && next !== "/auth" ? next : "/dashboard";
     url.search = "";
     return NextResponse.redirect(url);
   }
