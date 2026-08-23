@@ -49,7 +49,7 @@ export async function updateSession(request: NextRequest) {
   if (user && request.nextUrl.pathname.startsWith("/auth")) {
     const next = request.nextUrl.searchParams.get("next");
     const url = request.nextUrl.clone();
-    url.pathname = next && next !== "/auth" ? next : "/dashboard";
+    url.pathname = next && next !== "/auth" ? next : "/";
     url.search = "";
     return NextResponse.redirect(url);
   }

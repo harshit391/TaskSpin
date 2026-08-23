@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
+import { HomeDashboard } from "@/components/HomeDashboard";
 
 const DEFAULT_PAGE_KEY = "taskspin-default-page";
 
 export function getDefaultPage(): string {
   if (typeof window === "undefined") return "/dashboard";
-  return localStorage.getItem(DEFAULT_PAGE_KEY) || "/dashboard";
+  return localStorage.getItem(DEFAULT_PAGE_KEY) || "/";
 }
 
 export function setDefaultPage(page: string): void {
@@ -38,18 +38,10 @@ const FEATURES = [
   },
 ];
 
-export default function LandingPage() {
+export default function HomePage() {
   const { user, loading } = useAuth();
-  const [redirecting, setRedirecting] = useState(false);
 
-  useEffect(() => {
-    if (!loading && user) {
-      setRedirecting(true);
-      window.location.href = getDefaultPage();
-    }
-  }, [user, loading]);
-
-  if (loading || redirecting) {
+  if (loading) {
     return (
       <div className="min-h-dvh bg-bg-primary flex items-center justify-center">
         <svg className="animate-spin w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none">
@@ -58,6 +50,10 @@ export default function LandingPage() {
         </svg>
       </div>
     );
+  }
+
+  if (user) {
+    return <HomeDashboard />;
   }
 
   return (

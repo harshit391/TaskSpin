@@ -6,6 +6,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { getDefaultPage, setDefaultPage } from "@/app/page";
 
 const PAGE_OPTIONS = [
+  { value: "/", label: "Home" },
   { value: "/dashboard", label: "Tasks" },
   { value: "/habits", label: "Habits" },
   { value: "/projects", label: "Projects" },
