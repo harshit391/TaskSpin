@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { UserMenu } from "@/components/UserMenu";
+import { SetDefaultPageButton } from "@/components/SetDefaultPageButton";
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -34,6 +35,7 @@ export function Header({ onToggleSidebar, onSpin, onShortcuts, onExport }: Heade
           >
             Task<span className="text-accent">Spin</span>
           </motion.h1>
+          <SetDefaultPageButton page="/dashboard" />
         </div>
 
         <div className="flex items-center gap-3">

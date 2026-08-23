@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { SetDefaultPageButton } from "@/components/SetDefaultPageButton";
 import { useProjects } from "@/hooks/useProjects";
 import { useTasks } from "@/hooks/useTasks";
 import { ProjectCard } from "@/components/ProjectCard";
@@ -47,6 +48,7 @@ export default function ProjectsDashboard() {
             {projects.length > 0 && (
               <span className="text-sm text-text-muted">({projects.length})</span>
             )}
+            <SetDefaultPageButton page="/projects" />
           </div>
         </div>
       </header>

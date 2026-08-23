@@ -7,6 +7,7 @@ import { useHabits } from "@/hooks/useHabits";
 import { useProjects } from "@/hooks/useProjects";
 import { getLocalDate } from "@/lib/api";
 import { UserMenu } from "@/components/UserMenu";
+import { SyncingOverlay } from "@/components/SyncingOverlay";
 
 export function HomeDashboard() {
   const { tasks, isLoading: tasksLoading } = useTasks();
@@ -58,12 +59,14 @@ export function HomeDashboard() {
       {/* Header */}
       <header className="sticky top-0 z-30 bg-bg-primary/80 backdrop-blur-md border-b border-border">
         <div className="w-[92%] sm:w-[88%] lg:w-[85%] max-w-5xl mx-auto flex items-center justify-between h-14">
-          <div />
+          <a href="/" className="font-[family-name:var(--font-oswald)] text-xl sm:text-2xl font-semibold uppercase tracking-[0.02em] leading-none hover:opacity-80 transition-opacity">
+            Task<span className="text-accent">Spin</span>
+          </a>
           <UserMenu />
         </div>
       </header>
 
-      <main className="w-[92%] sm:w-[88%] lg:w-[85%] max-w-5xl mx-auto py-6 space-y-6">
+      <main className="w-[92%] sm:w-[88%] lg:w-[85%] max-w-5xl mx-auto py-8 space-y-8">
         {/* Welcome Section */}
         <section className="py-4 sm:py-6">
           <h2 className="font-[family-name:var(--font-oswald)] text-3xl sm:text-4xl font-bold uppercase tracking-[0.02em] leading-none mb-2">
@@ -100,7 +103,7 @@ export function HomeDashboard() {
                       key={habit.id}
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="flex items-center gap-3 p-3 rounded-lg border border-border bg-bg-card"
+                      className="flex items-center gap-3 p-4 rounded-lg border border-border bg-bg-card"
                     >
                       <button
                         onClick={() => isChecked ? undoCheckin(habit.id) : checkin(habit.id)}
@@ -146,7 +149,7 @@ export function HomeDashboard() {
                     key={task.id}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-3 p-3 rounded-lg border border-border bg-bg-card"
+                    className="flex items-center gap-3 p-4 rounded-lg border border-border bg-bg-card"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent flex-shrink-0">
                       <path d="M17 2l4 4-4 4" />
@@ -180,7 +183,7 @@ export function HomeDashboard() {
                   key={task.id}
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="p-3 rounded-lg border border-border bg-bg-card"
+                  className="p-4 rounded-lg border border-border bg-bg-card"
                 >
                   <p className="text-sm text-text-primary truncate">{task.title}</p>
                   <div className="flex items-center gap-2 mt-1.5">
@@ -215,15 +218,17 @@ export function HomeDashboard() {
           </div>
         </section>
       </main>
+
+      <SyncingOverlay show={habitsMutating} />
     </div>
   );
 }
 
 function StatCard({ label, value, href }: { label: string; value: number; href: string }) {
   return (
-    <a href={href} className="p-3 sm:p-4 rounded-xl border border-border bg-bg-card hover:border-accent/30 transition-colors">
-      <p className="text-lg sm:text-2xl font-bold text-text-primary">{value}</p>
-      <p className="text-[11px] text-text-muted mt-0.5">{label}</p>
+    <a href={href} className="p-4 sm:p-5 rounded-xl border border-border bg-bg-card hover:border-accent/30 transition-colors">
+      <p className="text-2xl sm:text-3xl font-bold text-text-primary">{value}</p>
+      <p className="text-xs text-text-muted mt-1">{label}</p>
     </a>
   );
 }
@@ -232,14 +237,14 @@ function NavCard({ href, label, icon }: { href: string; label: string; icon: str
   return (
     <a
       href={href}
-      className="flex items-center gap-2.5 p-3 rounded-xl border border-border bg-bg-card hover:border-accent/30 transition-colors"
+      className="flex items-center gap-3 p-4 rounded-xl border border-border bg-bg-card hover:border-accent/30 transition-colors"
     >
-      <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent">
+      <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent">
           <path d={icon} />
         </svg>
       </div>
-      <span className="text-sm font-medium text-text-primary">{label}</span>
+      <span className="text-sm sm:text-base font-medium text-text-primary">{label}</span>
     </a>
   );
 }

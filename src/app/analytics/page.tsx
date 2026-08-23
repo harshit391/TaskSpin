@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { SetDefaultPageButton } from "@/components/SetDefaultPageButton";
 import dynamic from "next/dynamic";
 
 const OverviewCharts = dynamic(() => import("./OverviewCharts").then((m) => ({ default: m.OverviewCharts })), {
@@ -163,6 +164,7 @@ export default function AnalyticsPage() {
           <h1 className="text-lg sm:text-xl font-bold text-text-primary" style={{ fontFamily: "var(--font-oswald)" }}>
             Analytics
           </h1>
+          <SetDefaultPageButton page="/analytics" />
         </div>
       </div>
 

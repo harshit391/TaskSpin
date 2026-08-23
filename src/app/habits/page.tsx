@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useHabits } from "@/hooks/useHabits";
+import { SetDefaultPageButton } from "@/components/SetDefaultPageButton";
+import { SyncingOverlay } from "@/components/SyncingOverlay";
 import { HabitCard } from "@/components/habits/HabitCard";
 import { CreateHabitModal } from "@/components/habits/CreateHabitModal";
 
 export default function HabitsPage() {
-  const { habits, isLoading, addHabit, checkin, undoCheckin, editHabit, removeHabit } = useHabits();
+  const { habits, isLoading, isMutating, addHabit, checkin, undoCheckin, editHabit, removeHabit } = useHabits();
   const [showCreate, setShowCreate] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
 
@@ -30,6 +32,7 @@ export default function HabitsPage() {
               </svg>
             </a>
             <h1 className="text-lg font-display font-bold text-text-primary">Habits</h1>
+            <SetDefaultPageButton page="/habits" />
           </div>
           <button
             onClick={() => setShowCreate(true)}
@@ -140,6 +143,8 @@ export default function HabitsPage() {
         onClose={() => setShowCreate(false)}
         onCreate={addHabit}
       />
+
+      <SyncingOverlay show={isMutating} />
     </div>
   );
 }
