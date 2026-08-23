@@ -22,15 +22,15 @@ export default function HabitsPage() {
       <header className="sticky top-0 z-30 bg-bg-primary/80 backdrop-blur-md border-b border-border">
         <div className="w-[92%] sm:w-[88%] lg:w-[85%] max-w-4xl mx-auto flex items-center justify-between h-14">
           <div className="flex items-center gap-3">
-            <a
-              href="/dashboard"
+            <button
+              onClick={() => window.history.back()}
               className="text-text-muted hover:text-text-primary transition-colors min-w-[36px] min-h-[36px] inline-flex items-center justify-center"
-              aria-label="Back to tasks"
+              aria-label="Go back"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M19 12H5M12 19l-7-7 7-7" />
               </svg>
-            </a>
+            </button>
             <h1 className="text-lg font-display font-bold text-text-primary">Habits</h1>
             <SetDefaultPageButton page="/habits" />
           </div>

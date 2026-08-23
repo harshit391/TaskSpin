@@ -33,15 +33,15 @@ export default function ProjectsDashboard() {
       <header className="border-b border-border bg-bg-primary/80 backdrop-blur-sm sticky top-0 z-30">
         <div className="w-[92%] sm:w-[88%] md:w-[85%] lg:w-[82%] max-w-5xl mx-auto flex items-center justify-between py-4">
           <div className="flex items-center gap-3">
-            <Link
-              href="/dashboard"
+            <button
+              onClick={() => window.history.back()}
               className="text-text-muted hover:text-text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-[2px] min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
-              aria-label="Back to tasks"
+              aria-label="Go back"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-            </Link>
+            </button>
             <h1 className="font-[family-name:var(--font-oswald)] text-2xl sm:text-3xl font-semibold uppercase tracking-[0.02em] leading-none">
               Projects
             </h1>

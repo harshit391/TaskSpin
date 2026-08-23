@@ -27,14 +27,16 @@ export function Header({ onToggleSidebar, onSpin, onShortcuts, onExport }: Heade
             </svg>
           </button>
 
-          <motion.h1
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: "spring", bounce: 0.3 }}
-            className="font-[family-name:var(--font-oswald)] text-2xl sm:text-3xl font-semibold uppercase tracking-[0.02em] leading-none"
-          >
-            Task<span className="text-accent">Spin</span>
-          </motion.h1>
+          <a href="/">
+            <motion.h1
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: "spring", bounce: 0.3 }}
+              className="font-[family-name:var(--font-oswald)] text-2xl sm:text-3xl font-semibold uppercase tracking-[0.02em] leading-none hover:opacity-80 transition-opacity"
+            >
+              Task<span className="text-accent">Spin</span>
+            </motion.h1>
+          </a>
           <SetDefaultPageButton page="/dashboard" />
         </div>
 

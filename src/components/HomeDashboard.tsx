@@ -58,10 +58,7 @@ export function HomeDashboard() {
     <div className="min-h-dvh bg-bg-primary overflow-y-auto">
       {/* Header */}
       <header className="sticky top-0 z-30 bg-bg-primary/80 backdrop-blur-md border-b border-border">
-        <div className="w-[92%] sm:w-[88%] lg:w-[85%] max-w-5xl mx-auto flex items-center justify-between h-14">
-          <a href="/" className="font-[family-name:var(--font-oswald)] text-xl sm:text-2xl font-semibold uppercase tracking-[0.02em] leading-none hover:opacity-80 transition-opacity">
-            Task<span className="text-accent">Spin</span>
-          </a>
+        <div className="w-[92%] sm:w-[88%] lg:w-[85%] max-w-5xl mx-auto flex items-center justify-end h-14">
           <UserMenu />
         </div>
       </header>
@@ -79,10 +76,10 @@ export function HomeDashboard() {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard label="Active Tasks" value={stats.active} href="/dashboard" />
-          <StatCard label="Done Today" value={stats.completedToday} href="/dashboard" />
-          <StatCard label="Projects" value={stats.projects} href="/projects" />
-          <StatCard label="Habits" value={stats.habits} href="/habits" />
+          <StatCard label="Active Tasks" value={stats.active} href="/dashboard" linkLabel="Tasks" icon="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5h6M9 12h6M9 16h4" />
+          <StatCard label="Done Today" value={stats.completedToday} href="/analytics" linkLabel="Analytics" icon="M3 3v18h18M7 16l4-4 4 4 5-5" />
+          <StatCard label="Projects" value={stats.projects} href="/projects" linkLabel="Projects" icon="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+          <StatCard label="Habits" value={stats.habits} href="/habits" linkLabel="Habits" icon="M12 2c1 3 3.5 5 6 5-1 4-3 8-6 11-3-3-5-7-6-11 2.5 0 5-2 6-5z" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -208,15 +205,6 @@ export function HomeDashboard() {
           )}
         </section>
 
-        {/* Quick Nav */}
-        <section>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <NavCard href="/dashboard" label="Tasks" icon="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5h6" />
-            <NavCard href="/habits" label="Habits" icon="M12 2c1 3 3.5 5 6 5-1 4-3 8-6 11-3-3-5-7-6-11 2.5 0 5-2 6-5z" />
-            <NavCard href="/projects" label="Projects" icon="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-            <NavCard href="/analytics" label="Analytics" icon="M3 3v18h18M7 16l4-4 4 4 5-5" />
-          </div>
-        </section>
       </main>
 
       <SyncingOverlay show={habitsMutating} />
@@ -224,27 +212,33 @@ export function HomeDashboard() {
   );
 }
 
-function StatCard({ label, value, href }: { label: string; value: number; href: string }) {
+function StatCard({ label, value, href, linkLabel, icon }: { label: string; value: number; href: string; linkLabel: string; icon: string }) {
   return (
-    <a href={href} className="p-4 sm:p-5 rounded-xl border border-border bg-bg-card hover:border-accent/30 transition-colors">
-      <p className="text-2xl sm:text-3xl font-bold text-text-primary">{value}</p>
-      <p className="text-xs text-text-muted mt-1">{label}</p>
-    </a>
-  );
-}
-
-function NavCard({ href, label, icon }: { href: string; label: string; icon: string }) {
-  return (
-    <a
-      href={href}
-      className="flex items-center gap-3 p-4 rounded-xl border border-border bg-bg-card hover:border-accent/30 transition-colors"
-    >
-      <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent">
-          <path d={icon} />
+    <a href={href} className="group relative p-4 sm:p-5 rounded-xl border border-border bg-bg-card hover:border-accent/30 transition-all overflow-hidden">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-2xl sm:text-3xl font-bold text-text-primary">{value}</p>
+          <p className="text-xs text-text-muted mt-1">{label}</p>
+        </div>
+        <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent">
+            <path d={icon} />
+          </svg>
+        </div>
+      </div>
+      {/* Desktop hover slide-up */}
+      <div className="hidden sm:flex absolute bottom-0 left-0 right-0 translate-y-full group-hover:translate-y-0 transition-transform duration-200 bg-accent/10 border-t border-accent/20 px-4 py-2 items-center justify-between">
+        <span className="text-[11px] font-medium text-accent">{linkLabel}</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent">
+          <path d="M5 12h14M12 5l7 7-7 7" />
         </svg>
       </div>
-      <span className="text-sm sm:text-base font-medium text-text-primary">{label}</span>
+      {/* Mobile: subtle arrow */}
+      <div className="sm:hidden absolute top-4 right-4 opacity-30">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
+          <path d="M7 17L17 7M17 7H7M17 7v10" />
+        </svg>
+      </div>
     </a>
   );
 }

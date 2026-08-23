@@ -57,7 +57,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-dvh bg-bg-primary flex flex-col">
+    <div className="min-h-dvh bg-bg-primary flex flex-col overflow-y-auto">
       {/* Nav */}
       <nav className="w-full border-b border-border/50">
         <div className="w-[92%] sm:w-[88%] lg:w-[82%] max-w-5xl mx-auto flex items-center justify-between h-14">
@@ -72,7 +72,7 @@ export default function HomePage() {
       </nav>
 
       {/* Hero */}
-      <section className="flex-1 flex flex-col items-center justify-center px-6 py-20 sm:py-28">
+      <section className="flex flex-col items-center justify-center px-6 py-20 sm:py-28">
         <div className="text-center max-w-2xl mx-auto space-y-6">
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-text-primary leading-tight">
             Your tasks, organized.<br />
