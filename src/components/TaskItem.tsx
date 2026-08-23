@@ -68,6 +68,7 @@ export function TaskItem({
   const [editValue, setEditValue] = useState(task.title);
   const [notesValue, setNotesValue] = useState(task.notes ?? "");
   const [editingNotes, setEditingNotes] = useState(false);
+  const [showNotesModal, setShowNotesModal] = useState(false);
   const notesRef = useRef<HTMLTextAreaElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const recurrenceMenuRef = useRef<HTMLDivElement>(null);
@@ -212,6 +213,7 @@ export function TaskItem({
   };
 
   return (
+    <>
     <motion.div
       layout="position"
       initial={{ opacity: 0, y: 10 }}
@@ -414,14 +416,18 @@ export function TaskItem({
                   </span>
                 )}
                 {task.notes && !expanded && (
-                  <span className="inline-flex items-center gap-0.5">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setShowNotesModal(true); }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-0.5 hover:text-accent transition-colors"
+                  >
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
                       <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
                       <polyline points="14 2 14 8 20 8" />
                       <line x1="16" y1="13" x2="8" y2="13" />
                       <line x1="16" y1="17" x2="8" y2="17" />
                     </svg>
-                  </span>
+                  </button>
                 )}
               </div>
             )}
@@ -435,18 +441,30 @@ export function TaskItem({
                   transition={{ type: "spring", bounce: 0.1, duration: 0.3 }}
                   className="overflow-hidden"
                 >
-                  <textarea
-                    ref={notesRef}
-                    value={notesValue}
-                    onChange={handleNotesChange}
-                    onFocus={() => setEditingNotes(true)}
-                    onBlur={handleNotesSave}
-                    onClick={(e) => e.stopPropagation()}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    placeholder="Add notes..."
-                    rows={2}
-                    className="w-full mt-1.5 resize-none bg-transparent border-none text-xs sm:text-sm text-text-secondary placeholder:text-text-muted/50 focus:outline-none leading-relaxed p-0"
-                  />
+                  <div className="flex items-start gap-1 mt-1.5">
+                    <textarea
+                      ref={notesRef}
+                      value={notesValue}
+                      onChange={handleNotesChange}
+                      onFocus={() => setEditingNotes(true)}
+                      onBlur={handleNotesSave}
+                      onClick={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      placeholder="Add notes..."
+                      rows={2}
+                      className="flex-1 resize-none bg-transparent border-none text-xs sm:text-sm text-text-secondary placeholder:text-text-muted/50 focus:outline-none leading-relaxed p-0"
+                    />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setShowNotesModal(true); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      aria-label="Expand notes"
+                      className="flex-shrink-0 text-text-muted hover:text-accent transition-colors mt-0.5 p-1"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                      </svg>
+                    </button>
+                  </div>
                   {notesWordCount >= NOTES_WORD_LIMIT - 20 && (
                     <p className={`text-[10px] mt-0.5 ${notesOverLimit ? "text-error" : "text-text-muted"}`}>
                       {notesWordCount}/{NOTES_WORD_LIMIT} words
@@ -970,5 +988,61 @@ export function TaskItem({
         </>
       )}
     </motion.div>
+
+    {/* Notes Modal */}
+    <AnimatePresence>
+      {showNotesModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => { handleNotesSave(); setShowNotesModal(false); }}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40 }}
+            transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-lg bg-bg-secondary border border-border rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 max-h-[85vh] flex flex-col"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-text-primary truncate flex-1 mr-3">{task.title}</h3>
+              <button
+                onClick={() => { handleNotesSave(); setShowNotesModal(false); }}
+                className="text-text-muted hover:text-text-primary transition-colors min-w-[36px] min-h-[36px] inline-flex items-center justify-center"
+                aria-label="Close notes"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <textarea
+              value={notesValue}
+              onChange={handleNotesChange}
+              onFocus={() => setEditingNotes(true)}
+              placeholder="Add notes..."
+              className="flex-1 min-h-[200px] w-full resize-none bg-bg-primary border border-border rounded-lg p-3 text-sm sm:text-base text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:border-accent/50 leading-relaxed"
+              autoFocus
+            />
+            <div className="flex items-center justify-between mt-2">
+              <p className={`text-[11px] ${notesOverLimit ? "text-error" : "text-text-muted"}`}>
+                {notesWordCount}/{NOTES_WORD_LIMIT} words
+              </p>
+              <button
+                onClick={() => { handleNotesSave(); setShowNotesModal(false); }}
+                className="text-xs font-medium text-accent hover:text-accent/80 transition-colors min-h-[36px] px-3"
+              >
+                Done
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+    </>
   );
 }
