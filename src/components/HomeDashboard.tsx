@@ -10,7 +10,7 @@ import { UserMenu } from "@/components/UserMenu";
 
 export function HomeDashboard() {
   const { tasks, isLoading: tasksLoading } = useTasks();
-  const { habits, isLoading: habitsLoading, checkin, undoCheckin } = useHabits();
+  const { habits, isLoading: habitsLoading, isMutating: habitsMutating, checkin, undoCheckin } = useHabits();
   const { projects } = useProjects();
 
   const today = getLocalDate();
@@ -54,13 +54,11 @@ export function HomeDashboard() {
   }
 
   return (
-    <div className="min-h-dvh bg-bg-primary">
+    <div className="min-h-dvh bg-bg-primary overflow-y-auto">
       {/* Header */}
       <header className="sticky top-0 z-30 bg-bg-primary/80 backdrop-blur-md border-b border-border">
         <div className="w-[92%] sm:w-[88%] lg:w-[85%] max-w-5xl mx-auto flex items-center justify-between h-14">
-          <h1 className="font-[family-name:var(--font-oswald)] text-xl sm:text-2xl font-semibold uppercase tracking-[0.02em] leading-none">
-            Task<span className="text-accent">Spin</span>
-          </h1>
+          <div />
           <UserMenu />
         </div>
       </header>
@@ -106,7 +104,8 @@ export function HomeDashboard() {
                     >
                       <button
                         onClick={() => isChecked ? undoCheckin(habit.id) : checkin(habit.id)}
-                        className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                        disabled={habitsMutating}
+                        className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all disabled:opacity-50 ${
                           isChecked
                             ? "bg-green-500/20 border border-green-500/50"
                             : "bg-bg-hover border border-border hover:border-accent/50"
