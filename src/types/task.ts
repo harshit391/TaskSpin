@@ -24,6 +24,6 @@ export interface Task {
   sourceTaskId: string | null;
 }
 
-export type FilterTab = "all" | "active" | "completed" | "recurring";
+export type FilterTab = "all" | "active" | "completed" | "recurring" | "overdue";
 
 export type ProjectFilter = "all" | "inbox" | string;

@@ -46,6 +46,18 @@ function isThisMonth(dateStr: string): boolean {
   return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
 }
 
+function daysOld(dateStr: string): number {
+  const d = new Date(dateStr);
+  const now = new Date();
+  return Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function isOverdue(task: { completed: boolean; hiddenUntil: string | null; createdAt: string }): boolean {
+  if (task.completed) return false;
+  if (task.hiddenUntil && new Date(task.hiddenUntil) > new Date()) return false;
+  return daysOld(task.createdAt) >= 7;
+}
+
 export default function Home() {
   return (
     <Suspense>
@@ -153,6 +165,7 @@ function HomeContent() {
     if (statusFilter === "active") result = result.filter((t) => !t.completed && !(t.hiddenUntil && new Date(t.hiddenUntil) > new Date()));
     if (statusFilter === "completed") result = result.filter((t) => t.completed);
     if (statusFilter === "recurring") result = result.filter((t) => !t.completed && !!t.hiddenUntil && new Date(t.hiddenUntil) > new Date());
+    if (statusFilter === "overdue") result = result.filter((t) => isOverdue(t));
 
     // Date filter
     if (dateFilter === "today") result = result.filter((t) => isToday(t.createdAt));
@@ -323,8 +336,28 @@ function HomeContent() {
       active: base.filter((t) => !t.completed && !(t.hiddenUntil && new Date(t.hiddenUntil) > new Date())).length,
       completed: base.filter((t) => t.completed).length,
       recurring: base.filter((t) => !t.completed && !!t.hiddenUntil && new Date(t.hiddenUntil) > new Date()).length,
+      overdue: base.filter((t) => isOverdue(t)).length,
     };
   }, [sidebarScoped, searchQuery, dateFilter, selectedProjects, followUpMap]);
+
+  // Group overdue tasks by age bucket
+  const overdueGroups = useMemo(() => {
+    if (statusFilter !== "overdue") return null;
+    const week: typeof filteredTasks = [];
+    const twoWeeks: typeof filteredTasks = [];
+    const month: typeof filteredTasks = [];
+    for (const t of filteredTasks) {
+      const age = daysOld(t.createdAt);
+      if (age >= 30) month.push(t);
+      else if (age >= 14) twoWeeks.push(t);
+      else week.push(t);
+    }
+    return [
+      { label: "30+ days old", tasks: month },
+      { label: "14–30 days old", tasks: twoWeeks },
+      { label: "7–14 days old", tasks: week },
+    ].filter(g => g.tasks.length > 0);
+  }, [statusFilter, filteredTasks]);
 
   const handleProjectFilterChange = (filter: ProjectFilter) => {
     setProjectFilter(filter);
@@ -340,7 +373,8 @@ function HomeContent() {
     { key: "m", action: () => setSidebarOpen((v) => !v), description: "Toggle sidebar", category: "Navigation" },
     { key: "1", action: () => setStatusFilter("all"), description: "All tasks", category: "Filters" },
     { key: "2", action: () => setStatusFilter("active"), description: "Active tasks", category: "Filters" },
-    { key: "3", action: () => setStatusFilter("completed"), description: "Completed tasks", category: "Filters" },
+    { key: "3", action: () => setStatusFilter("overdue"), description: "Overdue tasks", category: "Filters" },
+    { key: "4", action: () => setStatusFilter("completed"), description: "Completed tasks", category: "Filters" },
     { key: "f", action: () => (document.querySelector('[aria-label="Toggle filters"]') as HTMLButtonElement)?.click(), description: "Toggle filter panel", category: "Filters" },
     { key: "a", ctrl: true, action: selectAll, description: "Select all", category: "Selection" },
     { key: "Escape", action: () => { if (selectionActive) deselectAll(); }, description: "Deselect all", category: "Selection" },
@@ -477,6 +511,35 @@ function HomeContent() {
                   </svg>
                   <p className="text-error text-sm">Failed to load tasks</p>
                   <p className="text-text-muted text-xs">Make sure the database is running</p>
+                </div>
+              ) : overdueGroups ? (
+                <div className="space-y-6">
+                  {overdueGroups.map((group) => (
+                    <div key={group.label}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">{group.label}</span>
+                        <span className="text-[10px] font-medium bg-accent/10 text-accent px-2 py-0.5 rounded-full">{group.tasks.length}</span>
+                      </div>
+                      <TaskList
+                        tasks={group.tasks}
+                        projects={projects}
+                        selectedIds={selectedIds}
+                        selectionActive={selectionActive}
+                        tasksWithFollowUps={tasksWithFollowUps}
+                        followUpMap={followUpMap}
+                        expandedChains={effectiveExpandedChains}
+                        onToggleExpand={toggleChainExpand}
+                        onToggleSelect={toggleSelection}
+                        onToggle={toggleTask}
+                        onEdit={editTask}
+                        onEditNotes={editNotes}
+                        onDelete={deleteTask}
+                        onAssign={assignToProject}
+                        onSetRecurrence={setRecurrence}
+                        onOpenFollowUps={setChainTaskId}
+                      />
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <TaskList

@@ -6,12 +6,13 @@ import { FilterTab } from "@/types/task";
 interface TabFilterProps {
   activeTab: FilterTab;
   onTabChange: (tab: FilterTab) => void;
-  counts: { all: number; active: number; completed: number; recurring: number };
+  counts: { all: number; active: number; completed: number; recurring: number; overdue: number };
 }
 
 const tabs: { key: FilterTab; label: string }[] = [
   { key: "all", label: "All" },
   { key: "active", label: "Active" },
+  { key: "overdue", label: "Overdue" },
   { key: "completed", label: "Done" },
   { key: "recurring", label: "Recurring" },
 ];

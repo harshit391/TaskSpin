@@ -17,13 +17,14 @@ interface SearchFilterProps {
   selectedProjects: string[];
   onProjectsChange: (projects: string[]) => void;
   projects: Project[];
-  counts: { all: number; active: number; completed: number; recurring: number };
+  counts: { all: number; active: number; completed: number; recurring: number; overdue: number };
   searchInputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
 const statusOptions: { key: FilterTab; label: string }[] = [
   { key: "all", label: "All" },
   { key: "active", label: "Active" },
+  { key: "overdue", label: "Overdue" },
   { key: "completed", label: "Done" },
   { key: "recurring", label: "Recurring" },
 ];
