@@ -2,6 +2,10 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 export async function updateSession(request: NextRequest) {
+  if (process.env.NEXT_PUBLIC_AUTH_BYPASS_USER_ID) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(

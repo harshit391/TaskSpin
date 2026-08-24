@@ -25,11 +25,16 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const bypassId = process.env.NEXT_PUBLIC_AUTH_BYPASS_USER_ID;
+  const [user, setUser] = useState<User | null>(
+    bypassId ? ({ id: bypassId, email: "dev@local" } as User) : null
+  );
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!bypassId);
 
   useEffect(() => {
+    if (bypassId) return;
+
     const supabase = createClient();
 
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -50,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [bypassId]);
 
   const claimOrphanedData = async () => {
     try {
