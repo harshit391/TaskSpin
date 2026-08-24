@@ -297,7 +297,7 @@ function HomeContent() {
   };
 
   return (
-    <>
+    <div className="h-dvh flex flex-col overflow-hidden">
       <Header
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         onSpin={() => setSpinOpen(true)}
@@ -533,6 +533,6 @@ function HomeContent() {
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 }

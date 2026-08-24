@@ -49,7 +49,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${inter.variable} ${oswald.variable} font-[family-name:var(--font-inter)] h-dvh flex flex-col overflow-hidden bg-bg-primary text-text-primary antialiased`}
+        className={`${inter.variable} ${oswald.variable} font-[family-name:var(--font-inter)] min-h-dvh flex flex-col overflow-y-auto bg-bg-primary text-text-primary antialiased`}
       >
         <QueryProvider>
           <AuthProvider>
