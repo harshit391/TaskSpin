@@ -3,16 +3,21 @@
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Project, ProjectFilter, Task } from "@/types/task";
+import { Project, Roadmap, ProjectFilter, Task } from "@/types/task";
 import { ProjectForm } from "./ProjectForm";
+import { RoadmapForm } from "./RoadmapForm";
 
 interface SidebarProps {
   projects: Project[];
+  roadmaps: Roadmap[];
   selectedFilter: ProjectFilter;
   onFilterChange: (filter: ProjectFilter) => void;
   onAddProject: (name: string, color: string) => void;
   onDeleteProject: (id: string) => void;
+  onAddRoadmap: (title: string, color: string) => void;
+  onDeleteRoadmap: (id: string) => void;
   isAddingProject: boolean;
+  isAddingRoadmap: boolean;
   inboxCount: number;
   allCount: number;
   activeTasks: Task[];
@@ -20,21 +25,31 @@ interface SidebarProps {
 
 export function Sidebar({
   projects,
+  roadmaps,
   selectedFilter,
   onFilterChange,
   onAddProject,
   onDeleteProject,
+  onAddRoadmap,
+  onDeleteRoadmap,
   isAddingProject,
+  isAddingRoadmap,
   inboxCount,
   allCount,
   activeTasks,
 }: SidebarProps) {
   const [showForm, setShowForm] = useState(false);
+  const [showRoadmapForm, setShowRoadmapForm] = useState(false);
   const pathname = usePathname();
 
   const handleAddProject = (name: string, color: string) => {
     onAddProject(name, color);
     setShowForm(false);
+  };
+
+  const handleAddRoadmap = (title: string, color: string) => {
+    onAddRoadmap(title, color);
+    setShowRoadmapForm(false);
   };
 
   return (
@@ -184,6 +199,94 @@ export function Sidebar({
 
         {projects.length === 0 && !showForm && (
           <p className="text-xs text-text-muted px-2 py-3">No projects yet</p>
+        )}
+      </div>
+
+      {/* Divider */}
+      <div className="h-px bg-border my-3!" />
+
+      {/* Roadmap Dashboard Link */}
+      <a
+        href="/roadmap"
+        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[3px] text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+          pathname === "/roadmap"
+            ? "bg-bg-hover text-text-primary"
+            : "text-text-secondary hover:bg-bg-hover/50 hover:text-text-primary"
+        }`}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" />
+          <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" />
+        </svg>
+        <span className="flex-1 text-sm truncate">Roadmap Dashboard</span>
+      </a>
+
+      {/* Roadmaps section label */}
+      <div className="flex items-center justify-between px-2 pt-3 pb-2">
+        <span className="text-[11px] font-medium uppercase tracking-[0.1em] text-text-muted">
+          Roadmaps
+        </span>
+        <button
+          onClick={() => setShowRoadmapForm(!showRoadmapForm)}
+          className="text-text-muted hover:text-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-sm p-0.5"
+          aria-label={showRoadmapForm ? "Close roadmap form" : "Add new roadmap"}
+        >
+          <motion.svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+            animate={{ rotate: showRoadmapForm ? 45 : 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          >
+            <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+          </motion.svg>
+        </button>
+      </div>
+
+      {/* Roadmap Form */}
+      <AnimatePresence>
+        {showRoadmapForm && (
+          <RoadmapForm
+            onSubmit={handleAddRoadmap}
+            isLoading={isAddingRoadmap}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Roadmap List */}
+      <div className="space-y-0.5">
+        <AnimatePresence>
+          {roadmaps.map((roadmap) => (
+            <motion.div
+              key={roadmap.id}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              className="group"
+            >
+              <SidebarItem
+                label={roadmap.title}
+                count={roadmap._count?.tasks ?? 0}
+                isActive={selectedFilter === `roadmap:${roadmap.id}`}
+                onClick={() => onFilterChange(`roadmap:${roadmap.id}`)}
+                icon={
+                  <div
+                    className="w-3 h-3 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: roadmap.color }}
+                  />
+                }
+                onDelete={() => onDeleteRoadmap(roadmap.id)}
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
+        {roadmaps.length === 0 && !showRoadmapForm && (
+          <p className="text-xs text-text-muted px-2 py-3">No roadmaps yet</p>
         )}
       </div>
     </aside>

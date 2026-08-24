@@ -36,14 +36,6 @@ export async function PATCH(
       existing.recurrenceWeekdays
     );
 
-    // Delete any legacy clone from the old clone-on-complete system
-    const legacyClone = await prisma.task.findUnique({
-      where: { sourceTaskId: id },
-    });
-    if (legacyClone && legacyClone.recurrenceType) {
-      await prisma.task.delete({ where: { id: legacyClone.id } });
-    }
-
     const task = await prisma.task.update({
       where: { id },
       data: {
@@ -51,29 +43,37 @@ export async function PATCH(
         hiddenUntil,
         recurrenceStartDate: hiddenUntil,
       },
-      include: { project: true },
+      include: { project: true, roadmap: true },
     });
 
     return NextResponse.json({ ...task, _cloneHiddenUntil: hiddenUntil.toISOString() });
   }
 
+  // If completing a task in a roadmap, remove it from roadmap and recompact positions
+  if (body.completed === true && existing.roadmapId && existing.roadmapPosition !== null) {
+    data.roadmapId = null;
+    data.roadmapPosition = null;
+
+    await prisma.task.updateMany({
+      where: { roadmapId: existing.roadmapId, roadmapPosition: { gt: existing.roadmapPosition } },
+      data: { roadmapPosition: { decrement: 1 } },
+    });
+  }
+
+  // Mutual exclusion: setting projectId clears roadmap, setting roadmapId clears project
+  if (data.projectId && existing.roadmapId) {
+    data.roadmapId = null;
+    data.roadmapPosition = null;
+  }
+  if (data.roadmapId && existing.projectId) {
+    data.projectId = null;
+  }
+
   const task = await prisma.task.update({
     where: { id },
     data,
-    include: { project: true },
+    include: { project: true, roadmap: true },
   });
-
-  if (body.completed === true) {
-    const child = await prisma.task.findUnique({
-      where: { sourceTaskId: id },
-    });
-    if (child) {
-      await prisma.task.update({
-        where: { id: child.id },
-        data: { sourceTaskId: null },
-      });
-    }
-  }
 
   return NextResponse.json(task);
 }
@@ -90,27 +90,15 @@ export async function DELETE(
   const existing = await prisma.task.findFirst({ where: { id, userId } });
   if (!existing) return NextResponse.json({ error: "Task not found" }, { status: 404 });
 
-  await prisma.$transaction(async (tx) => {
-    const child = await tx.task.findUnique({
-      where: { sourceTaskId: id },
+  // If task is in a roadmap, recompact positions after deletion
+  if (existing.roadmapId && existing.roadmapPosition !== null) {
+    await prisma.task.updateMany({
+      where: { roadmapId: existing.roadmapId, roadmapPosition: { gt: existing.roadmapPosition } },
+      data: { roadmapPosition: { decrement: 1 } },
     });
+  }
 
-    if (existing.sourceTaskId) {
-      await tx.task.update({
-        where: { id },
-        data: { sourceTaskId: null },
-      });
-    }
-
-    if (child) {
-      await tx.task.update({
-        where: { id: child.id },
-        data: { sourceTaskId: existing.sourceTaskId ?? null },
-      });
-    }
-
-    await tx.task.delete({ where: { id } });
-  });
+  await prisma.task.delete({ where: { id } });
 
   return NextResponse.json({ success: true });
 }

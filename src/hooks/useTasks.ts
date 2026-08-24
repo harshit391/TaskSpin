@@ -34,7 +34,8 @@ export function useTasks() {
         recurrenceWeekdays: null,
         recurrenceStartDate: null,
         hiddenUntil: null,
-        sourceTaskId: null,
+        roadmapId: null,
+        roadmapPosition: null,
       };
       queryClient.setQueryData<Task[]>(TASKS_KEY, (old) =>
         old ? [optimistic, ...old] : [optimistic]
@@ -74,7 +75,8 @@ export function useTasks() {
         recurrenceWeekdays: null,
         recurrenceStartDate: null,
         hiddenUntil: null,
-        sourceTaskId: null,
+        roadmapId: null,
+        roadmapPosition: null,
       }));
       queryClient.setQueryData<Task[]>(TASKS_KEY, (old) =>
         old ? [...optimistic, ...old] : optimistic
@@ -191,7 +193,7 @@ export function useTasks() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: TASKS_KEY });
-      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === "follow-ups" });
+      queryClient.invalidateQueries({ queryKey: ["roadmaps"] });
     },
   });
 

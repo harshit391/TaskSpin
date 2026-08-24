@@ -72,7 +72,7 @@ export function generateAIExportPrompt({ tasks, projects }: ExportData): string 
     for (const t of group) {
       let meta = "";
       if (t.recurrenceType) meta += ` [recurring: ${t.recurrenceType}${t.recurrenceDays ? ` every ${t.recurrenceDays} days` : ""}]`;
-      if (t.sourceTaskId) meta += " [in chain]";
+      if (t.roadmapId) meta += " [in roadmap]";
       lines.push(`- ${t.title}${meta}`);
       if (t.notes) lines.push(`  > ${t.notes.replace(/\n/g, "\n  > ")}`);
     }
@@ -86,7 +86,7 @@ export function generateAIExportPrompt({ tasks, projects }: ExportData): string 
     for (const t of inboxGroup) {
       let meta = "";
       if (t.recurrenceType) meta += ` [recurring: ${t.recurrenceType}${t.recurrenceDays ? ` every ${t.recurrenceDays} days` : ""}]`;
-      if (t.sourceTaskId) meta += " [in chain]";
+      if (t.roadmapId) meta += " [in roadmap]";
       lines.push(`- ${t.title}${meta}`);
       if (t.notes) lines.push(`  > ${t.notes.replace(/\n/g, "\n  > ")}`);
     }

@@ -5,12 +5,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Task, Project } from "@/types/task";
 import { recurrenceLabel, DAY_SHORT } from "@/lib/recurrence";
 
-interface TaskItemProps {
+export interface TaskItemProps {
   task: Task;
   projects: Project[];
   isSelected: boolean;
   selectionActive: boolean;
-  hasFollowUps: boolean;
+  hasFollowUps?: boolean;
   chainCount?: number;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
@@ -22,7 +22,7 @@ interface TaskItemProps {
   onDelete: (id: string) => void;
   onAssign: (id: string, projectId: string | null) => void;
   onSetRecurrence: (id: string, recurrenceType: string | null, recurrenceDays?: number, recurrenceStartDate?: string | null, recurrenceWeekdays?: string | null) => void;
-  onOpenFollowUps: (id: string) => void;
+  onOpenFollowUps?: (id: string) => void;
 }
 
 const RECURRENCE_OPTIONS = [
@@ -720,7 +720,7 @@ export function TaskItem({
                         if (chainCount && chainCount > 0 && onToggleExpand) {
                           onToggleExpand();
                         } else {
-                          onOpenFollowUps(task.id);
+                          onOpenFollowUps?.(task.id);
                         }
                       }}
                       className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-xs text-left transition-colors hover:bg-bg-hover ${hasFollowUps || (chainCount && chainCount > 0) ? "text-accent" : "text-text-secondary"}`}
@@ -953,7 +953,7 @@ export function TaskItem({
                   if (chainCount && chainCount > 0 && onToggleExpand) {
                     onToggleExpand();
                   } else {
-                    onOpenFollowUps(task.id);
+                    onOpenFollowUps?.(task.id);
                   }
                 }}
                 aria-label={chainCount ? `${isExpanded ? "Collapse" : "Expand"} ${chainCount} follow-ups` : "Follow-up chain"}

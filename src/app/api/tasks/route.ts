@@ -11,23 +11,13 @@ export async function GET(request: Request) {
   const all = searchParams.get("all") === "true";
   const priorityProjectId = searchParams.get("priorityProjectId");
 
-  // Cleanup legacy recurrence clones (old clone-on-complete system)
-  // These are tasks with both sourceTaskId AND recurrenceType set — no longer valid
-  await prisma.task.deleteMany({
-    where: {
-      userId,
-      sourceTaskId: { not: null },
-      recurrenceType: { not: null },
-    },
-  });
-
   const tasks = await prisma.task.findMany({
     where: {
       userId,
       ...(all ? { completed: false } : {}),
     },
     orderBy: { createdAt: "desc" },
-    include: { project: true },
+    include: { project: true, roadmap: true },
   });
 
   if (priorityProjectId) {

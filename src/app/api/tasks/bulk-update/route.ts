@@ -52,26 +52,6 @@ export async function POST(request: Request) {
     );
 
     if (nonRecurringIds.length > 0) {
-      const completedIdSet = new Set(ids);
-      const children = await prisma.task.findMany({
-        where: { sourceTaskId: { in: nonRecurringIds } },
-      });
-
-      const childrenToPromote = children.filter(
-        (c) => !completedIdSet.has(c.id)
-      );
-
-      if (childrenToPromote.length > 0) {
-        await prisma.$transaction(
-          childrenToPromote.map((c) =>
-            prisma.task.update({
-              where: { id: c.id },
-              data: { sourceTaskId: null },
-            })
-          )
-        );
-      }
-
       await prisma.task.updateMany({
         where: { id: { in: nonRecurringIds }, userId },
         data,

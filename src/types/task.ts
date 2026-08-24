@@ -21,7 +21,17 @@ export interface Task {
   recurrenceWeekdays: string | null;
   recurrenceStartDate: string | null;
   hiddenUntil: string | null;
-  sourceTaskId: string | null;
+  roadmapId: string | null;
+  roadmapPosition: number | null;
+}
+
+export interface Roadmap {
+  id: string;
+  title: string;
+  color: string;
+  createdAt: string;
+  updatedAt: string;
+  _count?: { tasks: number };
 }
 
 export type FilterTab = "all" | "active" | "completed" | "recurring" | "overdue";

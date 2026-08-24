@@ -1,8 +1,9 @@
-import { Task, Project } from "@/types/task";
+import { Task, Project, Roadmap } from "@/types/task";
 import { Habit, GoalMode, MilestoneInfo } from "@/types/habit";
 
 const TASKS_BASE = "/api/tasks";
 const PROJECTS_BASE = "/api/projects";
+const ROADMAPS_BASE = "/api/roadmaps";
 
 // ─── Tasks ───────────────────────────────────────────────
 
@@ -132,51 +133,71 @@ export async function bulkDeleteTasks(ids: string[]): Promise<{ count: number }>
   return res.json();
 }
 
-export async function fetchFollowUpChain(taskId: string): Promise<Task[]> {
-  const res = await fetch(`${TASKS_BASE}/${taskId}/follow-ups`);
-  if (!res.ok) throw new Error("Failed to fetch follow-up chain");
+// ─── Roadmaps ───────────────────────────────────────────
+
+export async function fetchRoadmaps(): Promise<Roadmap[]> {
+  const res = await fetch(ROADMAPS_BASE);
+  if (!res.ok) throw new Error("Failed to fetch roadmaps");
   return res.json();
 }
 
-export async function addFollowUp(
-  taskId: string,
-  title: string,
-  insertAfterId?: string,
-  projectId?: string | null
-): Promise<Task[]> {
-  const res = await fetch(`${TASKS_BASE}/${taskId}/follow-ups`, {
+export async function createRoadmap(title: string, color: string): Promise<Roadmap> {
+  const res = await fetch(ROADMAPS_BASE, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, insertAfterId, projectId }),
+    body: JSON.stringify({ title, color }),
   });
-  if (!res.ok) throw new Error("Failed to add follow-up");
+  if (!res.ok) throw new Error("Failed to create roadmap");
   return res.json();
 }
 
-export async function reorderFollowUpChain(
-  taskId: string,
-  orderedIds: string[]
-): Promise<Task[]> {
-  const res = await fetch(`${TASKS_BASE}/${taskId}/follow-ups/reorder`, {
+export async function updateRoadmap(id: string, data: { title?: string; color?: string }): Promise<Roadmap> {
+  const res = await fetch(`${ROADMAPS_BASE}/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update roadmap");
+  return res.json();
+}
+
+export async function deleteRoadmap(options: { id: string; taskAction: "delete" | "move_inbox" }): Promise<void> {
+  const res = await fetch(`${ROADMAPS_BASE}/${options.id}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ taskAction: options.taskAction }),
+  });
+  if (!res.ok) throw new Error("Failed to delete roadmap");
+}
+
+export async function fetchRoadmapTasks(roadmapId: string): Promise<Task[]> {
+  const res = await fetch(`${ROADMAPS_BASE}/${roadmapId}/tasks`);
+  if (!res.ok) throw new Error("Failed to fetch roadmap tasks");
+  return res.json();
+}
+
+export async function addTaskToRoadmap(roadmapId: string, data: { taskId?: string; title?: string; position?: number }): Promise<Task[]> {
+  const res = await fetch(`${ROADMAPS_BASE}/${roadmapId}/tasks`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to add task to roadmap");
+  return res.json();
+}
+
+export async function removeTaskFromRoadmap(roadmapId: string, taskId: string): Promise<void> {
+  const res = await fetch(`${ROADMAPS_BASE}/${roadmapId}/tasks/${taskId}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to remove task from roadmap");
+}
+
+export async function reorderRoadmapTasks(roadmapId: string, orderedIds: string[]): Promise<Task[]> {
+  const res = await fetch(`${ROADMAPS_BASE}/${roadmapId}/tasks/reorder`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ orderedIds }),
   });
-  if (!res.ok) throw new Error("Failed to reorder chain");
-  return res.json();
-}
-
-export async function moveToChain(
-  anchorId: string,
-  taskId: string,
-  insertAfterId?: string
-): Promise<Task[]> {
-  const res = await fetch(`${TASKS_BASE}/${anchorId}/follow-ups/move`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ taskId, insertAfterId }),
-  });
-  if (!res.ok) throw new Error("Failed to move task to chain");
+  if (!res.ok) throw new Error("Failed to reorder roadmap");
   return res.json();
 }
 
