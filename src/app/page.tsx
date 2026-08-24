@@ -18,8 +18,13 @@ export function setDefaultPage(page: string): void {
 const FEATURES = [
   {
     title: "Smart Tasks",
-    description: "Create, organize, and batch-manage tasks with projects, follow-up chains, and recurring schedules.",
+    description: "Create, organize, and batch-manage tasks with projects, recurring schedules, and overdue tracking.",
     icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5h6M9 12h6M9 16h4",
+  },
+  {
+    title: "Roadmaps",
+    description: "Plan ordered sequences of tasks. Drag to reorder, track progress, and execute your goals step by step.",
+    icon: "M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2zM22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z",
   },
   {
     title: "Habit Tracker",
@@ -27,13 +32,8 @@ const FEATURES = [
     icon: "M12 2c1 3 3.5 5 6 5-1 4-3 8-6 11-3-3-5-7-6-11 2.5 0 5-2 6-5z",
   },
   {
-    title: "Projects",
-    description: "Group tasks into color-coded projects. Track progress, move tasks between projects, and stay focused.",
-    icon: "M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z",
-  },
-  {
-    title: "Analytics",
-    description: "Track your productivity with daily stats, completion trends, and project breakdowns over time.",
+    title: "Projects & Analytics",
+    description: "Group tasks into color-coded projects. Track productivity with daily stats, trends, and breakdowns.",
     icon: "M3 3v18h18M7 16l4-4 4 4 5-5",
   },
 ];

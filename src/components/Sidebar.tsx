@@ -99,6 +99,22 @@ export function Sidebar({
         <span className="flex-1 text-sm truncate">Projects Dashboard</span>
       </a>
 
+      {/* Roadmap Dashboard Link */}
+      <a
+        href="/roadmap"
+        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[3px] text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+          pathname === "/roadmap"
+            ? "bg-bg-hover text-text-primary"
+            : "text-text-secondary hover:bg-bg-hover/50 hover:text-text-primary"
+        }`}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" />
+          <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" />
+        </svg>
+        <span className="flex-1 text-sm truncate">Roadmap Dashboard</span>
+      </a>
+
       {/* Analytics Link — hard navigation to avoid RSC issues with dynamic imports */}
       <a
         href="/analytics"
@@ -204,22 +220,6 @@ export function Sidebar({
 
       {/* Divider */}
       <div className="h-px bg-border my-3!" />
-
-      {/* Roadmap Dashboard Link */}
-      <a
-        href="/roadmap"
-        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[3px] text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-          pathname === "/roadmap"
-            ? "bg-bg-hover text-text-primary"
-            : "text-text-secondary hover:bg-bg-hover/50 hover:text-text-primary"
-        }`}
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" />
-          <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" />
-        </svg>
-        <span className="flex-1 text-sm truncate">Roadmap Dashboard</span>
-      </a>
 
       {/* Roadmaps section label */}
       <div className="flex items-center justify-between px-2 pt-3 pb-2">
