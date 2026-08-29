@@ -8,6 +8,7 @@ import { getDefaultPage, setDefaultPage } from "@/app/page";
 const PAGE_OPTIONS = [
   { value: "/", label: "Home" },
   { value: "/dashboard", label: "Tasks" },
+  { value: "/plan", label: "Plan" },
   { value: "/habits", label: "Habits" },
   { value: "/projects", label: "Projects" },
   { value: "/analytics", label: "Analytics" },

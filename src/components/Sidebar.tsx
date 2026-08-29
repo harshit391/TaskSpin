@@ -99,6 +99,21 @@ export function Sidebar({
         <span className="flex-1 text-sm truncate">Projects Dashboard</span>
       </a>
 
+      {/* Plan My Day Link */}
+      <a
+        href="/plan"
+        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[3px] text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+          pathname === "/plan"
+            ? "bg-bg-hover text-text-primary"
+            : "text-text-secondary hover:bg-bg-hover/50 hover:text-text-primary"
+        }`}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <span className="flex-1 text-sm truncate">Plan My Day</span>
+      </a>
+
       {/* Roadmap Dashboard Link */}
       <a
         href="/roadmap"

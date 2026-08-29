@@ -35,6 +35,7 @@ model Task {
   recurrenceWeekdays  String?
   recurrenceStartDate DateTime?
   hiddenUntil         DateTime?
+  plannedDate         String?
   roadmapId           String?
   roadmap             Roadmap?  @relation(fields: [roadmapId], references: [id])
   roadmapPosition     Int?

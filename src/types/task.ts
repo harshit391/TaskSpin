@@ -21,6 +21,7 @@ export interface Task {
   recurrenceWeekdays: string | null;
   recurrenceStartDate: string | null;
   hiddenUntil: string | null;
+  plannedDate: string | null;
   roadmapId: string | null;
   roadmapPosition: number | null;
 }

@@ -118,6 +118,16 @@ export async function setTaskRecurrence(
   return res.json();
 }
 
+export async function planTask(id: string, plannedDate: string | null): Promise<Task> {
+  const res = await fetch(`${TASKS_BASE}/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ plannedDate }),
+  });
+  if (!res.ok) throw new Error("Failed to plan task");
+  return res.json();
+}
+
 export async function deleteTask(id: string): Promise<void> {
   const res = await fetch(`${TASKS_BASE}/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error("Failed to delete task");

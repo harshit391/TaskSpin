@@ -11,12 +11,16 @@ import { UserMenu } from "@/components/UserMenu";
 import { SyncingOverlay } from "@/components/SyncingOverlay";
 
 export function HomeDashboard() {
-  const { tasks, isLoading: tasksLoading } = useTasks();
+  const { tasks, isLoading: tasksLoading, toggleTask, unplan } = useTasks();
   const { habits, isLoading: habitsLoading, isMutating: habitsMutating, checkin, undoCheckin } = useHabits();
   const { projects } = useProjects();
   const { roadmaps } = useRoadmaps();
 
   const today = getLocalDate();
+
+  const plannedToday = useMemo(() => {
+    return tasks.filter((t) => t.plannedDate === today && !t.completed);
+  }, [tasks, today]);
 
   const todayHabits = useMemo(() => {
     return habits.filter((h) => !h.archived);
@@ -42,7 +46,8 @@ export function HomeDashboard() {
   const stats = useMemo(() => {
     const active = tasks.filter((t) => !t.completed && !(t.hiddenUntil && new Date(t.hiddenUntil) > new Date())).length;
     const completedToday = tasks.filter((t) => t.completed && t.updatedAt && new Date(t.updatedAt).toISOString().split("T")[0] === today).length;
-    return { active, completedToday, projects: projects.length, roadmaps: roadmaps.length, habits: habits.filter((h) => !h.archived).length };
+    const planned = tasks.filter((t) => t.plannedDate === today && !t.completed).length;
+    return { active, completedToday, planned, projects: projects.length, roadmaps: roadmaps.length, habits: habits.filter((h) => !h.archived).length };
   }, [tasks, projects, roadmaps, habits, today]);
 
   if (isLoading) {
@@ -77,13 +82,60 @@ export function HomeDashboard() {
         </section>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <StatCard label="Planned" value={stats.planned} href="/plan" linkLabel="Plan" icon="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           <StatCard label="Active Tasks" value={stats.active} href="/dashboard" linkLabel="Tasks" icon="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5h6M9 12h6M9 16h4" />
           <StatCard label="Done Today" value={stats.completedToday} href="/analytics" linkLabel="Analytics" icon="M3 3v18h18M7 16l4-4 4 4 5-5" />
           <StatCard label="Projects" value={stats.projects} href="/projects" linkLabel="Projects" icon="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
           <StatCard label="Roadmaps" value={stats.roadmaps} href="/roadmap" linkLabel="Roadmaps" icon="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2zM22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" />
           <StatCard label="Habits" value={stats.habits} href="/habits" linkLabel="Habits" icon="M12 2c1 3 3.5 5 6 5-1 4-3 8-6 11-3-3-5-7-6-11 2.5 0 5-2 6-5z" />
         </div>
+
+        {/* Today's Plan */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-text-primary">Today&apos;s Plan</h2>
+            <a href="/plan" className="text-[11px] text-accent hover:text-accent/80 transition-colors">Plan my day</a>
+          </div>
+          {plannedToday.length === 0 ? (
+            <EmptyCard message="No tasks planned for today" linkText="Plan your day" href="/plan" />
+          ) : (
+            <div className="space-y-2">
+              {plannedToday.map((task) => (
+                <motion.div
+                  key={task.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-3 p-4 rounded-lg border border-border bg-bg-card"
+                >
+                  <button
+                    onClick={() => toggleTask(task.id, true)}
+                    className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 bg-bg-hover border border-border hover:border-accent/50 transition-all"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="text-text-muted opacity-0 hover:opacity-100 transition-opacity">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-text-primary truncate">{task.title}</p>
+                  </div>
+                  {task.project && (
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: task.project.color }} />
+                  )}
+                  <button
+                    onClick={() => unplan(task.id)}
+                    className="text-text-muted hover:text-text-primary transition-colors p-1 flex-shrink-0"
+                    title="Remove from plan"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Habits Section */}

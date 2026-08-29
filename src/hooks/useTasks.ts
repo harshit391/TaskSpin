@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchTasks, createTask, createTasksBatch, toggleTask, updateTaskTitle, updateTaskNotes, assignTaskToProject, deleteTask, bulkDeleteTasks, bulkUpdateTasks, setTaskRecurrence } from "@/lib/api";
+import { fetchTasks, createTask, createTasksBatch, toggleTask, updateTaskTitle, updateTaskNotes, assignTaskToProject, deleteTask, bulkDeleteTasks, bulkUpdateTasks, setTaskRecurrence, planTask } from "@/lib/api";
 import { Task } from "@/types/task";
 import { showToast } from "@/hooks/useToast";
 
@@ -34,6 +34,7 @@ export function useTasks() {
         recurrenceWeekdays: null,
         recurrenceStartDate: null,
         hiddenUntil: null,
+        plannedDate: null,
         roadmapId: null,
         roadmapPosition: null,
       };
@@ -75,6 +76,7 @@ export function useTasks() {
         recurrenceWeekdays: null,
         recurrenceStartDate: null,
         hiddenUntil: null,
+        plannedDate: null,
         roadmapId: null,
         roadmapPosition: null,
       }));
@@ -321,6 +323,26 @@ export function useTasks() {
     },
   });
 
+  const planMutation = useMutation({
+    mutationFn: ({ id, plannedDate }: { id: string; plannedDate: string | null }) =>
+      planTask(id, plannedDate),
+    onMutate: async ({ id, plannedDate }) => {
+      await queryClient.cancelQueries({ queryKey: TASKS_KEY });
+      const previous = queryClient.getQueryData<Task[]>(TASKS_KEY);
+      queryClient.setQueryData<Task[]>(TASKS_KEY, (old) =>
+        old?.map((t) => (t.id === id ? { ...t, plannedDate } : t))
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(TASKS_KEY, context.previous);
+      showToast("Failed to update plan", "error");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: TASKS_KEY });
+    },
+  });
+
   return {
     tasks: query.data ?? [],
     isLoading: query.isLoading,
@@ -340,7 +362,8 @@ export function useTasks() {
       deleteMutation.isPending ||
       bulkDeleteMutation.isPending ||
       bulkUpdateMutation.isPending ||
-      recurrenceMutation.isPending,
+      recurrenceMutation.isPending ||
+      planMutation.isPending,
     toggleTask: (id: string, completed: boolean) =>
       toggleMutation.mutate({ id, completed }),
     editTask: (id: string, title: string) =>
@@ -355,5 +378,9 @@ export function useTasks() {
     bulkDelete: (ids: string[]) => bulkDeleteMutation.mutate(ids),
     bulkUpdate: (ids: string[], data: { completed?: boolean; projectId?: string | null }) =>
       bulkUpdateMutation.mutate({ ids, data }),
+    planForDate: (id: string, date: string) =>
+      planMutation.mutate({ id, plannedDate: date }),
+    unplan: (id: string) =>
+      planMutation.mutate({ id, plannedDate: null }),
   };
 }
