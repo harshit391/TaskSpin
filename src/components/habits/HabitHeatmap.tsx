@@ -5,9 +5,10 @@ import { HabitCheckin } from "@/types/habit";
 interface HabitHeatmapProps {
   checkins: HabitCheckin[];
   days?: number;
+  onToggle?: (date: string, isCurrentlyChecked: boolean) => void;
 }
 
-export function HabitHeatmap({ checkins, days = 30 }: HabitHeatmapProps) {
+export function HabitHeatmap({ checkins, days = 30, onToggle }: HabitHeatmapProps) {
   const today = new Date();
   const checkinDates = new Set(checkins.map((c) => c.date));
 
@@ -26,10 +27,15 @@ export function HabitHeatmap({ checkins, days = 30 }: HabitHeatmapProps) {
   return (
     <div className="flex items-center gap-[3px] flex-wrap">
       {cells.map((cell) => (
-        <div
+        <button
           key={cell.date}
-          title={cell.date}
-          className={`w-[10px] h-[10px] rounded-[2px] transition-colors ${
+          type="button"
+          title={`${cell.date}${cell.checked ? " ✓" : ""}`}
+          onClick={() => onToggle?.(cell.date, cell.checked)}
+          disabled={!onToggle}
+          className={`w-3 h-3 rounded-[2px] transition-colors ${
+            onToggle ? "cursor-pointer hover:ring-1 hover:ring-accent/60" : ""
+          } ${
             cell.checked
               ? "bg-accent"
               : cell.isToday

@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { HomeDashboard } from "@/components/HomeDashboard";
@@ -40,8 +42,20 @@ const FEATURES = [
 
 export default function HomePage() {
   const { user, loading } = useAuth();
+  const router = useRouter();
+  const [redirecting, setRedirecting] = useState(false);
 
-  if (loading) {
+  useEffect(() => {
+    if (!loading && user) {
+      const defaultPage = getDefaultPage();
+      if (defaultPage && defaultPage !== "/") {
+        setRedirecting(true);
+        router.replace(defaultPage);
+      }
+    }
+  }, [loading, user, router]);
+
+  if (loading || redirecting) {
     return (
       <div className="min-h-dvh bg-bg-primary flex items-center justify-center">
         <svg className="animate-spin w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none">

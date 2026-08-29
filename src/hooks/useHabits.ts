@@ -6,7 +6,6 @@ import { Habit, GoalMode, MilestoneInfo } from "@/types/habit";
 import { showToast } from "@/hooks/useToast";
 
 const HABITS_KEY = ["habits"];
-const PROGRESSIVE_MILESTONES = [7, 21, 66];
 
 export function useHabits() {
   const queryClient = useQueryClient();
@@ -76,13 +75,8 @@ export function useHabits() {
       queryClient.setQueryData<Habit[]>(HABITS_KEY, (old) =>
         old?.map((h) => {
           if (h.id !== id) return h;
-          const yesterday = getYesterdayStr(date);
-          const newStreak = h.lastCheckedDate === yesterday ? h.currentStreak + 1 : 1;
           return {
             ...h,
-            currentStreak: newStreak,
-            longestStreak: Math.max(h.longestStreak, newStreak),
-            lastCheckedDate: date,
             totalCheckins: h.totalCheckins + 1,
             checkins: [{ id: `temp-${Date.now()}`, habitId: id, date, createdAt: new Date().toISOString() }, ...h.checkins],
           };
@@ -141,13 +135,8 @@ export function useHabits() {
     addHabit: (data: { name: string; goalMode: GoalMode; goalTarget?: number }) => createMutation.mutate(data),
     editHabit: (id: string, data: { name?: string; archived?: boolean }) => updateMutation.mutate({ id, data }),
     removeHabit: (id: string) => deleteMutation.mutate(id),
-    checkin: (id: string) => checkinMutation.mutate({ id, date: getLocalDate() }),
-    undoCheckin: (id: string) => undoMutation.mutate({ id, date: getLocalDate() }),
+    checkin: (id: string, date?: string) => checkinMutation.mutate({ id, date: date ?? getLocalDate() }),
+    undoCheckin: (id: string, date?: string) => undoMutation.mutate({ id, date: date ?? getLocalDate() }),
   };
 }
 
-function getYesterdayStr(dateStr: string): string {
-  const d = new Date(dateStr + "T12:00:00");
-  d.setDate(d.getDate() - 1);
-  return d.toISOString().split("T")[0];
-}

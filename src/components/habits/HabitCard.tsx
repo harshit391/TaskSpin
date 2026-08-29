@@ -10,8 +10,8 @@ import { HabitCelebration } from "./HabitCelebration";
 
 interface HabitCardProps {
   habit: Habit;
-  onCheckin: (id: string) => void;
-  onUndo: (id: string) => void;
+  onCheckin: (id: string, date?: string) => void;
+  onUndo: (id: string, date?: string) => void;
   onArchive: (id: string) => void;
   onDelete: (id: string) => void;
 }
@@ -125,8 +125,18 @@ export function HabitCard({ habit, onCheckin, onUndo, onArchive, onDelete }: Hab
         )}
       </div>
 
-      {/* Row 3: Heatmap */}
-      <HabitHeatmap checkins={habit.checkins} days={30} />
+      {/* Row 3: Heatmap (clickable for retroactive check-ins) */}
+      <HabitHeatmap
+        checkins={habit.checkins}
+        days={30}
+        onToggle={(date, isChecked) => {
+          if (isChecked) {
+            onUndo(habit.id, date);
+          } else {
+            onCheckin(habit.id, date);
+          }
+        }}
+      />
 
       {/* Row 4: Check-in button */}
       <div className="relative flex items-center justify-center">
