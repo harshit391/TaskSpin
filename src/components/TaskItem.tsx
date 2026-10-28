@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Task, Project } from "@/types/task";
-import { recurrenceLabel, DAY_SHORT } from "@/lib/recurrence";
+import { recurrenceLabel } from "@/lib/recurrence";
+import RecurrencePicker from "./RecurrencePicker";
 
 export interface TaskItemProps {
   task: Task;
@@ -24,14 +25,6 @@ export interface TaskItemProps {
   onSetRecurrence: (id: string, recurrenceType: string | null, recurrenceDays?: number, recurrenceStartDate?: string | null, recurrenceWeekdays?: string | null) => void;
   onOpenFollowUps?: (id: string) => void;
 }
-
-const RECURRENCE_OPTIONS = [
-  { value: "daily", label: "Daily" },
-  { value: "weekly", label: "Weekly" },
-  { value: "monthly", label: "Monthly" },
-  { value: "quarterly", label: "Quarterly" },
-  { value: "custom", label: "Custom" },
-] as const;
 
 export function TaskItem({
   task,
@@ -56,11 +49,6 @@ export function TaskItem({
   const [showMenu, setShowMenu] = useState(false);
   const [showRecurrenceMenu, setShowRecurrenceMenu] = useState(false);
   const [showOverflowMenu, setShowOverflowMenu] = useState(false);
-  const [customDays, setCustomDays] = useState(task.recurrenceDays ?? 7);
-  const [selectedWeekdays, setSelectedWeekdays] = useState<number[]>(
-    task.recurrenceWeekdays ? task.recurrenceWeekdays.split(",").map(Number) : []
-  );
-  const [startDate, setStartDate] = useState(task.recurrenceStartDate ? task.recurrenceStartDate.split("T")[0] : "");
   const [expanded, setExpanded] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -190,27 +178,6 @@ export function TaskItem({
       setExpanded((prev) => !prev);
     }
   }, [selectionActive, task.id, onToggleSelect]);
-
-  const handleRecurrenceSelect = (type: string) => {
-    const sd = startDate || null;
-    if (type === "custom") {
-      if (selectedWeekdays.length > 0) {
-        onSetRecurrence(task.id, "custom", undefined, sd, selectedWeekdays.sort((a, b) => a - b).join(","));
-      } else {
-        onSetRecurrence(task.id, "custom", customDays, sd, null);
-      }
-    } else {
-      onSetRecurrence(task.id, type, undefined, sd, null);
-    }
-    setShowRecurrenceMenu(false);
-    setShowOverflowMenu(false);
-  };
-
-  const toggleWeekday = (day: number) => {
-    setSelectedWeekdays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
-    );
-  };
 
   return (
     <>
@@ -613,96 +580,11 @@ export function TaskItem({
                           className="overflow-hidden"
                         >
                           <div className="bg-bg-hover/20">
-                            {RECURRENCE_OPTIONS.map((opt) => (
-                              <button
-                                key={opt.value}
-                                onClick={(e) => { e.stopPropagation(); if (opt.value !== "custom") handleRecurrenceSelect(opt.value); }}
-                                className={`w-full flex items-center gap-2 px-5 py-2 text-[11px] text-left transition-colors hover:bg-bg-hover ${
-                                  task.recurrenceType === opt.value ? "text-accent" : "text-text-secondary"
-                                }`}
-                              >
-                                {opt.label}
-                                {opt.value === "custom" && task.recurrenceType === "custom" && !task.recurrenceWeekdays && (
-                                  <span className="text-text-muted ml-auto">{task.recurrenceDays}d</span>
-                                )}
-                                {opt.value === "custom" && task.recurrenceType === "custom" && task.recurrenceWeekdays && (
-                                  <span className="text-text-muted ml-auto">{recurrenceLabel("custom", null, task.recurrenceWeekdays)}</span>
-                                )}
-                              </button>
-                            ))}
-                            {/* Custom: Every N days */}
-                            <div className="px-5 py-2 border-t border-border flex items-center gap-1.5">
-                              <span className="text-[11px] text-text-muted">Every</span>
-                              <input
-                                type="number"
-                                min={1}
-                                max={365}
-                                value={customDays}
-                                onChange={(e) => setCustomDays(Math.max(1, Math.min(365, Number(e.target.value) || 1)))}
-                                onClick={(e) => e.stopPropagation()}
-                                className="w-10 text-center text-[11px] bg-bg-primary border border-border rounded-[3px] px-1 py-0.5 text-text-primary focus:outline-none focus:border-accent"
-                              />
-                              <span className="text-[11px] text-text-muted">days</span>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setSelectedWeekdays([]); onSetRecurrence(task.id, "custom", customDays, startDate || null, null); setShowRecurrenceMenu(false); setShowOverflowMenu(false); }}
-                                className="ml-auto text-[10px] font-medium text-accent hover:text-accent-hover"
-                              >
-                                Set
-                              </button>
-                            </div>
-                            {/* Custom: Specific weekdays */}
-                            <div className="px-5 py-2 border-t border-border space-y-1.5">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[11px] text-text-muted">On days</span>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); if (selectedWeekdays.length > 0) { onSetRecurrence(task.id, "custom", undefined, startDate || null, selectedWeekdays.sort((a, b) => a - b).join(",")); setShowRecurrenceMenu(false); setShowOverflowMenu(false); } }}
-                                  className={`text-[10px] font-medium ${selectedWeekdays.length > 0 ? "text-accent hover:text-accent-hover" : "text-text-muted cursor-not-allowed"}`}
-                                >
-                                  Set
-                                </button>
-                              </div>
-                              <div className="flex gap-1">
-                                {DAY_SHORT.map((label, i) => (
-                                  <button
-                                    key={i}
-                                    onClick={(e) => { e.stopPropagation(); toggleWeekday(i); }}
-                                    className={`w-7 h-7 rounded-full text-[10px] font-medium transition-all ${
-                                      selectedWeekdays.includes(i)
-                                        ? "bg-accent text-white"
-                                        : "bg-bg-secondary border border-border text-text-muted hover:border-accent"
-                                    }`}
-                                  >
-                                    {label}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="px-5 py-2 border-t border-border flex items-center gap-1.5">
-                              <span className="text-[11px] text-text-muted">From</span>
-                              <input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                onClick={(e) => e.stopPropagation()}
-                                className="flex-1 text-[11px] bg-bg-primary border border-border rounded-[3px] px-1.5 py-0.5 text-text-primary focus:outline-none focus:border-accent"
-                              />
-                              {startDate && (
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setStartDate(""); }}
-                                  className="text-[10px] text-text-muted hover:text-text-secondary"
-                                >
-                                  Clear
-                                </button>
-                              )}
-                            </div>
-                            {task.recurrenceType && (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); onSetRecurrence(task.id, null); setShowRecurrenceMenu(false); setShowOverflowMenu(false); }}
-                                className="w-full flex items-center gap-2 px-5 py-2 text-[11px] text-left transition-colors hover:bg-bg-hover text-error border-t border-border"
-                              >
-                                Remove recurrence
-                              </button>
-                            )}
+                            <RecurrencePicker
+                              task={task}
+                              onSave={(type, days, sd, wd) => { onSetRecurrence(task.id, type, days, sd, wd); setShowRecurrenceMenu(false); setShowOverflowMenu(false); }}
+                              onRemove={() => { onSetRecurrence(task.id, null); setShowRecurrenceMenu(false); setShowOverflowMenu(false); }}
+                            />
                           </div>
                         </motion.div>
                       )}
@@ -842,105 +724,13 @@ export function TaskItem({
                   initial={{ opacity: 0, scale: 0.95, y: -5 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   onClick={(e) => e.stopPropagation()}
-                  className="absolute right-0 top-full mt-1 z-40 min-w-[150px] bg-bg-card border border-border rounded-[4px] shadow-lg overflow-hidden"
+                  className="absolute right-0 top-full mt-1 z-40 w-[260px] bg-bg-card border border-border rounded-[4px] shadow-lg overflow-hidden"
                 >
-                  {RECURRENCE_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => { if (opt.value !== "custom") handleRecurrenceSelect(opt.value); }}
-                      className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors hover:bg-bg-hover ${
-                        task.recurrenceType === opt.value ? "text-accent" : "text-text-secondary"
-                      }`}
-                    >
-                      {opt.label}
-                      {opt.value === "custom" && task.recurrenceType === "custom" && !task.recurrenceWeekdays && (
-                        <span className="text-text-muted ml-auto">{task.recurrenceDays}d</span>
-                      )}
-                      {opt.value === "custom" && task.recurrenceType === "custom" && task.recurrenceWeekdays && (
-                        <span className="text-text-muted ml-auto">{recurrenceLabel("custom", null, task.recurrenceWeekdays)}</span>
-                      )}
-                    </button>
-                  ))}
-
-                  {/* Custom: Every N days */}
-                  <div className="px-3 py-2 border-t border-border flex items-center gap-1.5">
-                    <span className="text-[11px] text-text-muted">Every</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={365}
-                      value={customDays}
-                      onChange={(e) => setCustomDays(Math.max(1, Math.min(365, Number(e.target.value) || 1)))}
-                      onClick={(e) => e.stopPropagation()}
-                      className="w-10 text-center text-[11px] bg-bg-primary border border-border rounded-[3px] px-1 py-0.5 text-text-primary focus:outline-none focus:border-accent"
-                    />
-                    <span className="text-[11px] text-text-muted">days</span>
-                    <button
-                      onClick={() => { setSelectedWeekdays([]); onSetRecurrence(task.id, "custom", customDays, startDate || null, null); setShowRecurrenceMenu(false); }}
-                      className="ml-auto text-[10px] font-medium text-accent hover:text-accent-hover"
-                    >
-                      Set
-                    </button>
-                  </div>
-
-                  {/* Custom: Specific weekdays */}
-                  <div className="px-3 py-2 border-t border-border space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-text-muted">On days</span>
-                      <button
-                        onClick={() => { if (selectedWeekdays.length > 0) { onSetRecurrence(task.id, "custom", undefined, startDate || null, selectedWeekdays.sort((a, b) => a - b).join(",")); setShowRecurrenceMenu(false); } }}
-                        className={`text-[10px] font-medium ${selectedWeekdays.length > 0 ? "text-accent hover:text-accent-hover" : "text-text-muted cursor-not-allowed"}`}
-                      >
-                        Set
-                      </button>
-                    </div>
-                    <div className="flex gap-1">
-                      {DAY_SHORT.map((label, i) => (
-                        <button
-                          key={i}
-                          onClick={(e) => { e.stopPropagation(); toggleWeekday(i); }}
-                          className={`w-6 h-6 rounded-full text-[10px] font-medium transition-all ${
-                            selectedWeekdays.includes(i)
-                              ? "bg-accent text-white"
-                              : "bg-bg-secondary border border-border text-text-muted hover:border-accent"
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="px-3 py-2 border-t border-border flex items-center gap-1.5">
-                    <span className="text-[11px] text-text-muted">From</span>
-                    <input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                      className="flex-1 text-[11px] bg-bg-primary border border-border rounded-[3px] px-1.5 py-0.5 text-text-primary focus:outline-none focus:border-accent"
-                    />
-                    {startDate && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setStartDate(""); }}
-                        className="text-[10px] text-text-muted hover:text-text-secondary"
-                      >
-                        Clear
-                      </button>
-                    )}
-                  </div>
-
-                  {task.recurrenceType && (
-                    <>
-                      <div className="h-px bg-border" />
-                      <button
-                        onClick={() => { onSetRecurrence(task.id, null); setShowRecurrenceMenu(false); }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors hover:bg-bg-hover text-error"
-                      >
-                        Remove recurrence
-                      </button>
-                    </>
-                  )}
+                  <RecurrencePicker
+                    task={task}
+                    onSave={(type, days, sd, wd) => { onSetRecurrence(task.id, type, days, sd, wd); setShowRecurrenceMenu(false); }}
+                    onRemove={() => { onSetRecurrence(task.id, null); setShowRecurrenceMenu(false); }}
+                  />
                 </motion.div>
               )}
             </div>

@@ -140,21 +140,24 @@ export function useTasks() {
   const recurrenceMutation = useMutation({
     mutationFn: ({ id, recurrenceType, recurrenceDays, recurrenceStartDate, recurrenceWeekdays }: { id: string; recurrenceType: string | null; recurrenceDays?: number; recurrenceStartDate?: string | null; recurrenceWeekdays?: string | null }) =>
       setTaskRecurrence(id, recurrenceType, recurrenceDays, recurrenceStartDate, recurrenceWeekdays),
-    onMutate: async ({ id, recurrenceType, recurrenceDays, recurrenceStartDate }) => {
+    onMutate: async ({ id, recurrenceType, recurrenceDays, recurrenceStartDate, recurrenceWeekdays }) => {
       await queryClient.cancelQueries({ queryKey: TASKS_KEY });
       const previous = queryClient.getQueryData<Task[]>(TASKS_KEY);
       queryClient.setQueryData<Task[]>(TASKS_KEY, (old) => {
         if (!old) return old;
-        // If setting recurrence with a future start date, remove from visible list (it'll be hidden)
-        if (recurrenceType && recurrenceStartDate) {
-          const startMs = new Date(recurrenceStartDate).getTime();
-          if (startMs > Date.now()) {
-            return old.filter((t) => t.id !== id);
-          }
-        }
+        // Future start date hides the task until then (moves to Recurring tab)
+        const startIso = recurrenceStartDate ? new Date(recurrenceStartDate).toISOString() : null;
+        const hiddenUntil = recurrenceType && startIso && new Date(startIso).getTime() > Date.now() ? startIso : null;
         return old.map((t) =>
           t.id === id
-            ? { ...t, recurrenceType, recurrenceDays: recurrenceDays ?? null, recurrenceStartDate: recurrenceStartDate ?? null }
+            ? {
+                ...t,
+                recurrenceType,
+                recurrenceDays: recurrenceDays ?? null,
+                recurrenceStartDate: recurrenceStartDate ?? null,
+                recurrenceWeekdays: recurrenceWeekdays ?? null,
+                ...(t.completed ? {} : { hiddenUntil }),
+              }
             : t
         );
       });
@@ -166,7 +169,12 @@ export function useTasks() {
       }
       showToast("Failed to set recurrence", "error");
     },
-    onSuccess: (_data, { recurrenceType }) => {
+    onSuccess: (_data, { recurrenceType, recurrenceStartDate }) => {
+      if (recurrenceType && recurrenceStartDate && new Date(recurrenceStartDate).getTime() > Date.now()) {
+        const label = new Date(recurrenceStartDate).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+        showToast(`Recurring — will appear on ${label}`, "success");
+        return;
+      }
       showToast(recurrenceType ? "Recurrence set" : "Recurrence removed", "success");
     },
     onSettled: () => {

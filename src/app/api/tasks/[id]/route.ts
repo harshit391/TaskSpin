@@ -24,7 +24,9 @@ export async function PATCH(
   if (data.recurrenceType === null) {
     data.hiddenUntil = null;
   } else if (data.recurrenceType && !existing.completed) {
-    data.hiddenUntil = null;
+    // Future start date: hide until it arrives (shows in Recurring tab meanwhile)
+    const start = data.recurrenceStartDate as Date | undefined;
+    data.hiddenUntil = start && start > new Date() ? start : null;
   }
 
   if (body.completed === true && existing.recurrenceType) {
