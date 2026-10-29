@@ -1,8 +1,11 @@
 "use client";
 
+import { useMemo } from "react";
 import { AnimatePresence } from "framer-motion";
 import { Task, Project } from "@/types/task";
 import { TaskItem } from "./TaskItem";
+import { RoadmapStack } from "./task/RoadmapStack";
+import { buildListEntries } from "@/lib/taskEntries";
 
 interface TaskListProps {
   tasks: Task[];
@@ -31,6 +34,8 @@ export function TaskList({
   onAssign,
   onSetRecurrence,
 }: TaskListProps) {
+  const entries = useMemo(() => buildListEntries(tasks), [tasks]);
+
   if (tasks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4">
@@ -53,25 +58,39 @@ export function TaskList({
     );
   }
 
+  const renderTask = (task: Task, inStack = false) => (
+    <TaskItem
+      key={task.id}
+      task={task}
+      projects={projects}
+      isSelected={selectedIds.has(task.id)}
+      selectionActive={selectionActive}
+      onToggleSelect={onToggleSelect}
+      onToggle={onToggle}
+      onEdit={onEdit}
+      onEditNotes={onEditNotes}
+      onDelete={onDelete}
+      onAssign={onAssign}
+      onSetRecurrence={onSetRecurrence}
+      hideRoadmapBadge={inStack}
+    />
+  );
+
   return (
     <div className="space-y-1.5 sm:space-y-2" role="list" aria-label="Task list">
       <AnimatePresence initial={false}>
-        {tasks.map((task) => (
-          <TaskItem
-            key={task.id}
-            task={task}
-            projects={projects}
-            isSelected={selectedIds.has(task.id)}
-            selectionActive={selectionActive}
-            onToggleSelect={onToggleSelect}
-            onToggle={onToggle}
-            onEdit={onEdit}
-            onEditNotes={onEditNotes}
-            onDelete={onDelete}
-            onAssign={onAssign}
-            onSetRecurrence={onSetRecurrence}
-          />
-        ))}
+        {entries.map((entry) =>
+          entry.kind === "task" ? (
+            renderTask(entry.task)
+          ) : (
+            <RoadmapStack
+              key={`roadmap-${entry.roadmap.id}`}
+              roadmap={entry.roadmap}
+              steps={entry.steps}
+              renderTask={(task) => renderTask(task, true)}
+            />
+          )
+        )}
       </AnimatePresence>
     </div>
   );

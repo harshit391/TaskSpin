@@ -29,6 +29,8 @@ export interface TaskItemProps {
   onAssign: (id: string, projectId: string | null) => void;
   onSetRecurrence: (id: string, recurrenceType: string | null, recurrenceDays?: number, recurrenceStartDate?: string | null, recurrenceWeekdays?: string | null) => void;
   onOpenFollowUps?: (id: string) => void;
+  /** Set inside a RoadmapStack, whose header already names the roadmap. */
+  hideRoadmapBadge?: boolean;
 }
 
 export function TaskItem({
@@ -49,6 +51,7 @@ export function TaskItem({
   onAssign,
   onSetRecurrence,
   onOpenFollowUps,
+  hideRoadmapBadge,
 }: TaskItemProps) {
   const isFutureScheduled = !task.completed && !!task.hiddenUntil && new Date(task.hiddenUntil) > new Date();
   const [showMenu, setShowMenu] = useState(false);
@@ -299,6 +302,7 @@ export function TaskItem({
               task={task}
               isFutureScheduled={isFutureScheduled}
               expanded={expanded}
+              hideRoadmap={hideRoadmapBadge}
               onOpenNotes={() => setShowNotesModal(true)}
             />
             {/* Notes textarea (visible when expanded) */}

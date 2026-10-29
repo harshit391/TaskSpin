@@ -7,12 +7,14 @@ interface TaskBadgesProps {
   task: Task;
   isFutureScheduled: boolean;
   expanded: boolean;
+  hideRoadmap?: boolean;
   onOpenNotes: () => void;
 }
 
 /** Project, roadmap, recurrence, next-date and notes indicators shown under a task title. */
-export function TaskBadges({ task, isFutureScheduled, expanded, onOpenNotes }: TaskBadgesProps) {
-  if (!(task.project || task.roadmap || task.recurrenceType || isFutureScheduled || task.notes)) return null;
+export function TaskBadges({ task, isFutureScheduled, expanded, hideRoadmap, onOpenNotes }: TaskBadgesProps) {
+  const showRoadmap = !!task.roadmap && !hideRoadmap;
+  if (!(task.project || showRoadmap || task.recurrenceType || isFutureScheduled || task.notes)) return null;
 
   return (
     <div className="flex items-center gap-2 mt-0.5">
@@ -27,7 +29,7 @@ export function TaskBadges({ task, isFutureScheduled, expanded, onOpenNotes }: T
           </span>
         </span>
       )}
-      {task.roadmap && (
+      {showRoadmap && task.roadmap && (
         <span className="inline-flex items-center gap-1" title="Roadmap">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={task.roadmap.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0" aria-hidden="true">
             <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2zM22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" />
