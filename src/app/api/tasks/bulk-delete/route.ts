@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthUserId } from "@/lib/auth";
+import { readJson, isStringArray } from "@/lib/http";
 
 export async function POST(request: Request) {
   const userId = await getAuthUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await request.json();
-  const ids: string[] = body.ids;
+  const body = await readJson(request);
+  const ids = body?.ids;
 
-  if (!Array.isArray(ids) || ids.length === 0) {
+  if (!isStringArray(ids) || ids.length === 0) {
     return NextResponse.json(
       { error: "ids must be a non-empty array" },
       { status: 400 }

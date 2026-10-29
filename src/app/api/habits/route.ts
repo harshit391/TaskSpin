@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthUserId } from "@/lib/auth";
+import { readJson, badRequest, requestTimeZone } from "@/lib/http";
+import { dateKeyInZone } from "@/lib/timezone";
 
 function getYesterday(dateStr: string): string {
   const d = new Date(dateStr + "T12:00:00");
@@ -13,7 +15,8 @@ export async function GET(request: Request) {
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
-  const today = searchParams.get("today") || new Date().toISOString().split("T")[0];
+  const todayParam = searchParams.get("today");
+  const today = todayParam && /^\d{4}-\d{2}-\d{2}$/.test(todayParam) ? todayParam : dateKeyInZone(new Date(), requestTimeZone(request));
   const yesterday = getYesterday(today);
 
   const habits = await prisma.habit.findMany({
@@ -27,32 +30,27 @@ export async function GET(request: Request) {
     orderBy: { createdAt: "desc" },
   });
 
-  const staleIds: string[] = [];
-  for (const habit of habits) {
-    if (habit.currentStreak > 0 && habit.lastCheckedDate && habit.lastCheckedDate < yesterday) {
-      staleIds.push(habit.id);
-      habit.currentStreak = 0;
-    }
-  }
+  // A streak whose last check-in is older than yesterday is broken. That's derived at read
+  // time rather than written back, so a GET never mutates data. The stored value is
+  // recomputed from check-ins on the next check-in/undo anyway.
+  const result = habits.map((habit) =>
+    habit.currentStreak > 0 && habit.lastCheckedDate && habit.lastCheckedDate < yesterday
+      ? { ...habit, currentStreak: 0 }
+      : habit
+  );
 
-  if (staleIds.length > 0) {
-    await prisma.habit.updateMany({
-      where: { id: { in: staleIds } },
-      data: { currentStreak: 0 },
-    });
-  }
-
-  return NextResponse.json(habits);
+  return NextResponse.json(result);
 }
 
 export async function POST(request: Request) {
   const userId = await getAuthUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await request.json();
-  const name = body.name?.trim();
-  const goalMode = body.goalMode;
-  const goalTarget = body.goalTarget;
+  const body = await readJson(request);
+  if (!body) return badRequest();
+  const name = typeof body.name === "string" ? body.name.trim() : "";
+  const goalMode = typeof body.goalMode === "string" ? body.goalMode : "";
+  const goalTarget = typeof body.goalTarget === "number" ? Math.floor(body.goalTarget) : null;
 
   if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
   if (!["single", "progressive", "infinite"].includes(goalMode)) {

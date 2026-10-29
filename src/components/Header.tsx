@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { UserMenu } from "@/components/UserMenu";
 import { SetDefaultPageButton } from "@/components/SetDefaultPageButton";
@@ -27,7 +28,7 @@ export function Header({ onToggleSidebar, onSpin, onShortcuts, onExport }: Heade
             </svg>
           </button>
 
-          <a href="/">
+          <Link href="/">
             <motion.h1
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -36,7 +37,7 @@ export function Header({ onToggleSidebar, onSpin, onShortcuts, onExport }: Heade
             >
               Task<span className="text-accent">Spin</span>
             </motion.h1>
-          </a>
+          </Link>
           <SetDefaultPageButton page="/dashboard" />
         </div>
 

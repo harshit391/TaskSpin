@@ -23,6 +23,7 @@ export interface Task {
   hiddenUntil: string | null;
   plannedDate: string | null;
   roadmapId: string | null;
+  roadmap?: Roadmap | null;
   roadmapPosition: number | null;
 }
 

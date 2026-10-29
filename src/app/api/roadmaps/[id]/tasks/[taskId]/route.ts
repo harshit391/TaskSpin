@@ -14,15 +14,20 @@ export async function DELETE(
   const task = await prisma.task.findFirst({ where: { id: taskId, roadmapId: id, userId } });
   if (!task) return NextResponse.json({ error: "Task not found in roadmap" }, { status: 404 });
 
-  await prisma.task.update({
-    where: { id: taskId },
-    data: { roadmapId: null, roadmapPosition: null },
-  });
-
-  await prisma.task.updateMany({
-    where: { roadmapId: id, roadmapPosition: { gt: task.roadmapPosition! } },
-    data: { roadmapPosition: { decrement: 1 } },
-  });
+  await prisma.$transaction([
+    prisma.task.update({
+      where: { id: taskId },
+      data: { roadmapId: null, roadmapPosition: null },
+    }),
+    ...(task.roadmapPosition !== null
+      ? [
+          prisma.task.updateMany({
+            where: { roadmapId: id, roadmapPosition: { gt: task.roadmapPosition } },
+            data: { roadmapPosition: { decrement: 1 } },
+          }),
+        ]
+      : []),
+  ]);
 
   return NextResponse.json({ success: true });
 }

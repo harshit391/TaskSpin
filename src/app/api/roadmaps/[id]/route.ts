@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthUserId } from "@/lib/auth";
+import { readJson, badRequest } from "@/lib/http";
 
 export async function PATCH(
   request: Request,
@@ -10,14 +11,25 @@ export async function PATCH(
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const body = await request.json();
+  const body = await readJson(request);
+  if (!body) return badRequest();
 
   const existing = await prisma.roadmap.findFirst({ where: { id, userId } });
   if (!existing) return NextResponse.json({ error: "Roadmap not found" }, { status: 404 });
 
+  const data: { title?: string; color?: string } = {};
+  if (body.title !== undefined) {
+    if (typeof body.title !== "string" || !body.title.trim()) return badRequest("Title is required");
+    data.title = body.title.trim();
+  }
+  if (body.color !== undefined) {
+    if (typeof body.color !== "string") return badRequest("Invalid color");
+    data.color = body.color;
+  }
+
   const roadmap = await prisma.roadmap.update({
     where: { id },
-    data: body,
+    data,
     include: { _count: { select: { tasks: true } } },
   });
 
@@ -36,22 +48,18 @@ export async function DELETE(
   const existing = await prisma.roadmap.findFirst({ where: { id, userId } });
   if (!existing) return NextResponse.json({ error: "Roadmap not found" }, { status: 404 });
 
-  let taskAction = "move_inbox";
-  try {
-    const body = await request.json();
-    taskAction = body.taskAction ?? "move_inbox";
-  } catch {}
+  const body = await readJson(request);
+  const taskAction = body?.taskAction ?? "move_inbox";
 
-  if (taskAction === "delete") {
-    await prisma.task.deleteMany({ where: { roadmapId: id } });
-  } else {
-    await prisma.task.updateMany({
-      where: { roadmapId: id },
-      data: { roadmapId: null, roadmapPosition: null },
-    });
-  }
+  const taskOp =
+    taskAction === "delete"
+      ? prisma.task.deleteMany({ where: { roadmapId: id, userId } })
+      : prisma.task.updateMany({
+          where: { roadmapId: id, userId },
+          data: { roadmapId: null, roadmapPosition: null },
+        });
 
-  await prisma.roadmap.delete({ where: { id } });
+  await prisma.$transaction([taskOp, prisma.roadmap.delete({ where: { id } })]);
 
   return NextResponse.json({ success: true });
 }

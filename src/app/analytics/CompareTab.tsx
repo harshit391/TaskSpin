@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -199,11 +199,8 @@ function MetricCard({ label, valueA, valueB }: { label: string; valueA: number; 
 export function CompareTab() {
   const [rangeA, setRangeA] = useState<RangeSelection>({ preset: "this_month" });
   const [rangeB, setRangeB] = useState<RangeSelection>({ preset: "last_month" });
-  const [saved, setSaved] = useState<SavedComparison[]>([]);
-
-  useEffect(() => {
-    setSaved(loadSaved());
-  }, []);
+  // Loaded with ssr: false, so localStorage is available on first render
+  const [saved, setSaved] = useState<SavedComparison[]>(loadSaved);
 
   const daysA = getDaysNeeded(rangeA);
   const daysB = getDaysNeeded(rangeB);

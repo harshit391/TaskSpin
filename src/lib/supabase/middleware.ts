@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 export async function updateSession(request: NextRequest) {
-  if (process.env.NEXT_PUBLIC_AUTH_BYPASS_USER_ID) {
+  if (process.env.NODE_ENV !== "production" && process.env.NEXT_PUBLIC_AUTH_BYPASS_USER_ID) {
     return NextResponse.next({ request });
   }
 
@@ -29,11 +29,12 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims verifies the JWT locally (refreshing it if expired) instead of a
+  // network round-trip to the Auth server on every request like getUser().
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims?.sub ?? null;
 
-  const publicPaths = ["/auth", "/api/", "/_next", "/favicon", "/manifest"];
+  const publicPaths = ["/auth", "/api/", "/_next", "/favicon", "/manifest", "/offline.html", "/sw.js"];
   const isPublic =
     request.nextUrl.pathname === "/" ||
     publicPaths.some((p) => request.nextUrl.pathname.startsWith(p));
@@ -53,7 +54,8 @@ export async function updateSession(request: NextRequest) {
   if (user && request.nextUrl.pathname.startsWith("/auth")) {
     const next = request.nextUrl.searchParams.get("next");
     const url = request.nextUrl.clone();
-    url.pathname = next && next !== "/auth" ? next : "/";
+    const safeNext = next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/auth");
+    url.pathname = safeNext ? next : "/";
     url.search = "";
     return NextResponse.redirect(url);
   }

@@ -1,6 +1,8 @@
-const CACHE_NAME = 'taskspin-v2';
+const CACHE_NAME = 'taskspin-v3';
+const OFFLINE_URL = '/offline.html';
 
 const PRECACHE_ASSETS = [
+  OFFLINE_URL,
   '/manifest.json',
   '/favicon.ico',
   '/favicon-16x16.png',
@@ -51,7 +53,10 @@ self.addEventListener('fetch', (event) => {
   // Page navigations: network-first, offline fallback only
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => caches.match('/offline') || new Response('Offline', { status: 503 }))
+      fetch(request).catch(async () => {
+        const cached = await caches.match(OFFLINE_URL);
+        return cached || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
+      })
     );
     return;
   }

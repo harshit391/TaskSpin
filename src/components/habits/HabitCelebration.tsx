@@ -11,25 +11,31 @@ interface HabitCelebrationProps {
 const PARTICLE_COUNT = 14;
 const COLORS = ["#FF2D6F", "#FF6B9D", "#FFD700", "#FFFFFF", "#FF2D6F"];
 
+type Particle = { id: number; x: number; y: number; color: string; scale: number };
+
+function makeParticles(): Particle[] {
+  return Array.from({ length: PARTICLE_COUNT }, (_, i) => ({
+    id: i,
+    x: (Math.random() - 0.5) * 160,
+    y: -(Math.random() * 80 + 20),
+    color: COLORS[i % COLORS.length],
+    scale: Math.random() * 0.5 + 0.5,
+  }));
+}
+
 export function HabitCelebration({ isActive, onComplete }: HabitCelebrationProps) {
-  const [particles, setParticles] = useState<{ id: number; x: number; y: number; color: string; scale: number }[]>([]);
+  // New particles each time isActive turns on (adjust-state-on-prop-change, no effect needed)
+  const [particles, setParticles] = useState<Particle[]>([]);
+  const [wasActive, setWasActive] = useState(false);
+  if (isActive !== wasActive) {
+    setWasActive(isActive);
+    setParticles(isActive ? makeParticles() : []);
+  }
 
   useEffect(() => {
-    if (isActive) {
-      const newParticles = Array.from({ length: PARTICLE_COUNT }, (_, i) => ({
-        id: i,
-        x: (Math.random() - 0.5) * 160,
-        y: -(Math.random() * 80 + 20),
-        color: COLORS[i % COLORS.length],
-        scale: Math.random() * 0.5 + 0.5,
-      }));
-      setParticles(newParticles);
-      const timer = setTimeout(() => {
-        setParticles([]);
-        onComplete?.();
-      }, 900);
-      return () => clearTimeout(timer);
-    }
+    if (!isActive) return;
+    const timer = setTimeout(() => onComplete?.(), 900);
+    return () => clearTimeout(timer);
   }, [isActive, onComplete]);
 
   return (

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { getAuthUserId } from "@/lib/auth";
+import { readJson, requestTimeZone } from "@/lib/http";
+import { dateKeyInZone } from "@/lib/timezone";
 
 const PROGRESSIVE_MILESTONES = [7, 21, 66];
 
@@ -42,21 +45,25 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const habit = await prisma.habit.findFirst({ where: { id, userId } });
   if (!habit) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const body = await request.json();
-  const date = body.date;
-  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+  const body = await readJson(request);
+  const date = body?.date;
+  if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return NextResponse.json({ error: "Valid date (YYYY-MM-DD) required" }, { status: 400 });
   }
 
-  const today = new Intl.DateTimeFormat("en-CA").format(new Date());
+  // "Future" is judged in the user's timezone, not the server's (UTC on Vercel)
+  const today = dateKeyInZone(new Date(), requestTimeZone(request));
   if (date > today) {
     return NextResponse.json({ error: "Cannot check in for future dates" }, { status: 400 });
   }
 
   try {
     await prisma.habitCheckin.create({ data: { habitId: id, date } });
-  } catch {
-    return NextResponse.json({ error: "Already checked in for this date" }, { status: 409 });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return NextResponse.json({ error: "Already checked in for this date" }, { status: 409 });
+    }
+    throw err;
   }
 
   const { currentStreak: newStreak, lastCheckedDate } = await calculateStreak(id);
@@ -69,7 +76,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       currentStreak: newStreak,
       longestStreak: newLongest,
       lastCheckedDate,
-      totalCheckins: habit.totalCheckins + 1,
+      totalCheckins: { increment: 1 },
       ...(isCompleted ? { completedAt: new Date() } : {}),
     },
     include: { checkins: { orderBy: { date: "desc" }, take: 66 } },
@@ -93,9 +100,9 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   const habit = await prisma.habit.findFirst({ where: { id, userId } });
   if (!habit) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const body = await request.json();
-  const date = body.date;
-  if (!date) return NextResponse.json({ error: "Date required" }, { status: 400 });
+  const body = await readJson(request);
+  const date = body?.date;
+  if (typeof date !== "string" || !date) return NextResponse.json({ error: "Date required" }, { status: 400 });
 
   const checkin = await prisma.habitCheckin.findUnique({
     where: { habitId_date: { habitId: id, date } },
@@ -111,7 +118,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     data: {
       currentStreak,
       lastCheckedDate,
-      totalCheckins: Math.max(0, habit.totalCheckins - 1),
+      totalCheckins: { decrement: habit.totalCheckins > 0 ? 1 : 0 },
       ...(habit.completedAt ? { completedAt: null } : {}),
     },
     include: { checkins: { orderBy: { date: "desc" }, take: 66 } },

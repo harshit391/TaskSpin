@@ -1,6 +1,14 @@
 import { Task, Project, Roadmap } from "@/types/task";
 import { Habit, GoalMode, MilestoneInfo } from "@/types/habit";
 
+// Every API call carries the browser's timezone so the server can compute
+// "today" and recurrence dates in the user's local time instead of UTC.
+function fetch(input: string, init: RequestInit = {}): Promise<Response> {
+  const headers = new Headers(init.headers);
+  headers.set("x-timezone", Intl.DateTimeFormat().resolvedOptions().timeZone);
+  return globalThis.fetch(input, { ...init, headers });
+}
+
 const TASKS_BASE = "/api/tasks";
 const PROJECTS_BASE = "/api/projects";
 const ROADMAPS_BASE = "/api/roadmaps";
@@ -110,7 +118,7 @@ export async function setTaskRecurrence(
       recurrenceDays: (recurrenceType === "custom" && !recurrenceWeekdays) ? (recurrenceDays ?? 7) : null,
       recurrenceWeekdays: (recurrenceType === "custom" && recurrenceWeekdays) ? recurrenceWeekdays : null,
       recurrenceStartDate: recurrenceType
-        ? (recurrenceStartDate || new Date().toISOString().split("T")[0])
+        ? (recurrenceStartDate || getLocalDate())
         : null,
     }),
   });

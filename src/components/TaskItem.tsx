@@ -5,6 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Task, Project } from "@/types/task";
 import { recurrenceLabel } from "@/lib/recurrence";
 import RecurrencePicker from "./RecurrencePicker";
+import { TaskBadges } from "./task/TaskBadges";
+import { TaskNotesModal } from "./task/TaskNotesModal";
+import { ConfirmPopover } from "./task/ConfirmPopover";
+import { ProjectPickerList } from "./task/ProjectPickerList";
+import { useClickOutside } from "@/hooks/useClickOutside";
 
 export interface TaskItemProps {
   task: Task;
@@ -65,40 +70,16 @@ export function TaskItem({
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFired = useRef(false);
 
-  useEffect(() => {
-    if (!showMenu) return;
-    const handleClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setShowMenu(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [showMenu]);
-
-  useEffect(() => {
-    if (!showRecurrenceMenu) return;
-    const handleClick = (e: MouseEvent) => {
-      if (recurrenceMenuRef.current && !recurrenceMenuRef.current.contains(e.target as Node)) {
-        setShowRecurrenceMenu(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [showRecurrenceMenu]);
-
-  useEffect(() => {
-    if (!showOverflowMenu) return;
-    const handleClick = (e: MouseEvent) => {
-      if (overflowMenuRef.current && !overflowMenuRef.current.contains(e.target as Node)) {
-        setShowOverflowMenu(false);
-        setShowMenu(false);
-        setShowRecurrenceMenu(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [showOverflowMenu]);
+  const closeMenu = useCallback(() => setShowMenu(false), []);
+  const closeRecurrenceMenu = useCallback(() => setShowRecurrenceMenu(false), []);
+  const closeOverflowMenu = useCallback(() => {
+    setShowOverflowMenu(false);
+    setShowMenu(false);
+    setShowRecurrenceMenu(false);
+  }, []);
+  useClickOutside(menuRef, showMenu, closeMenu);
+  useClickOutside(recurrenceMenuRef, showRecurrenceMenu, closeRecurrenceMenu);
+  useClickOutside(overflowMenuRef, showOverflowMenu, closeOverflowMenu);
 
   useEffect(() => {
     if (editing && inputRef.current) {
@@ -125,11 +106,12 @@ export function TaskItem({
     }
   };
 
-  useEffect(() => {
-    if (!editingNotes) {
-      setNotesValue(task.notes ?? "");
-    }
-  }, [task.notes, editingNotes]);
+  // While not editing, follow the server value (React's "adjust state on prop change" pattern)
+  const [syncedNotes, setSyncedNotes] = useState(task.notes);
+  if (!editingNotes && syncedNotes !== task.notes) {
+    setSyncedNotes(task.notes);
+    setNotesValue(task.notes ?? "");
+  }
 
   const NOTES_WORD_LIMIT = 250;
   const notesWordCount = notesValue.trim() ? notesValue.trim().split(/\s+/).length : 0;
@@ -257,56 +239,25 @@ export function TaskItem({
       {/* Complete Confirmation */}
       <AnimatePresence>
         {showCompleteConfirm && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.15 }}
-            onClick={(e) => e.stopPropagation()}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 bg-bg-card border border-border rounded-[4px] shadow-lg px-4 py-3 flex flex-col items-center gap-2.5 min-w-[200px]"
-          >
-            <p className="text-xs text-text-secondary text-center">Mark as complete?</p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => { setShowCompleteConfirm(false); onToggle(task.id, true); }}
-                className="bg-accent hover:bg-accent-hover text-white text-xs font-medium px-3.5 py-1.5 rounded-[3px] transition-colors min-h-[36px]"
-              >
-                Yes
-              </button>
-              <button
-                onClick={() => setShowCompleteConfirm(false)}
-                className="bg-bg-primary border border-border text-text-secondary text-xs font-medium px-3.5 py-1.5 rounded-[3px] hover:bg-bg-hover transition-colors min-h-[36px]"
-              >
-                No
-              </button>
-            </div>
-          </motion.div>
+          <ConfirmPopover
+            key="complete"
+            message="Mark as complete?"
+            confirmLabel="Yes"
+            cancelLabel="No"
+            onConfirm={() => { setShowCompleteConfirm(false); onToggle(task.id, true); }}
+            onCancel={() => setShowCompleteConfirm(false)}
+          />
         )}
         {showDeleteConfirm && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.15 }}
-            onClick={(e) => e.stopPropagation()}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 bg-bg-card border border-border rounded-[4px] shadow-lg px-4 py-3 flex flex-col items-center gap-2.5 min-w-[200px]"
-          >
-            <p className="text-xs text-text-secondary text-center">Delete this task?</p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => { setShowDeleteConfirm(false); onDelete(task.id); }}
-                className="bg-error hover:bg-error/80 text-white text-xs font-medium px-3.5 py-1.5 rounded-[3px] transition-colors min-h-[36px]"
-              >
-                Delete
-              </button>
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="bg-bg-primary border border-border text-text-secondary text-xs font-medium px-3.5 py-1.5 rounded-[3px] hover:bg-bg-hover transition-colors min-h-[36px]"
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
+          <ConfirmPopover
+            key="delete"
+            message="Delete this task?"
+            confirmLabel="Delete"
+            cancelLabel="Cancel"
+            tone="danger"
+            onConfirm={() => { setShowDeleteConfirm(false); onDelete(task.id); }}
+            onCancel={() => setShowDeleteConfirm(false)}
+          />
         )}
       </AnimatePresence>
 
@@ -344,60 +295,12 @@ export function TaskItem({
                 </motion.div>
               </div>
             </div>
-            {/* Project badge + recurrence + next date + notes indicator (always visible below title) */}
-            {(task.project || task.recurrenceType || isFutureScheduled || task.notes) && (
-              <div className="flex items-center gap-2 mt-0.5">
-                {task.project && (
-                  <span className="inline-flex items-center gap-1">
-                    <span
-                      className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: task.project.color }}
-                    />
-                    <span className="text-[11px] text-text-muted truncate max-w-[120px]">
-                      {task.project.name}
-                    </span>
-                  </span>
-                )}
-                {task.recurrenceType && (
-                  <span className="inline-flex items-center gap-0.5">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
-                      <path d="M17 2l4 4-4 4" />
-                      <path d="M3 11V9a4 4 0 014-4h14" />
-                      <path d="M7 22l-4-4 4-4" />
-                      <path d="M21 13v2a4 4 0 01-4 4H3" />
-                    </svg>
-                    <span className="text-[10px] text-text-muted">
-                      {recurrenceLabel(task.recurrenceType, task.recurrenceDays, task.recurrenceWeekdays)}
-                    </span>
-                  </span>
-                )}
-                {isFutureScheduled && task.hiddenUntil && (
-                  <span className="inline-flex items-center gap-1">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-accent/70">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                      <path d="M16 2v4M8 2v4M3 10h18" />
-                    </svg>
-                    <span className="text-[10px] text-accent/70 font-medium">
-                      next: {new Date(task.hiddenUntil).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                    </span>
-                  </span>
-                )}
-                {task.notes && !expanded && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setShowNotesModal(true); }}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-0.5 hover:text-accent transition-colors"
-                  >
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
-                      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
-                      <line x1="16" y1="13" x2="8" y2="13" />
-                      <line x1="16" y1="17" x2="8" y2="17" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-            )}
+            <TaskBadges
+              task={task}
+              isFutureScheduled={isFutureScheduled}
+              expanded={expanded}
+              onOpenNotes={() => setShowNotesModal(true)}
+            />
             {/* Notes textarea (visible when expanded) */}
             <AnimatePresence>
               {expanded && (
@@ -513,33 +416,12 @@ export function TaskItem({
                           className="overflow-hidden"
                         >
                           <div className="max-h-[200px] overflow-y-auto bg-bg-hover/20">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); onAssign(task.id, null); setShowMenu(false); setShowOverflowMenu(false); }}
-                              className={`w-full flex items-center gap-2 px-5 py-2 text-[11px] text-left transition-colors hover:bg-bg-hover ${
-                                task.projectId === null ? "text-accent" : "text-text-secondary"
-                              }`}
-                            >
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                                <path d="M22 12h-6l-2 3H10l-2-3H2" strokeLinecap="round" strokeLinejoin="round" />
-                                <path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                              Inbox
-                            </button>
-                            {projects.map((project) => (
-                              <button
-                                key={project.id}
-                                onClick={(e) => { e.stopPropagation(); onAssign(task.id, project.id); setShowMenu(false); setShowOverflowMenu(false); }}
-                                className={`w-full flex items-center gap-2 px-5 py-2 text-[11px] text-left transition-colors hover:bg-bg-hover ${
-                                  task.projectId === project.id ? "text-accent" : "text-text-secondary"
-                                }`}
-                              >
-                                <span
-                                  className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                                  style={{ backgroundColor: project.color }}
-                                />
-                                <span className="truncate">{project.name}</span>
-                              </button>
-                            ))}
+                            <ProjectPickerList
+                              variant="accordion"
+                              projects={projects}
+                              currentProjectId={task.projectId}
+                              onPick={(pid) => { onAssign(task.id, pid); setShowMenu(false); setShowOverflowMenu(false); }}
+                            />
                           </div>
                         </motion.div>
                       )}
@@ -668,36 +550,12 @@ export function TaskItem({
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   className="absolute right-0 top-full mt-1 z-40 min-w-[160px] bg-bg-card border border-border rounded-[4px] shadow-lg overflow-hidden"
                 >
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onAssign(task.id, null); setShowMenu(false); }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors hover:bg-bg-hover ${
-                      task.projectId === null ? "text-accent" : "text-text-secondary"
-                    }`}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                      <path d="M22 12h-6l-2 3H10l-2-3H2" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    Inbox
-                  </button>
-
-                  {projects.length > 0 && <div className="h-px bg-border" />}
-
-                  {projects.map((project) => (
-                    <button
-                      key={project.id}
-                      onClick={(e) => { e.stopPropagation(); onAssign(task.id, project.id); setShowMenu(false); }}
-                      className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors hover:bg-bg-hover ${
-                        task.projectId === project.id ? "text-accent" : "text-text-secondary"
-                      }`}
-                    >
-                      <span
-                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: project.color }}
-                      />
-                      <span className="truncate">{project.name}</span>
-                    </button>
-                  ))}
+                  <ProjectPickerList
+                    variant="menu"
+                    projects={projects}
+                    currentProjectId={task.projectId}
+                    onPick={(pid) => { onAssign(task.id, pid); setShowMenu(false); }}
+                  />
                 </motion.div>
               )}
             </div>
@@ -779,60 +637,17 @@ export function TaskItem({
       )}
     </motion.div>
 
-    {/* Notes Modal */}
-    <AnimatePresence>
-      {showNotesModal && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
-          className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
-          onClick={() => { handleNotesSave(); setShowNotesModal(false); }}
-        >
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 40 }}
-            transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg bg-bg-secondary border border-border rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 max-h-[85vh] flex flex-col"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-text-primary truncate flex-1 mr-3">{task.title}</h3>
-              <button
-                onClick={() => { handleNotesSave(); setShowNotesModal(false); }}
-                className="text-text-muted hover:text-text-primary transition-colors min-w-[36px] min-h-[36px] inline-flex items-center justify-center"
-                aria-label="Close notes"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <textarea
-              value={notesValue}
-              onChange={handleNotesChange}
-              onFocus={() => setEditingNotes(true)}
-              placeholder="Add notes..."
-              className="flex-1 min-h-[200px] w-full resize-none bg-bg-primary border border-border rounded-lg p-3 text-sm sm:text-base text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:border-accent/50 leading-relaxed"
-              autoFocus
-            />
-            <div className="flex items-center justify-between mt-2">
-              <p className={`text-[11px] ${notesOverLimit ? "text-error" : "text-text-muted"}`}>
-                {notesWordCount}/{NOTES_WORD_LIMIT} words
-              </p>
-              <button
-                onClick={() => { handleNotesSave(); setShowNotesModal(false); }}
-                className="text-xs font-medium text-accent hover:text-accent/80 transition-colors min-h-[36px] px-3"
-              >
-                Done
-              </button>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <TaskNotesModal
+      open={showNotesModal}
+      title={task.title}
+      value={notesValue}
+      wordCount={notesWordCount}
+      wordLimit={NOTES_WORD_LIMIT}
+      overLimit={notesOverLimit}
+      onChange={handleNotesChange}
+      onFocus={() => setEditingNotes(true)}
+      onClose={() => { handleNotesSave(); setShowNotesModal(false); }}
+    />
     </>
   );
 }

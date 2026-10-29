@@ -45,7 +45,7 @@ export function HomeDashboard() {
 
   const stats = useMemo(() => {
     const active = tasks.filter((t) => !t.completed && !(t.hiddenUntil && new Date(t.hiddenUntil) > new Date())).length;
-    const completedToday = tasks.filter((t) => t.completed && t.updatedAt && new Date(t.updatedAt).toISOString().split("T")[0] === today).length;
+    const completedToday = tasks.filter((t) => t.completed && t.updatedAt && new Intl.DateTimeFormat("en-CA").format(new Date(t.updatedAt)) === today).length;
     const planned = tasks.filter((t) => t.plannedDate === today && !t.completed).length;
     return { active, completedToday, planned, projects: projects.length, roadmaps: roadmaps.length, habits: habits.filter((h) => !h.archived).length };
   }, [tasks, projects, roadmaps, habits, today]);

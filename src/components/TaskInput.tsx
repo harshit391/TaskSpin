@@ -25,12 +25,12 @@ export function TaskInput({ onAdd, onAddBatch, isLoading, inputRef }: TaskInputP
   const [recurrenceDays, setRecurrenceDays] = useState(7);
   const [recurrenceStartDate, setRecurrenceStartDate] = useState("");
   const [showRecurrencePicker, setShowRecurrencePicker] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const mergedRef = useCallback(
     (el: HTMLTextAreaElement | null) => {
-      (textareaRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
-      if (inputRef) (inputRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
+      textareaRef.current = el;
+      if (inputRef) inputRef.current = el;
     },
     [inputRef]
   );

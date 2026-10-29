@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef, useCallback, Suspense } from "react";
+import { useState, useMemo, useRef, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "@/components/Header";
@@ -50,6 +50,10 @@ function daysOld(dateStr: string): number {
   return Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+function isHiddenRecurring(task: { completed: boolean; hiddenUntil: string | null }): boolean {
+  return !task.completed && !!task.hiddenUntil && new Date(task.hiddenUntil) > new Date();
+}
+
 function isOverdue(task: { completed: boolean; hiddenUntil: string | null; createdAt: string }): boolean {
   if (task.completed) return false;
   if (task.hiddenUntil && new Date(task.hiddenUntil) > new Date()) return false;
@@ -68,15 +72,27 @@ function HomeContent() {
   const searchParams = useSearchParams();
 
   // Sidebar state
-  const [projectFilter, setProjectFilter] = useState<ProjectFilter>("all");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  useEffect(() => {
+  // Initial view comes from ?project= / ?roadmap= (links from cards and the home page)
+  const [projectFilter, setProjectFilterState] = useState<ProjectFilter>(() => {
     const projectParam = searchParams.get("project");
     const roadmapParam = searchParams.get("roadmap");
-    if (projectParam) setProjectFilter(projectParam);
-    else if (roadmapParam) setProjectFilter(`roadmap:${roadmapParam}`);
-  }, [searchParams]);
+    if (projectParam) return projectParam;
+    if (roadmapParam) return `roadmap:${roadmapParam}`;
+    return "all";
+  });
+
+  // Keep the URL in sync (replace, not push) so reload/share reflect the current view
+  // and a stale ?roadmap= param doesn't pin the page to an old roadmap.
+  const setProjectFilter = useCallback((filter: ProjectFilter) => {
+    setProjectFilterState(filter);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("project");
+    url.searchParams.delete("roadmap");
+    if (filter.startsWith("roadmap:")) url.searchParams.set("roadmap", filter.slice(8));
+    else if (filter !== "all") url.searchParams.set("project", filter);
+    window.history.replaceState(window.history.state, "", url);
+  }, []);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Search & filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -104,9 +120,8 @@ function HomeContent() {
   const activeRoadmapId = isRoadmapView ? projectFilter.slice(8) : null;
   const activeRoadmap = activeRoadmapId ? roadmaps.find(r => r.id === activeRoadmapId) ?? null : null;
 
-  // Selection state
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const selectionActive = selectedIds.size > 0;
+  // Selection state. Raw picks are kept as-is; only those still visible count as selected.
+  const [pickedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const toggleSelection = useCallback((id: string) => {
     setSelectedIds(prev => {
@@ -121,13 +136,13 @@ function HomeContent() {
     setSelectedIds(new Set());
   }, []);
 
-  // Filter tasks (exclude roadmap tasks from normal views)
+  // Filter tasks. "All Tasks" includes roadmap tasks; Inbox means no project and no roadmap.
   const filteredTasks = useMemo(() => {
-    let result = tasks.filter(t => !t.roadmapId);
+    let result = tasks;
 
     // Sidebar project filter
     if (projectFilter === "inbox") {
-      result = result.filter((t) => t.projectId === null);
+      result = result.filter((t) => t.projectId === null && !t.roadmapId);
     } else if (projectFilter !== "all" && !isRoadmapView) {
       result = result.filter((t) => t.projectId === projectFilter);
     }
@@ -143,9 +158,9 @@ function HomeContent() {
     }
 
     // Status filter
-    if (statusFilter === "active") result = result.filter((t) => !t.completed && !(t.hiddenUntil && new Date(t.hiddenUntil) > new Date()));
+    if (statusFilter === "active") result = result.filter((t) => !t.completed && !isHiddenRecurring(t));
     if (statusFilter === "completed") result = result.filter((t) => t.completed);
-    if (statusFilter === "recurring") result = result.filter((t) => !t.completed && !!t.hiddenUntil && new Date(t.hiddenUntil) > new Date());
+    if (statusFilter === "recurring") result = result.filter((t) => isHiddenRecurring(t));
     if (statusFilter === "overdue") result = result.filter((t) => isOverdue(t));
 
     // Date filter
@@ -156,7 +171,7 @@ function HomeContent() {
     // Multi-project filter
     if (selectedProjects.length > 0) {
       result = result.filter((t) => {
-        if (selectedProjects.includes("inbox") && t.projectId === null) return true;
+        if (selectedProjects.includes("inbox") && t.projectId === null && !t.roadmapId) return true;
         return selectedProjects.includes(t.projectId ?? "");
       });
     }
@@ -167,12 +182,11 @@ function HomeContent() {
   // Visible task IDs (for selection pruning)
   const visibleTaskIds = useMemo(() => new Set(filteredTasks.map(t => t.id)), [filteredTasks]);
 
-  useEffect(() => {
-    setSelectedIds(prev => {
-      const pruned = new Set([...prev].filter(id => visibleTaskIds.has(id)));
-      return pruned.size === prev.size ? prev : pruned;
-    });
-  }, [visibleTaskIds]);
+  const selectedIds = useMemo(
+    () => new Set([...pickedIds].filter(id => visibleTaskIds.has(id))),
+    [pickedIds, visibleTaskIds]
+  );
+  const selectionActive = selectedIds.size > 0;
 
   const selectAll = useCallback(() => {
     setSelectedIds(new Set(visibleTaskIds));
@@ -204,15 +218,14 @@ function HomeContent() {
   }, [tasks, projects]);
 
   // Counts
-  const nonRoadmapTasks = useMemo(() => tasks.filter(t => !t.roadmapId), [tasks]);
   const sidebarScoped = useMemo(() => {
-    if (projectFilter === "inbox") return nonRoadmapTasks.filter((t) => t.projectId === null);
-    if (projectFilter !== "all" && !isRoadmapView) return nonRoadmapTasks.filter((t) => t.projectId === projectFilter);
-    return nonRoadmapTasks;
-  }, [nonRoadmapTasks, projectFilter, isRoadmapView]);
+    if (projectFilter === "inbox") return tasks.filter((t) => t.projectId === null && !t.roadmapId);
+    if (projectFilter !== "all" && !isRoadmapView) return tasks.filter((t) => t.projectId === projectFilter);
+    return tasks;
+  }, [tasks, projectFilter, isRoadmapView]);
 
-  const activeTasks = nonRoadmapTasks.filter((t) => !t.completed && !(t.hiddenUntil && new Date(t.hiddenUntil) > new Date()));
-  const inboxCount = activeTasks.filter((t) => t.projectId === null).length;
+  const activeTasks = tasks.filter((t) => !t.completed && !isHiddenRecurring(t));
+  const inboxCount = activeTasks.filter((t) => t.projectId === null && !t.roadmapId).length;
 
   const statusCounts = useMemo(() => {
     let base = sidebarScoped;
@@ -227,15 +240,15 @@ function HomeContent() {
     }
     if (selectedProjects.length > 0) {
       base = base.filter((t) => {
-        if (selectedProjects.includes("inbox") && t.projectId === null) return true;
+        if (selectedProjects.includes("inbox") && t.projectId === null && !t.roadmapId) return true;
         return selectedProjects.includes(t.projectId ?? "");
       });
     }
     return {
       all: base.length,
-      active: base.filter((t) => !t.completed && !(t.hiddenUntil && new Date(t.hiddenUntil) > new Date())).length,
+      active: base.filter((t) => !t.completed && !isHiddenRecurring(t)).length,
       completed: base.filter((t) => t.completed).length,
-      recurring: base.filter((t) => !t.completed && !!t.hiddenUntil && new Date(t.hiddenUntil) > new Date()).length,
+      recurring: base.filter((t) => isHiddenRecurring(t)).length,
       overdue: base.filter((t) => isOverdue(t)).length,
     };
   }, [sidebarScoped, searchQuery, dateFilter, selectedProjects]);
@@ -258,6 +271,26 @@ function HomeContent() {
       { label: "7–14 days old", tasks: week },
     ].filter(g => g.tasks.length > 0);
   }, [statusFilter, filteredTasks]);
+
+  // "All" tab: show tasks grouped by status instead of one mixed list
+  const statusGroups = useMemo(() => {
+    if (statusFilter !== "all") return null;
+    const active: typeof filteredTasks = [];
+    const recurring: typeof filteredTasks = [];
+    const done: typeof filteredTasks = [];
+    for (const t of filteredTasks) {
+      if (t.completed) done.push(t);
+      else if (isHiddenRecurring(t)) recurring.push(t);
+      else active.push(t);
+    }
+    return [
+      { label: "Active", tasks: active },
+      { label: "Recurring", tasks: recurring },
+      { label: "Done", tasks: done },
+    ].filter(g => g.tasks.length > 0);
+  }, [statusFilter, filteredTasks]);
+
+  const groupedTasks = overdueGroups ?? statusGroups;
 
   const handleProjectFilterChange = (filter: ProjectFilter) => {
     setProjectFilter(filter);
@@ -427,9 +460,9 @@ function HomeContent() {
                       <p className="text-error text-sm">Failed to load tasks</p>
                       <p className="text-text-muted text-xs">Make sure the database is running</p>
                     </div>
-                  ) : overdueGroups ? (
+                  ) : groupedTasks && groupedTasks.length > 0 ? (
                     <div className="space-y-6">
-                      {overdueGroups.map((group) => (
+                      {groupedTasks.map((group) => (
                         <div key={group.label}>
                           <div className="flex items-center gap-2 mb-3">
                             <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">{group.label}</span>
@@ -450,14 +483,16 @@ function HomeContent() {
       </div>
 
       {/* Spin Modal */}
-      <SpinModal
-        isOpen={spinOpen}
-        onClose={() => setSpinOpen(false)}
-        tasks={tasks}
-        projects={projects}
-        onComplete={(id) => toggleTask(id, true)}
-        currentProjectFilter={projectFilter}
-      />
+      {spinOpen && (
+        <SpinModal
+          isOpen={spinOpen}
+          onClose={() => setSpinOpen(false)}
+          tasks={tasks}
+          projects={projects}
+          onComplete={(id) => toggleTask(id, true)}
+          currentProjectFilter={projectFilter}
+        />
+      )}
 
       {/* Shortcuts Modal */}
       <ShortcutsModal isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />

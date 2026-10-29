@@ -113,7 +113,9 @@ export function useTasks() {
         old?.map((t) => {
           if (t.id !== id) return t;
           if (completed && t.recurrenceType) {
-            return { ...t, completed: false, hiddenUntil: new Date(Date.now() + 86400000).toISOString() };
+            const tomorrow = new Date();
+            tomorrow.setHours(24, 0, 0, 0);
+            return { ...t, completed: false, hiddenUntil: tomorrow.toISOString() };
           }
           return { ...t, completed };
         })
@@ -146,7 +148,7 @@ export function useTasks() {
       queryClient.setQueryData<Task[]>(TASKS_KEY, (old) => {
         if (!old) return old;
         // Future start date hides the task until then (moves to Recurring tab)
-        const startIso = recurrenceStartDate ? new Date(recurrenceStartDate).toISOString() : null;
+        const startIso = recurrenceStartDate ? new Date(`${recurrenceStartDate.slice(0, 10)}T00:00:00`).toISOString() : null;
         const hiddenUntil = recurrenceType && startIso && new Date(startIso).getTime() > Date.now() ? startIso : null;
         return old.map((t) =>
           t.id === id
@@ -170,8 +172,8 @@ export function useTasks() {
       showToast("Failed to set recurrence", "error");
     },
     onSuccess: (_data, { recurrenceType, recurrenceStartDate }) => {
-      if (recurrenceType && recurrenceStartDate && new Date(recurrenceStartDate).getTime() > Date.now()) {
-        const label = new Date(recurrenceStartDate).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+      if (recurrenceType && recurrenceStartDate && new Date(`${recurrenceStartDate.slice(0, 10)}T00:00:00`).getTime() > Date.now()) {
+        const label = new Date(`${recurrenceStartDate.slice(0, 10)}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" });
         showToast(`Recurring — will appear on ${label}`, "success");
         return;
       }

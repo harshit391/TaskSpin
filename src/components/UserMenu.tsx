@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
-import { getDefaultPage, setDefaultPage } from "@/app/page";
+import { setDefaultPage, useDefaultPage } from "@/lib/defaultPage";
 
 const PAGE_OPTIONS = [
   { value: "/", label: "Home" },
@@ -18,12 +18,8 @@ export function UserMenu() {
   const { user, signOut } = useAuth();
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [defaultPage, setDefaultPageState] = useState("/dashboard");
+  const defaultPage = useDefaultPage();
   const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setDefaultPageState(getDefaultPage());
-  }, []);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -59,6 +55,8 @@ export function UserMenu() {
         aria-label="User menu"
       >
         {avatar ? (
+          // External OAuth avatar (Google etc.), 32px: next/image would need remote host config for no gain
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={avatar}
             alt=""
@@ -88,7 +86,7 @@ export function UserMenu() {
               {PAGE_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
-                  onClick={() => { setDefaultPage(opt.value); setDefaultPageState(opt.value); }}
+                  onClick={() => setDefaultPage(opt.value)}
                   className={`px-2 py-1 text-[11px] rounded-md transition-colors ${
                     defaultPage === opt.value
                       ? "bg-accent text-white"

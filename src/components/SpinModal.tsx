@@ -18,45 +18,32 @@ type SpinState = "idle" | "spinning" | "result";
 export function SpinModal({ isOpen, onClose, tasks, projects, onComplete, currentProjectFilter }: SpinModalProps) {
   const [spinState, setSpinState] = useState<SpinState>("idle");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [scopeProjects, setScopeProjects] = useState<string[]>([]);
+  // Mounted fresh on every open (see dashboard), so initial state comes from the current filter
+  const [scopeProjects, setScopeProjects] = useState<string[]>(() => {
+    if (currentProjectFilter === "all" || currentProjectFilter.startsWith("roadmap:")) return [];
+    if (currentProjectFilter === "inbox") return ["inbox"];
+    return [currentProjectFilter];
+  });
   const [displayedTasks, setDisplayedTasks] = useState<Task[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Get eligible tasks (incomplete only)
+  // Eligible: incomplete and actually due (a recurring task hidden until a later date isn't)
+  const now = new Date();
   const eligibleTasks = tasks.filter((t) => {
     if (t.completed) return false;
+    if (t.hiddenUntil && new Date(t.hiddenUntil) > now) return false;
     if (scopeProjects.length === 0) return true;
-    if (scopeProjects.includes("inbox") && t.projectId === null) return true;
+    if (scopeProjects.includes("inbox") && t.projectId === null && !t.roadmapId) return true;
     return scopeProjects.includes(t.projectId ?? "");
   });
-
-  // Initialize scope from current project filter
-  useEffect(() => {
-    if (isOpen) {
-      setSpinState("idle");
-      setSelectedTask(null);
-      if (currentProjectFilter === "all") {
-        setScopeProjects([]);
-      } else if (currentProjectFilter === "inbox") {
-        setScopeProjects(["inbox"]);
-      } else {
-        setScopeProjects([currentProjectFilter]);
-      }
-    }
-  }, [isOpen, currentProjectFilter]);
-
-  // Shuffle display tasks for the spinning effect
-  useEffect(() => {
-    if (eligibleTasks.length > 0) {
-      const shuffled = [...eligibleTasks].sort(() => Math.random() - 0.5);
-      setDisplayedTasks(shuffled.length >= 8 ? shuffled.slice(0, 8) : shuffled);
-    }
-  }, [eligibleTasks.length, spinState === "idle"]);
 
   const startSpin = useCallback(() => {
     if (eligibleTasks.length === 0) return;
 
+    // Shuffle a fresh set of titles to flash through while spinning
+    const shuffled = [...eligibleTasks].sort(() => Math.random() - 0.5).slice(0, 8);
+    setDisplayedTasks(shuffled);
     setSpinState("spinning");
     setCurrentIndex(0);
 
@@ -66,7 +53,7 @@ export function SpinModal({ isOpen, onClose, tasks, projects, onComplete, curren
 
     const tick = () => {
       iterations++;
-      setCurrentIndex((prev) => (prev + 1) % displayedTasks.length);
+      setCurrentIndex((prev) => (prev + 1) % shuffled.length);
 
       if (iterations >= totalIterations) {
         if (intervalRef.current) clearTimeout(intervalRef.current);
@@ -82,7 +69,7 @@ export function SpinModal({ isOpen, onClose, tasks, projects, onComplete, curren
     };
 
     intervalRef.current = setTimeout(tick, speed);
-  }, [eligibleTasks, displayedTasks.length]);
+  }, [eligibleTasks]);
 
   // Cleanup on unmount
   useEffect(() => {

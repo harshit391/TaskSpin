@@ -5,6 +5,7 @@ import { QueryProvider } from "@/components/QueryProvider";
 import { AuthProvider } from "@/components/AuthProvider";
 import { ToastProvider } from "@/components/ToastProvider";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { AppEntryTracker } from "@/components/AppEntryTracker";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -56,6 +57,7 @@ export default function RootLayout({
             {children}
             <ToastProvider />
             <ServiceWorkerRegister />
+            <AppEntryTracker />
           </AuthProvider>
         </QueryProvider>
       </body>

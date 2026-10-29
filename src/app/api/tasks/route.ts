@@ -2,31 +2,22 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthUserId } from "@/lib/auth";
 import { calculateNextOccurrence } from "@/lib/recurrence";
+import { readJson, badRequest, parseRecurrence, requestTimeZone } from "@/lib/http";
+import { dateKeyInZone, startOfDayInZone } from "@/lib/timezone";
+import { ownsProject } from "@/lib/ownership";
 
-export async function GET(request: Request) {
+export async function GET() {
   const userId = await getAuthUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { searchParams } = new URL(request.url);
-  const all = searchParams.get("all") === "true";
-  const priorityProjectId = searchParams.get("priorityProjectId");
-
+  // The client filters, groups and counts the full list locally (dashboard tabs,
+  // home stats, spin), so every task is returned. Completed tasks are cleaned up
+  // by the nightly delete-old-tasks cron, which keeps this list bounded.
   const tasks = await prisma.task.findMany({
-    where: {
-      userId,
-      ...(all ? { completed: false } : {}),
-    },
+    where: { userId },
     orderBy: { createdAt: "desc" },
     include: { project: true, roadmap: true },
   });
-
-  if (priorityProjectId) {
-    tasks.sort((a, b) => {
-      const aMatch = a.projectId === priorityProjectId ? 0 : 1;
-      const bMatch = b.projectId === priorityProjectId ? 0 : 1;
-      return aMatch - bMatch;
-    });
-  }
 
   return NextResponse.json(tasks);
 }
@@ -35,8 +26,9 @@ export async function POST(request: Request) {
   const userId = await getAuthUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await request.json();
-  const title = body.title?.trim();
+  const body = await readJson(request);
+  if (!body) return badRequest();
+  const title = typeof body.title === "string" ? body.title.trim() : "";
 
   if (!title) {
     return NextResponse.json(
@@ -45,17 +37,27 @@ export async function POST(request: Request) {
     );
   }
 
-  const startDate = body.recurrenceType
-    ? (body.recurrenceStartDate || new Date().toISOString().split("T")[0])
+  const projectId = typeof body.projectId === "string" && body.projectId ? body.projectId : null;
+  if (projectId && !(await ownsProject(userId, projectId))) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
+
+  const recurrence = parseRecurrence(body);
+  const timeZone = requestTimeZone(request);
+  const startKey = recurrence.type
+    ? (recurrence.start?.slice(0, 10) || dateKeyInZone(new Date(), timeZone))
     : null;
+  // Stored as local midnight of the chosen day
+  const startDate = startKey ? startOfDayInZone(startKey, timeZone) : null;
 
   let hiddenUntil: Date | null = null;
-  if (body.recurrenceType && startDate) {
+  if (recurrence.type && startDate) {
     const nextOccurrence = calculateNextOccurrence(
-      body.recurrenceType,
-      body.recurrenceDays ?? null,
+      recurrence.type,
+      recurrence.days,
       startDate,
-      body.recurrenceWeekdays ?? null
+      recurrence.weekdays,
+      timeZone
     );
     const now = new Date();
     if (nextOccurrence > now) {
@@ -67,11 +69,11 @@ export async function POST(request: Request) {
     data: {
       userId,
       title,
-      ...(body.projectId ? { projectId: body.projectId } : {}),
-      ...(body.recurrenceType ? { recurrenceType: body.recurrenceType } : {}),
-      ...(body.recurrenceDays ? { recurrenceDays: body.recurrenceDays } : {}),
-      ...(body.recurrenceWeekdays ? { recurrenceWeekdays: body.recurrenceWeekdays } : {}),
-      ...(startDate ? { recurrenceStartDate: new Date(startDate) } : {}),
+      ...(projectId ? { projectId } : {}),
+      ...(recurrence.type ? { recurrenceType: recurrence.type } : {}),
+      ...(recurrence.days ? { recurrenceDays: recurrence.days } : {}),
+      ...(recurrence.weekdays ? { recurrenceWeekdays: recurrence.weekdays } : {}),
+      ...(startDate ? { recurrenceStartDate: startDate } : {}),
       ...(hiddenUntil ? { hiddenUntil } : {}),
     },
     include: { project: true },

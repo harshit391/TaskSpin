@@ -66,7 +66,7 @@ export function ProjectCard({ project, totalTasks, completedTasks, index, onEdit
       className="relative group"
     >
       <Link
-        href={`/?project=${project.id}`}
+        href={`/dashboard?project=${project.id}`}
         className={`block border border-border rounded-[4px] bg-bg-secondary overflow-hidden transition-all hover:border-text-muted hover:shadow-[0_0_20px_rgba(255,45,111,0.05)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${editing ? "pointer-events-none" : ""}`}
         onClick={(e) => { if (editing) e.preventDefault(); }}
       >

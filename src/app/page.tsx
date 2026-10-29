@@ -1,21 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { HomeDashboard } from "@/components/HomeDashboard";
-
-const DEFAULT_PAGE_KEY = "taskspin-default-page";
-
-export function getDefaultPage(): string {
-  if (typeof window === "undefined") return "/dashboard";
-  return localStorage.getItem(DEFAULT_PAGE_KEY) || "/";
-}
-
-export function setDefaultPage(page: string): void {
-  localStorage.setItem(DEFAULT_PAGE_KEY, page);
-}
+import { markAppEntered, useEntryRedirect } from "@/lib/defaultPage";
 
 const FEATURES = [
   {
@@ -43,17 +33,16 @@ const FEATURES = [
 export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [redirecting, setRedirecting] = useState(false);
+  // Only redirect to the default page when the app is freshly opened. Redirecting every
+  // time the user comes back to "/" (back button, logo) would trap them in a loop.
+  const entryRedirect = useEntryRedirect();
+  const redirecting = !!user && !!entryRedirect;
 
   useEffect(() => {
-    if (!loading && user) {
-      const defaultPage = getDefaultPage();
-      if (defaultPage && defaultPage !== "/") {
-        setRedirecting(true);
-        router.replace(defaultPage);
-      }
-    }
-  }, [loading, user, router]);
+    if (loading || !user) return;
+    if (entryRedirect) router.replace(entryRedirect);
+    else markAppEntered();
+  }, [loading, user, entryRedirect, router]);
 
   if (loading || redirecting) {
     return (

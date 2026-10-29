@@ -1,78 +1,74 @@
+import {
+  addDaysToKey,
+  addMonthsToKey,
+  dateKeyInZone,
+  startOfDayInZone,
+  toDateKey,
+  weekdayOfKey,
+} from "@/lib/timezone";
+
 export type RecurrenceType = "daily" | "weekly" | "monthly" | "quarterly" | "custom";
 
 const DAY_ABBR = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const DAY_SHORT = ["S", "M", "T", "W", "T", "F", "S"];
 
-function addPeriod(date: Date, type: string, days: number | null): Date {
-  const result = new Date(date);
+function addPeriod(dateKey: string, type: string, days: number | null): string {
   switch (type) {
     case "daily":
-      result.setDate(result.getDate() + 1);
-      break;
+      return addDaysToKey(dateKey, 1);
     case "weekly":
-      result.setDate(result.getDate() + 7);
-      break;
+      return addDaysToKey(dateKey, 7);
     case "monthly":
-      result.setMonth(result.getMonth() + 1);
-      break;
+      return addMonthsToKey(dateKey, 1);
     case "quarterly":
-      result.setMonth(result.getMonth() + 3);
-      break;
+      return addMonthsToKey(dateKey, 3);
     case "custom":
-      result.setDate(result.getDate() + (days ?? 7));
-      break;
+      return addDaysToKey(dateKey, days ?? 7);
+    default:
+      return addDaysToKey(dateKey, 1);
   }
-  return result;
 }
 
-function calculateNextWeekday(weekdays: number[]): Date {
-  const now = new Date();
-  const today = now.getDay();
+function nextWeekday(todayKey: string, weekdays: number[]): string {
+  const today = weekdayOfKey(todayKey);
   const sorted = [...weekdays].sort((a, b) => a - b);
-
-  for (const day of sorted) {
-    if (day > today) {
-      const diff = day - today;
-      const next = new Date(now);
-      next.setDate(next.getDate() + diff);
-      next.setHours(0, 0, 0, 0);
-      return next;
-    }
-  }
-
-  const diff = 7 - today + sorted[0];
-  const next = new Date(now);
-  next.setDate(next.getDate() + diff);
-  next.setHours(0, 0, 0, 0);
-  return next;
+  const later = sorted.find((day) => day > today);
+  const diff = later !== undefined ? later - today : 7 - today + sorted[0];
+  return addDaysToKey(todayKey, diff);
 }
 
+/**
+ * When a recurring task should reappear: local midnight (in timeZone) of the next
+ * occurrence that is strictly in the future.
+ */
 export function calculateNextOccurrence(
   type: string,
   days: number | null,
   anchorDate?: Date | string | null,
-  weekdays?: string | null
+  weekdays?: string | null,
+  timeZone = "UTC"
 ): Date {
+  const now = new Date();
+  const todayKey = dateKeyInZone(now, timeZone);
+
   if (type === "custom" && weekdays) {
     const dayIndices = weekdays.split(",").map(Number).filter((n) => n >= 0 && n <= 6);
     if (dayIndices.length > 0) {
-      return calculateNextWeekday(dayIndices);
+      return startOfDayInZone(nextWeekday(todayKey, dayIndices), timeZone);
     }
   }
 
-  const now = new Date();
-
   if (!anchorDate) {
-    return addPeriod(now, type, days);
+    return startOfDayInZone(addPeriod(todayKey, type, days), timeZone);
   }
 
-  let anchor = new Date(anchorDate);
-  if (anchor > now) return anchor;
-
-  while (anchor <= now) {
-    anchor = addPeriod(anchor, type, days);
+  let key = toDateKey(anchorDate, timeZone);
+  let next = startOfDayInZone(key, timeZone);
+  while (next <= now) {
+    key = addPeriod(key, type, days);
+    next = startOfDayInZone(key, timeZone);
   }
-  return anchor;
+  return next;
 }
 
 export function recurrenceLabel(type: string, days?: number | null, weekdays?: string | null): string {

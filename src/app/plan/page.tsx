@@ -1,9 +1,9 @@
 "use client";
 
+import { BackButton } from "@/components/BackButton";
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTasks } from "@/hooks/useTasks";
-import { useProjects } from "@/hooks/useProjects";
 import { getLocalDate } from "@/lib/api";
 import { SyncingOverlay } from "@/components/SyncingOverlay";
 
@@ -24,7 +24,6 @@ function formatDateLabel(dateStr: string): string {
 
 export default function PlanPage() {
   const { tasks, isLoading, isMutating, toggleTask, planForDate, unplan } = useTasks();
-  const { projects } = useProjects();
 
   const today = getLocalDate();
   const tomorrow = getTomorrowDate();
@@ -77,15 +76,7 @@ export default function PlanPage() {
       {/* Header */}
       <header className="sticky top-0 z-30 bg-bg-primary/80 backdrop-blur-md border-b border-border">
         <div className="w-[92%] sm:w-[88%] lg:w-[85%] max-w-5xl mx-auto flex items-center gap-3 h-14">
-          <a
-            href="/"
-            className="text-text-muted hover:text-text-primary transition-colors p-1"
-            aria-label="Back to home"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
-          </a>
+          <BackButton fallback="/" />
           <h1 className="text-base font-semibold text-text-primary">Plan My Day</h1>
         </div>
       </header>

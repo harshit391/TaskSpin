@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { getDefaultPage, setDefaultPage } from "@/app/page";
+import { setDefaultPage, useDefaultPage } from "@/lib/defaultPage";
 import { showToast } from "@/hooks/useToast";
 
 interface SetDefaultPageButtonProps {
@@ -9,11 +8,7 @@ interface SetDefaultPageButtonProps {
 }
 
 export function SetDefaultPageButton({ page }: SetDefaultPageButtonProps) {
-  const [isDefault, setIsDefault] = useState(false);
-
-  useEffect(() => {
-    setIsDefault(getDefaultPage() === page);
-  }, [page]);
+  const isDefault = useDefaultPage() === page;
 
   if (isDefault) {
     return (
@@ -27,7 +22,6 @@ export function SetDefaultPageButton({ page }: SetDefaultPageButtonProps) {
     <button
       onClick={() => {
         setDefaultPage(page);
-        setIsDefault(true);
         showToast("Set as default page", "success");
       }}
       className="text-[10px] text-text-muted hover:text-accent border border-border hover:border-accent/30 rounded-md px-2 py-1 transition-colors"

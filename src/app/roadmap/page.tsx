@@ -1,5 +1,6 @@
 "use client";
 
+import { BackButton } from "@/components/BackButton";
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SetDefaultPageButton } from "@/components/SetDefaultPageButton";
@@ -31,15 +32,7 @@ export default function RoadmapDashboard() {
       {/* Header */}
       <div className="sticky top-0 z-30 bg-bg-primary/80 backdrop-blur-sm border-b border-border">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
-          <a
-            href="/dashboard"
-            className="text-text-muted hover:text-text-primary transition-colors min-w-[36px] min-h-[36px] inline-flex items-center justify-center"
-            aria-label="Back to dashboard"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <path d="M19 12H5M12 5l-7 7 7 7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </a>
+          <BackButton fallback="/" />
           <div className="flex-1">
             <h1 className="text-lg sm:text-xl font-bold text-text-primary uppercase tracking-[0.05em]">
               Roadmaps

@@ -1,5 +1,6 @@
 "use client";
 
+import { browserTimeZone, toDateKey } from "@/lib/timezone";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Task } from "@/types/task";
@@ -28,7 +29,7 @@ export default function RecurrencePicker({ task, onSave, onRemove }: RecurrenceP
   const [selectedWeekdays, setSelectedWeekdays] = useState<number[]>(
     task.recurrenceWeekdays ? task.recurrenceWeekdays.split(",").map(Number) : []
   );
-  const [startDate, setStartDate] = useState(task.recurrenceStartDate ? task.recurrenceStartDate.split("T")[0] : "");
+  const [startDate, setStartDate] = useState(task.recurrenceStartDate ? toDateKey(task.recurrenceStartDate, browserTimeZone()) : "");
 
   const toggleWeekday = (day: number) => {
     setSelectedWeekdays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));

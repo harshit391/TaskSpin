@@ -1,15 +1,21 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isCronAuthorized } from "@/lib/http";
+import { DEFAULT_TIMEZONE, addDaysToKey, dateKeyInZone, startOfDayInZone } from "@/lib/timezone";
 
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const now = new Date();
-  const yesterdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-  const yesterdayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  // "Yesterday" is the user's local day, not the server's UTC day. The cron runs at
+  // 00:05 UTC, which is after midnight in Asia/Kolkata, so this is the day that just ended.
+  const todayKey = dateKeyInZone(new Date(), DEFAULT_TIMEZONE);
+  const yesterdayKey = addDaysToKey(todayKey, -1);
+  const yesterdayStart = startOfDayInZone(yesterdayKey, DEFAULT_TIMEZONE);
+  const yesterdayEnd = startOfDayInZone(todayKey, DEFAULT_TIMEZONE);
+  // Rows are keyed by calendar date (UTC midnight of that date), matching existing data
+  const statsDate = new Date(`${yesterdayKey}T00:00:00.000Z`);
 
   // Get all distinct userIds
   const users = await prisma.task.groupBy({
@@ -96,7 +102,7 @@ export async function GET(request: Request) {
     const avgCompletionMs = completionCount > 0 ? totalCompletionMs / completionCount : null;
 
     await prisma.dailyStats.upsert({
-      where: { userId_date: { userId, date: yesterdayStart } },
+      where: { userId_date: { userId, date: statsDate } },
       update: {
         tasksCompleted: completedTasks.length,
         tasksCreated: createdTasks.length,
@@ -106,7 +112,7 @@ export async function GET(request: Request) {
       },
       create: {
         userId,
-        date: yesterdayStart,
+        date: statsDate,
         tasksCompleted: completedTasks.length,
         tasksCreated: createdTasks.length,
         tasksActive: activeCount,
@@ -119,7 +125,7 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json({
-    date: yesterdayStart.toISOString().split("T")[0],
+    date: yesterdayKey,
     usersProcessed: totalStats,
   });
 }
