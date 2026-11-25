@@ -3,12 +3,37 @@
 import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { recurrenceLabel } from "@/lib/recurrence";
+import { Project } from "@/types/task";
 
 interface TaskInputProps {
   onAdd: (title: string, recurrence?: { type: string; days?: number; startDate?: string }) => void;
   onAddBatch: (titles: string[], projectName?: string, recurrence?: { type: string; days?: number; startDate?: string }) => void;
   isLoading: boolean;
   inputRef?: React.RefObject<HTMLTextAreaElement | null>;
+  projects?: Project[];
+}
+
+const MAX_SUGGESTIONS = 6;
+
+type Suggestion = { kind: "project"; project: Project } | { kind: "create"; name: string };
+
+/** Projects matching the #query: prefix matches first, then substring matches. */
+function projectSuggestions(projects: Project[], query: string): Suggestion[] {
+  const q = query.toLowerCase();
+  const prefix: Project[] = [];
+  const rest: Project[] = [];
+  for (const p of projects) {
+    const name = p.name.toLowerCase();
+    if (name.startsWith(q)) prefix.push(p);
+    else if (name.includes(q)) rest.push(p);
+  }
+  const matches: Suggestion[] = [...prefix, ...rest]
+    .slice(0, MAX_SUGGESTIONS)
+    .map((project) => ({ kind: "project", project }));
+  if (q && !projects.some((p) => p.name.toLowerCase() === q)) {
+    matches.push({ kind: "create", name: query });
+  }
+  return matches;
 }
 
 const RECURRENCE_OPTIONS = [
@@ -19,8 +44,12 @@ const RECURRENCE_OPTIONS = [
   { value: "custom", label: "Custom" },
 ] as const;
 
-export function TaskInput({ onAdd, onAddBatch, isLoading, inputRef }: TaskInputProps) {
+export function TaskInput({ onAdd, onAddBatch, isLoading, inputRef, projects = [] }: TaskInputProps) {
   const [value, setValue] = useState("");
+  const [caret, setCaret] = useState(0);
+  const [focused, setFocused] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [dismissedQuery, setDismissedQuery] = useState<string | null>(null);
   const [recurrenceType, setRecurrenceType] = useState<string | null>(null);
   const [recurrenceDays, setRecurrenceDays] = useState(7);
   const [recurrenceStartDate, setRecurrenceStartDate] = useState("");
@@ -58,8 +87,36 @@ export function TaskInput({ onAdd, onAddBatch, isLoading, inputRef }: TaskInputP
     el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
   }, []);
 
+  // Project autocomplete: open while the caret sits on a first line that starts with "#".
+  const rawFirstLine = value.split("\n")[0];
+  const hashQuery = rawFirstLine.trimStart().startsWith("#") && caret <= rawFirstLine.length
+    ? rawFirstLine.trimStart().slice(1).trim()
+    : null;
+  const suggestions = hashQuery !== null ? projectSuggestions(projects, hashQuery) : [];
+  const showSuggestions = focused && hashQuery !== null && dismissedQuery !== hashQuery && suggestions.length > 0;
+  const highlighted = Math.min(activeIndex, suggestions.length - 1);
+
+  const applySuggestion = (s: Suggestion) => {
+    const name = s.kind === "project" ? s.project.name : s.name;
+    const rest = value.slice(rawFirstLine.length).replace(/^\n/, "");
+    const next = `#${name}\n${rest}`;
+    const pos = name.length + 2;
+    setValue(next);
+    setCaret(pos);
+    setActiveIndex(0);
+    requestAnimationFrame(() => {
+      const el = textareaRef.current;
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(pos, pos);
+      autoResize();
+    });
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setValue(e.target.value);
+    setCaret(e.target.selectionStart);
+    setActiveIndex(0);
     autoResize();
   };
 
@@ -82,6 +139,24 @@ export function TaskInput({ onAdd, onAddBatch, isLoading, inputRef }: TaskInputP
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (showSuggestions) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        const step = e.key === "ArrowDown" ? 1 : -1;
+        setActiveIndex((highlighted + step + suggestions.length) % suggestions.length);
+        return;
+      }
+      if ((e.key === "Enter" && !e.shiftKey) || e.key === "Tab") {
+        e.preventDefault();
+        applySuggestion(suggestions[highlighted]);
+        return;
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setDismissedQuery(hashQuery);
+        return;
+      }
+    }
     if (e.key === "Enter" && !e.shiftKey) {
       if (taskCount === 0) return;
       e.preventDefault();
@@ -124,11 +199,65 @@ export function TaskInput({ onAdd, onAddBatch, isLoading, inputRef }: TaskInputP
             value={value}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
+            onSelect={(e) => setCaret(e.currentTarget.selectionStart)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
             placeholder="Add a new task..."
             rows={1}
             className="w-full resize-none bg-bg-secondary border border-border rounded-[4px] px-3 py-2.5 sm:px-4 sm:py-3 text-sm text-text-primary placeholder:text-text-muted transition-all focus:outline-none focus-visible:border-accent focus-visible:shadow-[0_0_0_2px_var(--color-accent-glow)] leading-relaxed"
             aria-label="New task title — press Shift+Enter for multiple tasks"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={showSuggestions}
+            aria-controls="task-project-suggestions"
+            aria-activedescendant={showSuggestions ? `task-project-suggestion-${highlighted}` : undefined}
           />
+
+          {/* Project suggestions for #Project on the first line */}
+          <AnimatePresence>
+            {showSuggestions && (
+              <motion.ul
+                id="task-project-suggestions"
+                role="listbox"
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.12 }}
+                className="absolute left-0 right-0 top-full mt-1 z-30 max-h-60 overflow-y-auto bg-bg-secondary border border-border rounded-[4px] shadow-lg py-1"
+              >
+                {suggestions.map((s, i) => (
+                  <li
+                    key={s.kind === "project" ? s.project.id : "create"}
+                    id={`task-project-suggestion-${i}`}
+                    role="option"
+                    aria-selected={i === highlighted}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onMouseEnter={() => setActiveIndex(i)}
+                    onClick={() => applySuggestion(s)}
+                    className={`flex items-center gap-2 px-3 py-2 text-xs cursor-pointer transition-colors ${
+                      i === highlighted ? "bg-bg-hover text-text-primary" : "text-text-secondary"
+                    }`}
+                  >
+                    {s.kind === "project" ? (
+                      <>
+                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: s.project.color }} />
+                        <span className="truncate">{s.project.name}</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true" className="flex-shrink-0 text-accent">
+                          <path d="M12 5v14M5 12h14" />
+                        </svg>
+                        <span className="truncate">
+                          Create project <span className="text-accent font-medium">&ldquo;{s.name}&rdquo;</span>
+                        </span>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </motion.ul>
+            )}
+          </AnimatePresence>
         </div>
         <button
           type="button"

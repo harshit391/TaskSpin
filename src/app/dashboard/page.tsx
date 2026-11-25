@@ -425,6 +425,7 @@ function HomeContent() {
                   }}
                   isLoading={isAdding}
                   inputRef={taskInputRef}
+                  projects={projects}
                 />
 
                 {/* Search & Filter */}
